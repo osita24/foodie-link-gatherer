@@ -1,24 +1,29 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart } from "lucide-react";
+import { Heart, UtensilsCrossed } from "lucide-react";
 
 const SavedRestaurants = () => {
   // Placeholder data - will be replaced with real data later
-  const savedRestaurants = [
-    {
-      id: 1,
-      name: "Italian Bistro",
-      image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4",
-      cuisine: "Italian",
-      rating: 4.5,
-    },
-    {
-      id: 2,
-      name: "Sushi Place",
-      image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4",
-      cuisine: "Japanese",
-      rating: 4.8,
-    },
-  ];
+  const savedRestaurants = [];
+
+  if (savedRestaurants.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="rounded-full bg-muted p-6 mb-4">
+          <UtensilsCrossed className="w-12 h-12 text-muted-foreground" />
+        </div>
+        <h3 className="text-xl font-semibold mb-2">No saved restaurants yet</h3>
+        <p className="text-muted-foreground max-w-sm mb-6">
+          When you find restaurants you love, save them here to keep track of your favorite spots.
+        </p>
+        <a 
+          href="/"
+          className="inline-flex items-center justify-center rounded-md bg-primary px-8 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          Discover Restaurants
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
