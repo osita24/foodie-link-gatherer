@@ -4,10 +4,31 @@ import MenuSection from "@/components/restaurant/MenuSection";
 import PhotosSection from "@/components/restaurant/PhotosSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Star, ExternalLink, BookmarkPlus, Share2 } from "lucide-react";
+import { Star, ExternalLink, BookmarkPlus, Share2, Check } from "lucide-react";
 import Header from "@/components/Header";
+import { useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
 
 const RestaurantDetails = () => {
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
+
+  const handleSave = () => {
+    setIsSaving(true);
+    console.log('Restaurant saved');
+    
+    toast({
+      title: "Restaurant Saved!",
+      description: "Added to your favorites",
+      duration: 2000,
+    });
+
+    // Reset the animation after 1 second
+    setTimeout(() => {
+      setIsSaving(false);
+    }, 1000);
+  };
+
   return (
     <>
       <Header />
@@ -23,11 +44,18 @@ const RestaurantDetails = () => {
           <div className="absolute bottom-4 right-4 flex gap-2">
             <Button
               size="lg"
-              className="bg-primary text-white hover:bg-primary/90"
-              onClick={() => console.log('Restaurant saved')}
+              className={`bg-primary text-white hover:bg-primary/90 transition-all duration-300 ${
+                isSaving ? 'scale-105 bg-green-500' : ''
+              }`}
+              onClick={handleSave}
+              disabled={isSaving}
             >
-              <BookmarkPlus className="mr-2 h-5 w-5" />
-              Save
+              {isSaving ? (
+                <Check className="mr-2 h-5 w-5 animate-[scale-in_0.2s_ease-out]" />
+              ) : (
+                <BookmarkPlus className="mr-2 h-5 w-5" />
+              )}
+              {isSaving ? 'Saved!' : 'Save'}
             </Button>
             <Button
               variant="outline"
