@@ -50,6 +50,13 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
       throw new Error('No restaurant data found');
     }
 
+    // Create photo URLs without CORS proxy
+    const photoUrls = data.result.photos?.map((photo: any) => 
+      `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${GOOGLE_API_KEY}`
+    ) || [];
+
+    console.log('Generated photo URLs:', photoUrls);
+
     // Transform the API response into our RestaurantDetails format
     return {
       id: placeId,
@@ -60,9 +67,7 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
       hours: data.result.opening_hours?.weekday_text?.[0] || 'Hours not available',
       phone: data.result.formatted_phone_number || '',
       website: data.result.website || '',
-      photos: data.result.photos?.map((photo: any) => 
-        `${baseUrl}/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${GOOGLE_API_KEY}`
-      ) || [],
+      photos: photoUrls,
       priceLevel: data.result.price_level || 0,
       openingHours: data.result.opening_hours ? {
         periods: data.result.opening_hours.periods,
