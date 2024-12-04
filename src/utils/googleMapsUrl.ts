@@ -21,15 +21,29 @@ export const extractPlaceId = async (url: string): Promise<string | null> => {
     const urlObj = new URL(url);
     const searchParams = new URLSearchParams(urlObj.search);
     
+    // Check for cid parameter (unique identifier)
+    if (searchParams.has('cid')) {
+      const cid = searchParams.get('cid');
+      console.log('Found cid parameter:', cid);
+      return `place_id:${cid}`;
+    }
+
+    // Check for place_id parameter
+    if (searchParams.has('place_id')) {
+      const placeId = searchParams.get('place_id');
+      console.log('Found direct place_id:', placeId);
+      return placeId;
+    }
+
     // Check for ftid parameter (specific restaurant ID)
     if (searchParams.has('ftid')) {
       const ftid = searchParams.get('ftid');
       console.log('Found ftid parameter:', ftid);
-      // Extract the actual ID after the colon
-      const placeId = ftid?.split(':')[1];
-      if (placeId) {
-        console.log('Extracted Place ID from ftid:', placeId);
-        return placeId;
+      // Extract the business reference ID
+      const businessRef = ftid?.split(':')[0];
+      if (businessRef) {
+        console.log('Extracted business reference:', businessRef);
+        return businessRef;
       }
     }
 
@@ -44,44 +58,13 @@ export const extractPlaceId = async (url: string): Promise<string | null> => {
         console.log('Extracted Place ID from q parameter:', placeId);
         return placeId;
       }
-      
-      // If q parameter contains an address/name
-      // Note: This will be used as a fallback identifier
-      if (query) {
-        console.log('Using q parameter as identifier:', query);
-        return query.replace(/[^a-zA-Z0-9]/g, '');
-      }
     }
     
-    // Format: ?query=place_id:ChIJ...
-    if (searchParams.has('query')) {
-      const query = searchParams.get('query');
-      if (query?.startsWith('place_id:')) {
-        const placeId = query.split('place_id:')[1];
-        console.log('Extracted Place ID from query:', placeId);
-        return placeId;
-      }
-    }
-
-    // Format: ?place_id=ChIJ...
-    if (searchParams.has('place_id')) {
-      const placeId = searchParams.get('place_id');
-      console.log('Extracted Place ID from URL:', placeId);
-      return placeId;
-    }
-
     // Format: maps/place/.../@...,17z/data=!3m1!4b1!4m5!3m4!1s0x...
     const matches = url.match(/!1s([^!]+)!/);
     if (matches && matches[1]) {
       console.log('Extracted Place ID from URL data:', matches[1]);
       return matches[1];
-    }
-
-    // Format: maps/place/.../data=!4m[numbers]!1s[placeId]!
-    const altMatches = url.match(/!1s([^!]+)(?:!|$)/);
-    if (altMatches && altMatches[1]) {
-      console.log('Extracted Place ID from alternative URL format:', altMatches[1]);
-      return altMatches[1];
     }
 
     console.log('No Place ID found in URL');

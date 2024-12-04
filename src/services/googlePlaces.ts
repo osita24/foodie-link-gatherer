@@ -14,9 +14,12 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
   try {
     const baseUrl = `${CORS_PROXY}/https://maps.googleapis.com/maps/api/place`;
     
-    console.log('Fetching from Google Places API...');
+    // Format the place ID if it's not already in the correct format
+    const formattedPlaceId = placeId.startsWith('place_id:') ? placeId.replace('place_id:', '') : placeId;
+    
+    console.log('Using formatted Place ID:', formattedPlaceId);
     const response = await fetch(
-      `${baseUrl}/details/json?place_id=${placeId}&fields=name,rating,user_ratings_total,formatted_address,formatted_phone_number,opening_hours,website,price_level,photos&key=${GOOGLE_API_KEY}`
+      `${baseUrl}/details/json?place_id=${formattedPlaceId}&fields=name,rating,user_ratings_total,formatted_address,formatted_phone_number,opening_hours,website,price_level,photos&key=${GOOGLE_API_KEY}`
     );
 
     if (response.status === 403) {
