@@ -14,7 +14,6 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
   try {
     const baseUrl = `${CORS_PROXY}/https://maps.googleapis.com/maps/api/place`;
     
-    // Only use the place ID if it starts with "ChIJ", otherwise it might be invalid
     if (!placeId.startsWith('ChIJ')) {
       console.error('Invalid Place ID format:', placeId);
       throw new Error('Invalid Place ID format. Please try using a different URL format.');
@@ -22,7 +21,7 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
     
     console.log('Making API request with Place ID:', placeId);
     const response = await fetch(
-      `${baseUrl}/details/json?place_id=${placeId}&fields=name,rating,user_ratings_total,formatted_address,formatted_phone_number,opening_hours,website,price_level,photos&key=${GOOGLE_API_KEY}`
+      `${baseUrl}/details/json?place_id=${placeId}&fields=name,rating,user_ratings_total,formatted_address,formatted_phone_number,opening_hours,website,price_level,photos,types,vicinity,utc_offset&key=${GOOGLE_API_KEY}`
     );
 
     if (response.status === 403) {
@@ -59,12 +58,20 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
       reviews: data.result.user_ratings_total || 0,
       address: data.result.formatted_address || 'Address Not Available',
       hours: data.result.opening_hours?.weekday_text?.[0] || 'Hours not available',
-      phone: data.result.formatted_phone_number || 'Phone Not Available',
+      phone: data.result.formatted_phone_number || '',
       website: data.result.website || '',
       photos: data.result.photos?.map((photo: any) => 
         `${baseUrl}/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${GOOGLE_API_KEY}`
       ) || [],
-      priceLevel: data.result.price_level || 0
+      priceLevel: data.result.price_level || 0,
+      openingHours: data.result.opening_hours ? {
+        periods: data.result.opening_hours.periods,
+        weekdayText: data.result.opening_hours.weekday_text,
+      } : undefined,
+      vicinity: data.result.vicinity,
+      types: data.result.types,
+      userRatingsTotal: data.result.user_ratings_total,
+      utcOffset: data.result.utc_offset
     };
   } catch (error) {
     console.error('Error fetching restaurant details:', error);

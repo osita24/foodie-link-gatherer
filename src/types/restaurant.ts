@@ -18,4 +18,15 @@ export interface RestaurantDetails {
   website: string;
   photos: string[];
   priceLevel: number;
+  openingHours?: {
+    periods: {
+      open: { day: number; time: string };
+      close: { day: number; time: string };
+    }[];
+    weekdayText: string[];
+  };
+  vicinity?: string;
+  types?: string[];
+  userRatingsTotal?: number;
+  utcOffset?: number;
 }
