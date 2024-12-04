@@ -24,12 +24,9 @@ const Header = () => {
           </Button>
 
           {/* Desktop navigation */}
-          <nav className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-text-primary hover:text-primary transition-colors">Features</a>
-            <a href="#testimonials" className="text-text-primary hover:text-primary transition-colors">Testimonials</a>
-            <a href="#faq" className="text-text-primary hover:text-primary transition-colors">FAQ</a>
+          <nav className="hidden md:flex items-center">
             <Button className="bg-primary hover:bg-primary/90 text-white">
-              Try for free
+              Sign up
             </Button>
           </nav>
 
@@ -37,11 +34,8 @@ const Header = () => {
           {isMenuOpen && (
             <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-100 md:hidden">
               <nav className="container mx-auto px-4 py-4 flex flex-col gap-4">
-                <a href="#features" className="text-text-primary hover:text-primary transition-colors py-2">Features</a>
-                <a href="#testimonials" className="text-text-primary hover:text-primary transition-colors py-2">Testimonials</a>
-                <a href="#faq" className="text-text-primary hover:text-primary transition-colors py-2">FAQ</a>
                 <Button className="bg-primary hover:bg-primary/90 text-white w-full">
-                  Try for free
+                  Sign up
                 </Button>
               </nav>
             </div>
