@@ -22,10 +22,10 @@ const ActionButtons = () => {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 left-4 sm:left-auto z-40 flex flex-row gap-2 justify-end">
+    <div className="absolute bottom-4 right-4 flex flex-col sm:flex-row gap-2 w-auto">
       <Button
         size="lg"
-        className={`shadow-lg bg-primary text-white hover:bg-primary/90 transition-all duration-300 flex-1 sm:flex-none
+        className={`bg-primary text-white hover:bg-primary/90 transition-all duration-300 w-full sm:w-auto
           ${isSaving ? 'scale-105 bg-green-500' : ''}`}
         onClick={handleSave}
         disabled={isSaving}
@@ -40,7 +40,7 @@ const ActionButtons = () => {
       <Button
         variant="outline"
         size="lg"
-        className="shadow-lg bg-white hover:bg-white flex-1 sm:flex-none"
+        className="bg-white/80 backdrop-blur-sm hover:bg-white w-full sm:w-auto"
         onClick={() => console.log('Share clicked')}
       >
         <Share2 className="mr-2 h-5 w-5" />
