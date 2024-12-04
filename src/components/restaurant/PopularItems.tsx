@@ -24,28 +24,28 @@ const PopularItems = () => {
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
-      <CardHeader>
-        <CardTitle className="text-2xl">Popular Items</CardTitle>
+      <CardHeader className="p-4">
+        <CardTitle className="text-lg sm:text-xl">Popular Items</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <CardContent className="p-4">
+        <div className="grid grid-cols-1 gap-4">
           {popularItems.map((item, index) => (
             <div 
               key={index}
-              className="flex flex-col sm:flex-row gap-4 p-4 rounded-lg border border-gray-100 
-                hover:shadow-md transition-all duration-300 hover:scale-[1.02] bg-white group"
+              className="flex gap-4 p-3 rounded-lg border border-gray-100 
+                hover:shadow-md transition-all duration-300 hover:scale-[1.01] bg-white group"
             >
               <img
                 src={item.image}
                 alt={item.name}
-                className="w-full sm:w-24 h-48 sm:h-24 rounded-lg object-cover group-hover:shadow-md transition-all duration-300"
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg object-cover group-hover:shadow-md transition-all duration-300"
               />
-              <div className="flex flex-col justify-between">
+              <div className="flex flex-col justify-between flex-1">
                 <div>
-                  <h3 className="font-semibold text-secondary text-lg">{item.name}</h3>
-                  <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                  <h3 className="font-semibold text-secondary text-sm sm:text-base">{item.name}</h3>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1">{item.description}</p>
                 </div>
-                <p className="text-primary font-semibold mt-2">{item.price}</p>
+                <p className="text-primary font-semibold text-sm sm:text-base">{item.price}</p>
               </div>
             </div>
           ))}

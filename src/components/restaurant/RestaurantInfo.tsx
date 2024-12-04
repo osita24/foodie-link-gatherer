@@ -48,35 +48,35 @@ const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-4xl font-bold mb-4">{restaurant.name}</h1>
-        <div className="flex items-center gap-4">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">{restaurant.name}</h1>
+        <div className="flex items-center gap-2 flex-wrap">
           <RatingStars rating={restaurant.rating} />
-          <span className="text-muted-foreground">
+          <span className="text-sm text-muted-foreground">
             {formatReviewCount(restaurant.reviews)} reviews
           </span>
         </div>
       </div>
 
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 hover:text-primary transition-colors">
-          <MapPin className="w-5 h-5" />
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 hover:text-primary transition-colors text-sm sm:text-base">
+          <MapPin className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
           <span>{restaurant.address}</span>
         </div>
-        <div className="flex items-center gap-2 hover:text-primary transition-colors">
-          <Clock className="w-5 h-5" />
+        <div className="flex items-center gap-2 hover:text-primary transition-colors text-sm sm:text-base">
+          <Clock className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
           <span>{getTodayHours(restaurant.hours)}</span>
         </div>
         {restaurant.phone && (
-          <div className="flex items-center gap-2 hover:text-primary transition-colors">
-            <Phone className="w-5 h-5" />
+          <div className="flex items-center gap-2 hover:text-primary transition-colors text-sm sm:text-base">
+            <Phone className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
             <span>{formatPhoneNumber(restaurant.phone)}</span>
           </div>
         )}
         {restaurant.website && (
-          <div className="flex items-center gap-2 hover:text-primary transition-colors">
-            <Globe className="w-5 h-5" />
+          <div className="flex items-center gap-2 hover:text-primary transition-colors text-sm sm:text-base">
+            <Globe className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
             <a
               href={restaurant.website}
               target="_blank"
