@@ -20,8 +20,28 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
     }
     
     console.log('Making API request with Place ID:', placeId);
+    
+    // Explicitly request all fields we need, including opening_hours
+    const fields = [
+      'name',
+      'rating',
+      'user_ratings_total',
+      'formatted_address',
+      'formatted_phone_number',
+      'opening_hours/weekday_text',
+      'opening_hours/periods',
+      'opening_hours',
+      'website',
+      'price_level',
+      'photos',
+      'types',
+      'vicinity',
+      'utc_offset',
+      'reviews'
+    ].join(',');
+
     const response = await fetch(
-      `${baseUrl}/details/json?place_id=${placeId}&fields=name,rating,user_ratings_total,formatted_address,formatted_phone_number,opening_hours,website,price_level,photos,types,vicinity,utc_offset,reviews&key=${GOOGLE_API_KEY}`
+      `${baseUrl}/details/json?place_id=${placeId}&fields=${fields}&key=${GOOGLE_API_KEY}`
     );
 
     if (response.status === 403) {
@@ -50,7 +70,7 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
       throw new Error('No restaurant data found');
     }
 
-    // Create photo URLs without CORS proxy
+    // Create photo URLs
     const photoUrls = data.result.photos?.map((photo: any) => 
       `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${GOOGLE_API_KEY}`
     ) || [];
@@ -58,18 +78,22 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
     console.log('Generated photo URLs:', photoUrls);
     console.log('Opening hours data:', data.result.opening_hours);
 
+    // Enhanced hours handling
     let hoursText = 'Hours not available';
     if (data.result.opening_hours?.weekday_text?.length > 0) {
-      hoursText = data.result.opening_hours.weekday_text.join(', ');
+      hoursText = data.result.opening_hours.weekday_text.join(' | ');
     } else if (data.result.opening_hours?.periods) {
-      // Fallback to using periods if weekday_text is not available
-      hoursText = 'Open - Check with restaurant for specific hours';
+      const periods = data.result.opening_hours.periods;
+      hoursText = periods.map((period: any) => {
+        const day = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][period.open.day];
+        return `${day}: ${period.open.time} - ${period.close?.time || 'Closed'}`;
+      }).join(' | ');
     }
 
     // Transform the API response into our RestaurantDetails format
     const restaurantDetails: RestaurantDetails = {
       id: placeId,
-      name: data.result.name,
+      name: data.result.name || 'Restaurant Name Not Available',
       rating: data.result.rating || 0,
       reviews: data.result.user_ratings_total || 0,
       address: data.result.formatted_address || data.result.vicinity || 'Address Not Available',
