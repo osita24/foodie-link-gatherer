@@ -11,8 +11,11 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
   }
 
   try {
+    // Use a CORS proxy for development
+    const baseUrl = 'https://cors-anywhere.herokuapp.com/https://maps.googleapis.com/maps/api/place';
+    
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,rating,user_ratings_total,formatted_address,formatted_phone_number,opening_hours,website,price_level,photos&key=${GOOGLE_API_KEY}`
+      `${baseUrl}/details/json?place_id=${placeId}&fields=name,rating,user_ratings_total,formatted_address,formatted_phone_number,opening_hours,website,price_level,photos&key=${GOOGLE_API_KEY}`
     );
 
     if (!response.ok) {
@@ -24,17 +27,17 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
 
     return {
       id: placeId,
-      name: data.result.name,
-      rating: data.result.rating,
-      reviews: data.result.user_ratings_total,
-      address: data.result.formatted_address,
+      name: data.result.name || 'Restaurant Name Not Available',
+      rating: data.result.rating || 0,
+      reviews: data.result.user_ratings_total || 0,
+      address: data.result.formatted_address || 'Address Not Available',
       hours: data.result.opening_hours?.weekday_text?.[0] || 'Hours not available',
-      phone: data.result.formatted_phone_number,
-      website: data.result.website,
+      phone: data.result.formatted_phone_number || 'Phone Not Available',
+      website: data.result.website || '',
       photos: data.result.photos?.map((photo: any) => 
-        `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${GOOGLE_API_KEY}`
+        `${baseUrl}/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${GOOGLE_API_KEY}`
       ) || [],
-      priceLevel: data.result.price_level
+      priceLevel: data.result.price_level || 0
     };
   } catch (error) {
     console.error('Error fetching restaurant details:', error);

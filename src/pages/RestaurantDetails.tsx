@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
-import { BookmarkPlus, Share2, Check } from "lucide-react";
+import { BookmarkPlus, Share2, Check, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/Header";
 import RestaurantInfo from "@/components/restaurant/RestaurantInfo";
 import PopularItems from "@/components/restaurant/PopularItems";
@@ -108,16 +109,15 @@ const RestaurantDetails = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="md:col-span-2 space-y-8">
-              <RestaurantInfo restaurant={restaurant} />
+              {restaurant && <RestaurantInfo restaurant={restaurant} />}
               <PopularItems />
               <MenuSection />
-              <PhotosSection photos={restaurant?.photos || []} />
+              <PhotosSection />
             </div>
 
             <div className="space-y-8 md:sticky md:top-24 self-start">
               <MatchScoreCard categories={matchCategories} />
               
-              {/* Order Options Card */}
               <Card className="hover:shadow-lg transition-shadow duration-300">
                 <CardHeader>
                   <CardTitle>Order Now</CardTitle>
