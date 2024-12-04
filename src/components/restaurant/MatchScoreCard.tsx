@@ -16,7 +16,7 @@ const MatchScoreCard = ({ categories }: MatchScoreCardProps) => {
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <CardHeader className="border-b border-gray-100 md:p-6 p-4">
-        <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
+        <CardTitle className="flex items-center gap-2 text-xl md:text-2xl text-left">
           <Star className="w-5 h-5 md:w-6 md:h-6 text-yellow-400 fill-current" />
           Why We Think You'll Love It
         </CardTitle>
@@ -32,7 +32,7 @@ const MatchScoreCard = ({ categories }: MatchScoreCardProps) => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 md:gap-2">
                   <span className="text-lg md:text-xl">{item.icon}</span>
-                  <span className="font-medium text-secondary text-sm md:text-base">
+                  <span className="font-medium text-secondary text-sm md:text-base text-left">
                     {item.category}
                   </span>
                 </div>
@@ -48,7 +48,7 @@ const MatchScoreCard = ({ categories }: MatchScoreCardProps) => {
                   />
                 </div>
               </div>
-              <p className="text-xs md:text-sm text-gray-600">{item.description}</p>
+              <p className="text-xs md:text-sm text-gray-600 text-left">{item.description}</p>
             </div>
           ))}
         </div>
