@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { extractPlaceId } from "@/utils/googleMapsUrl";
 
 const Hero = () => {
   const [restaurantUrl, setRestaurantUrl] = useState("");
@@ -15,9 +16,16 @@ const Hero = () => {
     }
     
     console.log("Importing restaurant:", restaurantUrl);
+    const placeId = extractPlaceId(restaurantUrl);
+    
+    if (!placeId) {
+      toast.error("Please use a direct Google Maps link. Shortened URLs (g.co) are not supported yet.");
+      return;
+    }
+
     setRestaurantUrl("");
     toast.success("Processing your restaurant...");
-    navigate('/restaurant/sample-id');
+    navigate(`/restaurant/${placeId}`);
   };
 
   return (
