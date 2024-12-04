@@ -4,7 +4,7 @@ import MenuSection from "@/components/restaurant/MenuSection";
 import PhotosSection from "@/components/restaurant/PhotosSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Star, ExternalLink } from "lucide-react";
+import { Star, ExternalLink, BookmarkPlus } from "lucide-react";
 import Header from "@/components/Header";
 
 const RestaurantDetails = () => {
@@ -19,6 +19,15 @@ const RestaurantDetails = () => {
             alt="Restaurant hero"
             className="w-full h-full object-cover"
           />
+          {/* Save Button - Floating on hero image */}
+          <Button
+            variant="outline"
+            className="absolute top-4 right-4 bg-white/80 backdrop-blur-sm hover:bg-white"
+            onClick={() => console.log('Restaurant saved')}
+          >
+            <BookmarkPlus className="mr-2 h-4 w-4" />
+            Save
+          </Button>
         </div>
 
         <div className="container mx-auto px-4">
