@@ -10,7 +10,7 @@ const RestaurantDetails = () => {
     <div className="min-h-screen bg-background">
       <RestaurantHeader imageUrl="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4" />
 
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 pb-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="md:col-span-2 space-y-8">
@@ -76,7 +76,7 @@ const RestaurantDetails = () => {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-8">
+          <div className="space-y-8 md:sticky md:top-4 self-start">
             {/* Match Score Details */}
             <Card className="hover:shadow-lg transition-shadow duration-300">
               <CardHeader>
