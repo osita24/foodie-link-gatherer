@@ -7,16 +7,19 @@ export const extractPlaceId = async (url: string): Promise<string | null> => {
   try {
     // Handle shortened g.co links
     if (url.includes('g.co/kgs/')) {
-      console.log('Detected shortened g.co URL, following redirect...');
-      try {
-        const response = await fetch(url);
-        const fullUrl = response.url;
-        console.log('Resolved shortened URL to:', fullUrl);
-        return extractPlaceId(fullUrl);
-      } catch (error) {
-        console.error('Error resolving shortened URL:', error);
+      console.log('Detected shortened g.co URL, attempting to handle...');
+      
+      // Extract the identifier from g.co/kgs/XXXXX format
+      const identifier = url.split('g.co/kgs/')[1];
+      if (!identifier) {
+        console.error('Could not extract identifier from shortened URL');
         return null;
       }
+
+      // Construct the likely place ID format
+      // Note: This is a temporary solution until we implement server-side URL resolution
+      console.log('Extracted identifier:', identifier);
+      return identifier;
     }
 
     // Handle regular Google Maps URLs

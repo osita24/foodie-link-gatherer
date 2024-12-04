@@ -20,10 +20,15 @@ const Hero = () => {
     console.log("Importing restaurant:", restaurantUrl);
     
     try {
+      // Check if it's a shortened URL
+      if (restaurantUrl.includes('g.co/kgs/')) {
+        toast.info("Processing shortened URL. This might take a moment...");
+      }
+      
       const placeId = await extractPlaceId(restaurantUrl);
       
       if (!placeId) {
-        toast.error("Could not extract restaurant information from the URL. Please check the link and try again.");
+        toast.error("Could not extract restaurant information from the URL. Please try using a full Google Maps URL instead of a shortened link.");
         return;
       }
 
@@ -32,7 +37,7 @@ const Hero = () => {
       navigate(`/restaurant/${placeId}`);
     } catch (error) {
       console.error("Error processing URL:", error);
-      toast.error("An error occurred while processing the URL. Please try again.");
+      toast.error("An error occurred while processing the URL. Please try using a full Google Maps URL.");
     } finally {
       setIsProcessing(false);
     }
@@ -74,7 +79,7 @@ const Hero = () => {
             </Button>
           </div>
           <p className="text-sm text-gray-500 mt-4 animate-fade-up" style={{ animationDelay: "600ms" }}>
-            Example: https://maps.google.com/...
+            For best results, use full Google Maps URLs (e.g., https://www.google.com/maps/place/...)
           </p>
         </div>
       </div>
