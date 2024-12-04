@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 
 interface Review {
@@ -17,18 +19,32 @@ interface ReviewsSectionProps {
 }
 
 const ReviewsSection = ({ reviews }: ReviewsSectionProps) => {
+  const [showAllReviews, setShowAllReviews] = useState(false);
+  
   if (!reviews?.length) {
     return null;
   }
 
+  const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 3);
+
   return (
     <Card className="hover:shadow-lg transition-shadow duration-300">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-2xl font-bold">Customer Reviews</CardTitle>
+        <Button
+          variant="outline"
+          onClick={() => setShowAllReviews(!showAllReviews)}
+          className="ml-4"
+        >
+          {showAllReviews ? "Show Less" : `See All (${reviews.length})`}
+        </Button>
       </CardHeader>
       <CardContent className="space-y-6">
-        {reviews.map((review, index) => (
-          <div key={index} className="border-b last:border-b-0 pb-6 last:pb-0">
+        {displayedReviews.map((review, index) => (
+          <div 
+            key={index} 
+            className="border-b last:border-b-0 pb-6 last:pb-0 animate-fade-in"
+          >
             <div className="flex items-start gap-4">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={review.profile_photo_url} alt={review.author_name} />
@@ -53,7 +69,7 @@ const ReviewsSection = ({ reviews }: ReviewsSectionProps) => {
                     />
                   ))}
                 </div>
-                <p className="text-gray-600 mt-2">{review.text}</p>
+                <p className="text-gray-600 mt-2 line-clamp-3">{review.text}</p>
               </div>
             </div>
           </div>
