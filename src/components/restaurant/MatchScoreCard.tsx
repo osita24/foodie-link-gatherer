@@ -14,7 +14,7 @@ interface MatchScoreCardProps {
 
 const MatchScoreCard = ({ categories }: MatchScoreCardProps) => {
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 relative z-20">
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 relative z-[90]">
       <CardHeader className="border-b border-gray-100 md:p-6 p-4">
         <CardTitle className="flex items-center gap-2 text-xl md:text-2xl text-left">
           <Star className="w-5 h-5 md:w-6 md:h-6 text-yellow-400 fill-current" />
