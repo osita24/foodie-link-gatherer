@@ -25,25 +25,33 @@ const ReviewsSection = ({ reviews }: ReviewsSectionProps) => {
     return null;
   }
 
-  const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 3);
+  // Ensure we have a valid array of reviews to display
+  const validReviews = Array.isArray(reviews) ? reviews : [];
+  const displayedReviews = showAllReviews ? validReviews : validReviews.slice(0, 3);
+
+  const toggleReviews = () => {
+    setShowAllReviews((prev) => !prev);
+  };
 
   return (
     <Card className="hover:shadow-lg transition-shadow duration-300">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-2xl font-bold">Customer Reviews</CardTitle>
-        <Button
-          variant="outline"
-          onClick={() => setShowAllReviews(!showAllReviews)}
-          className="ml-4"
-        >
-          {showAllReviews ? "Show Less" : `See All (${reviews.length})`}
-        </Button>
+        {validReviews.length > 3 && (
+          <Button
+            variant="outline"
+            onClick={toggleReviews}
+            className="ml-4"
+          >
+            {showAllReviews ? "Show Less" : `See All (${validReviews.length})`}
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="space-y-6">
         {displayedReviews.map((review, index) => (
           <div 
-            key={index} 
-            className="border-b last:border-b-0 pb-6 last:pb-0 animate-fade-in"
+            key={`${review.author_name}-${index}`}
+            className="border-b last:border-b-0 pb-6 last:pb-0 transition-all duration-300 ease-in-out"
           >
             <div className="flex items-start gap-4">
               <Avatar className="h-10 w-10">
