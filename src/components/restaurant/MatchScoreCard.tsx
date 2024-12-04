@@ -35,11 +35,8 @@ const MatchScoreCard = ({ categories }: MatchScoreCardProps) => {
   });
 
   const UnauthenticatedContent = () => (
-    <div className="space-y-6 text-center py-8">
+    <div className="space-y-6 text-center py-4">
       <div className="space-y-4">
-        <h3 className="text-2xl font-bold text-secondary">
-          Discover Your Perfect Match!
-        </h3>
         <p className="text-gray-600 max-w-md mx-auto">
           Find out exactly why this restaurant matches your taste preferences. Our AI analyzes hundreds of data points to create your personalized match score.
         </p>
@@ -95,13 +92,15 @@ const MatchScoreCard = ({ categories }: MatchScoreCardProps) => {
   return (
     <>
       <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 relative z-[90]">
-        <CardHeader className="border-b border-gray-100 md:p-6 p-4">
-          <CardTitle className="flex items-center gap-2 text-xl md:text-2xl text-left">
-            <Star className="w-5 h-5 md:w-6 md:h-6 text-yellow-400 fill-current" />
-            Why We Think You'll Love It
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="md:pt-6 pt-4 p-4 md:p-6">
+        {session && (
+          <CardHeader className="border-b border-gray-100 md:p-6 p-4">
+            <CardTitle className="flex items-center gap-2 text-xl md:text-2xl text-left">
+              <Star className="w-5 h-5 md:w-6 md:h-6 text-yellow-400 fill-current" />
+              Why We Think You'll Love It
+            </CardTitle>
+          </CardHeader>
+        )}
+        <CardContent className={session ? "md:pt-6 pt-4 p-4 md:p-6" : "p-4"}>
           {session ? <AuthenticatedContent /> : <UnauthenticatedContent />}
         </CardContent>
       </Card>
