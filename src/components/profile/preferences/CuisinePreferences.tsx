@@ -1,5 +1,5 @@
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { Utensils, Pizza, Soup, Coffee, Fish, Beef, Salad, Sandwich } from "lucide-react";
+import PreferenceCard from "./PreferenceCard";
 
 interface CuisinePreferencesProps {
   selected: string[];
@@ -8,10 +8,22 @@ interface CuisinePreferencesProps {
 
 const CuisinePreferences = ({ selected, onChange }: CuisinePreferencesProps) => {
   const cuisineTypes = [
-    "Italian", "Japanese", "Mexican", "Indian", 
-    "Chinese", "Thai", "American", "Mediterranean",
-    "French", "Korean", "Vietnamese", "Spanish",
-    "Greek", "Middle Eastern", "Brazilian", "Caribbean"
+    { name: "Italian", icon: <Pizza /> },
+    { name: "Japanese", icon: <Soup /> },
+    { name: "Mexican", icon: <Utensils /> },
+    { name: "Indian", icon: <Coffee /> },
+    { name: "Chinese", icon: <Soup /> },
+    { name: "Thai", icon: <Fish /> },
+    { name: "American", icon: <Beef /> },
+    { name: "Mediterranean", icon: <Salad /> },
+    { name: "French", icon: <Coffee /> },
+    { name: "Korean", icon: <Soup /> },
+    { name: "Vietnamese", icon: <Soup /> },
+    { name: "Spanish", icon: <Sandwich /> },
+    { name: "Greek", icon: <Salad /> },
+    { name: "Middle Eastern", icon: <Utensils /> },
+    { name: "Brazilian", icon: <Beef /> },
+    { name: "Caribbean", icon: <Fish /> }
   ];
 
   const toggleCuisine = (cuisine: string) => {
@@ -22,20 +34,16 @@ const CuisinePreferences = ({ selected, onChange }: CuisinePreferencesProps) => 
   };
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-medium">Cuisine Preferences</h3>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {cuisineTypes.map((cuisine) => (
-          <div key={cuisine} className="flex items-center space-x-3 bg-accent/20 p-3 rounded-lg hover:bg-accent/30 transition-colors">
-            <Checkbox 
-              id={cuisine}
-              checked={selected.includes(cuisine)}
-              onCheckedChange={() => toggleCuisine(cuisine)}
-            />
-            <Label htmlFor={cuisine} className="cursor-pointer">{cuisine}</Label>
-          </div>
-        ))}
-      </div>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {cuisineTypes.map((cuisine) => (
+        <PreferenceCard
+          key={cuisine.name}
+          label={cuisine.name}
+          selected={selected.includes(cuisine.name)}
+          onClick={() => toggleCuisine(cuisine.name)}
+          icon={cuisine.icon}
+        />
+      ))}
     </div>
   );
 };

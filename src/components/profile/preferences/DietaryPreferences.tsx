@@ -1,5 +1,5 @@
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { Leaf, Apple, Wheat, Ban, Scale, Milk } from "lucide-react";
+import PreferenceCard from "./PreferenceCard";
 
 interface DietaryPreferencesProps {
   selected: string[];
@@ -8,9 +8,15 @@ interface DietaryPreferencesProps {
 
 const DietaryPreferences = ({ selected, onChange }: DietaryPreferencesProps) => {
   const dietaryPreferences = [
-    "Vegetarian", "Vegan", "Gluten-Free", 
-    "Halal", "Kosher", "Dairy-Free",
-    "Nut-Free", "Low-Carb", "Keto-Friendly"
+    { name: "Vegetarian", icon: <Leaf /> },
+    { name: "Vegan", icon: <Apple /> },
+    { name: "Gluten-Free", icon: <Wheat /> },
+    { name: "Halal", icon: <Ban /> },
+    { name: "Kosher", icon: <Ban /> },
+    { name: "Dairy-Free", icon: <Milk /> },
+    { name: "Nut-Free", icon: <Ban /> },
+    { name: "Low-Carb", icon: <Scale /> },
+    { name: "Keto-Friendly", icon: <Scale /> }
   ];
 
   const toggleDietary = (diet: string) => {
@@ -21,20 +27,16 @@ const DietaryPreferences = ({ selected, onChange }: DietaryPreferencesProps) => 
   };
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-medium">Dietary Preferences</h3>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        {dietaryPreferences.map((pref) => (
-          <div key={pref} className="flex items-center space-x-3 bg-accent/20 p-3 rounded-lg hover:bg-accent/30 transition-colors">
-            <Checkbox 
-              id={pref}
-              checked={selected.includes(pref)}
-              onCheckedChange={() => toggleDietary(pref)}
-            />
-            <Label htmlFor={pref} className="cursor-pointer">{pref}</Label>
-          </div>
-        ))}
-      </div>
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      {dietaryPreferences.map((pref) => (
+        <PreferenceCard
+          key={pref.name}
+          label={pref.name}
+          selected={selected.includes(pref.name)}
+          onClick={() => toggleDietary(pref.name)}
+          icon={pref.icon}
+        />
+      ))}
     </div>
   );
 };

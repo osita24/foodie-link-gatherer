@@ -1,14 +1,13 @@
 import { useToast } from "@/components/ui/use-toast";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PriceRange, UserPreferences } from "@/types/preferences";
 import CuisinePreferences from "./preferences/CuisinePreferences";
 import DietaryPreferences from "./preferences/DietaryPreferences";
-import { Checkbox } from "../ui/checkbox";
+import SpiceLevelSelector from "./preferences/SpiceLevelSelector";
+import PriceRangeSelector from "./preferences/PriceRangeSelector";
+import PreferenceCard from "./preferences/PreferenceCard";
 import {
   Accordion,
   AccordionContent,
@@ -16,6 +15,13 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
+import { 
+  UtensilsCrossed, 
+  Leaf, 
+  Cherry, 
+  Wind,
+  Settings2
+} from "lucide-react";
 
 const RestaurantPreferences = () => {
   const { toast } = useToast();
@@ -32,16 +38,34 @@ const RestaurantPreferences = () => {
   const [completionPercentage, setCompletionPercentage] = useState(0);
 
   const atmosphereTypes = [
-    "Casual Dining", "Fine Dining", "Family-Friendly",
-    "Romantic", "Outdoor Seating", "Quiet/Intimate",
-    "Lively/Energetic", "Modern/Trendy", "Traditional/Classic"
+    { name: "Casual Dining", icon: <UtensilsCrossed /> },
+    { name: "Fine Dining", icon: <UtensilsCrossed /> },
+    { name: "Family-Friendly", icon: <UtensilsCrossed /> },
+    { name: "Romantic", icon: <Cherry /> },
+    { name: "Outdoor Seating", icon: <Wind /> },
+    { name: "Quiet/Intimate", icon: <Wind /> },
+    { name: "Lively/Energetic", icon: <Wind /> },
+    { name: "Modern/Trendy", icon: <Settings2 /> },
+    { name: "Traditional/Classic", icon: <Settings2 /> }
   ];
 
   const favoriteIngredients = [
-    "Chicken", "Beef", "Fish", "Tofu",
-    "Mushrooms", "Avocado", "Cheese", "Rice",
-    "Noodles", "Eggs", "Shrimp", "Lamb",
-    "Garlic", "Ginger", "Tomatoes", "Fresh Herbs"
+    { name: "Chicken", icon: <UtensilsCrossed /> },
+    { name: "Beef", icon: <UtensilsCrossed /> },
+    { name: "Fish", icon: <UtensilsCrossed /> },
+    { name: "Tofu", icon: <Leaf /> },
+    { name: "Mushrooms", icon: <Leaf /> },
+    { name: "Avocado", icon: <Cherry /> },
+    { name: "Cheese", icon: <Cherry /> },
+    { name: "Rice", icon: <Cherry /> },
+    { name: "Noodles", icon: <UtensilsCrossed /> },
+    { name: "Eggs", icon: <Cherry /> },
+    { name: "Shrimp", icon: <UtensilsCrossed /> },
+    { name: "Lamb", icon: <UtensilsCrossed /> },
+    { name: "Garlic", icon: <Leaf /> },
+    { name: "Ginger", icon: <Leaf /> },
+    { name: "Tomatoes", icon: <Cherry /> },
+    { name: "Fresh Herbs", icon: <Leaf /> }
   ];
 
   useEffect(() => {
@@ -190,17 +214,16 @@ const RestaurantPreferences = () => {
           <AccordionContent className="px-4 pb-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {favoriteIngredients.map((ingredient) => (
-                <div key={ingredient} className="flex items-center space-x-3 bg-accent/20 p-3 rounded-lg hover:bg-accent/30 transition-colors">
-                  <Checkbox 
-                    id={ingredient}
-                    checked={preferences.favoriteIngredients.includes(ingredient)}
-                    onCheckedChange={() => setPreferences(prev => ({
-                      ...prev,
-                      favoriteIngredients: toggleArrayPreference(prev.favoriteIngredients, ingredient)
-                    }))}
-                  />
-                  <Label htmlFor={ingredient} className="cursor-pointer">{ingredient}</Label>
-                </div>
+                <PreferenceCard
+                  key={ingredient.name}
+                  label={ingredient.name}
+                  selected={preferences.favoriteIngredients.includes(ingredient.name)}
+                  onClick={() => setPreferences(prev => ({
+                    ...prev,
+                    favoriteIngredients: toggleArrayPreference(prev.favoriteIngredients, ingredient.name)
+                  }))}
+                  icon={ingredient.icon}
+                />
               ))}
             </div>
           </AccordionContent>
@@ -220,17 +243,16 @@ const RestaurantPreferences = () => {
           <AccordionContent className="px-4 pb-4">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {atmosphereTypes.map((atmosphere) => (
-                <div key={atmosphere} className="flex items-center space-x-3 bg-accent/20 p-3 rounded-lg hover:bg-accent/30 transition-colors">
-                  <Checkbox 
-                    id={atmosphere}
-                    checked={preferences.atmospherePreferences.includes(atmosphere)}
-                    onCheckedChange={() => setPreferences(prev => ({
-                      ...prev,
-                      atmospherePreferences: toggleArrayPreference(prev.atmospherePreferences, atmosphere)
-                    }))}
-                  />
-                  <Label htmlFor={atmosphere} className="cursor-pointer">{atmosphere}</Label>
-                </div>
+                <PreferenceCard
+                  key={atmosphere.name}
+                  label={atmosphere.name}
+                  selected={preferences.atmospherePreferences.includes(atmosphere.name)}
+                  onClick={() => setPreferences(prev => ({
+                    ...prev,
+                    atmospherePreferences: toggleArrayPreference(prev.atmospherePreferences, atmosphere.name)
+                  }))}
+                  icon={atmosphere.icon}
+                />
               ))}
             </div>
           </AccordionContent>
@@ -243,39 +265,18 @@ const RestaurantPreferences = () => {
           <AccordionContent className="px-4 pb-4 space-y-6">
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Spice Level Preference</h3>
-              <div className="space-y-4">
-                <Slider
-                  value={[preferences.spiceLevel]}
-                  onValueChange={([value]) => setPreferences(prev => ({ ...prev, spiceLevel: value }))}
-                  max={5}
-                  min={1}
-                  step={1}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-sm text-gray-500">
-                  <span>Mild</span>
-                  <span>Medium</span>
-                  <span>Hot</span>
-                </div>
-              </div>
+              <SpiceLevelSelector
+                value={preferences.spiceLevel}
+                onChange={(value) => setPreferences(prev => ({ ...prev, spiceLevel: value }))}
+              />
             </div>
 
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Price Range Preference</h3>
-              <RadioGroup
+              <PriceRangeSelector
                 value={preferences.priceRange}
-                onValueChange={(value: PriceRange) => setPreferences(prev => ({ ...prev, priceRange: value }))}
-                className="grid grid-cols-2 md:grid-cols-4 gap-4"
-              >
-                {["budget", "moderate", "upscale", "luxury"].map((range) => (
-                  <div key={range} className="flex items-center space-x-3 bg-accent/20 p-3 rounded-lg">
-                    <RadioGroupItem value={range} id={range} />
-                    <Label htmlFor={range} className="capitalize cursor-pointer">
-                      {range}
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
+                onChange={(value) => setPreferences(prev => ({ ...prev, priceRange: value }))}
+              />
             </div>
           </AccordionContent>
         </AccordionItem>
