@@ -25,30 +25,31 @@ const MenuRecommendations = () => {
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-xl">
-          <Star className="w-5 h-5 text-yellow-400 fill-current" />
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+          <Star className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 fill-current" />
           Recommended For You
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4">
+        <div className="grid gap-3">
           {recommendations.map((item, index) => (
             <div 
               key={index}
-              className="flex items-center justify-between p-3 rounded-lg border border-gray-100 
-                hover:shadow-md transition-all duration-300 bg-white"
+              className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg 
+                border border-gray-100 hover:shadow-md transition-all duration-300 bg-white
+                space-y-2 sm:space-y-0"
             >
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-secondary">{item.name}</h3>
-                  <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">
+              <div className="flex-1 text-left">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <h3 className="font-semibold text-secondary text-sm sm:text-base">{item.name}</h3>
+                  <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full w-fit">
                     {item.tag}
                   </span>
                 </div>
-                <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">{item.description}</p>
               </div>
-              <p className="text-primary font-semibold ml-4">{item.price}</p>
+              <p className="text-primary font-semibold text-sm sm:text-base sm:ml-4">{item.price}</p>
             </div>
           ))}
         </div>
