@@ -8,25 +8,52 @@ export const extractPlaceId = async (url: string): Promise<string | null> => {
     // Handle shortened g.co links
     if (url.includes('g.co/kgs/')) {
       console.log('Detected shortened g.co URL, attempting to handle...');
-      
-      // Extract the identifier from g.co/kgs/XXXXX format
       const identifier = url.split('g.co/kgs/')[1];
       if (!identifier) {
         console.error('Could not extract identifier from shortened URL');
         return null;
       }
-
-      // Construct the likely place ID format
-      // Note: This is a temporary solution until we implement server-side URL resolution
       console.log('Extracted identifier:', identifier);
       return identifier;
     }
 
     // Handle regular Google Maps URLs
     const urlObj = new URL(url);
+    const searchParams = new URLSearchParams(urlObj.search);
+    
+    // Check for ftid parameter (specific restaurant ID)
+    if (searchParams.has('ftid')) {
+      const ftid = searchParams.get('ftid');
+      console.log('Found ftid parameter:', ftid);
+      // Extract the actual ID after the colon
+      const placeId = ftid?.split(':')[1];
+      if (placeId) {
+        console.log('Extracted Place ID from ftid:', placeId);
+        return placeId;
+      }
+    }
+
+    // Check for q parameter (search query with place details)
+    if (searchParams.has('q')) {
+      const query = searchParams.get('q');
+      console.log('Found q parameter:', query);
+      
+      // If q parameter contains a place_id
+      if (query?.includes('place_id:')) {
+        const placeId = query.split('place_id:')[1];
+        console.log('Extracted Place ID from q parameter:', placeId);
+        return placeId;
+      }
+      
+      // If q parameter contains an address/name
+      // Note: This will be used as a fallback identifier
+      if (query) {
+        console.log('Using q parameter as identifier:', query);
+        return query.replace(/[^a-zA-Z0-9]/g, '');
+      }
+    }
     
     // Format: ?query=place_id:ChIJ...
-    const searchParams = new URLSearchParams(urlObj.search);
     if (searchParams.has('query')) {
       const query = searchParams.get('query');
       if (query?.startsWith('place_id:')) {
