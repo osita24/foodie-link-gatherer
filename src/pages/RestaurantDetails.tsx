@@ -79,13 +79,32 @@ const RestaurantDetails = () => {
             <div className="bg-white rounded-xl shadow-sm p-6">
               {restaurant && <RestaurantInfo restaurant={restaurant} />}
             </div>
-            <PopularItems />
-            <MenuSection menu={restaurant?.menu} />
-            {restaurant && <PhotosSection photos={restaurant.photos} />}
-            {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
+            
+            {/* Mobile-first order of components */}
+            <div className="block lg:hidden space-y-6">
+              <MatchScoreCard categories={matchCategories} />
+              <PopularItems />
+              <MenuSection menu={restaurant?.menu} />
+              <OrderSection />
+            </div>
+
+            {/* Desktop-only order of components */}
+            <div className="hidden lg:block space-y-6">
+              <PopularItems />
+              <MenuSection menu={restaurant?.menu} />
+              {restaurant && <PhotosSection photos={restaurant.photos} />}
+              {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
+            </div>
+
+            {/* Mobile-only remaining components */}
+            <div className="block lg:hidden space-y-6">
+              {restaurant && <PhotosSection photos={restaurant.photos} />}
+              {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
+            </div>
           </div>
 
-          <div className="space-y-6 lg:sticky lg:top-24 self-start">
+          {/* Desktop sidebar */}
+          <div className="hidden lg:block space-y-6 lg:sticky lg:top-24 self-start">
             <MatchScoreCard categories={matchCategories} />
             <OrderSection />
           </div>
