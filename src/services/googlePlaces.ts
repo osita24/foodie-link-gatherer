@@ -21,7 +21,7 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
     
     console.log('Making API request with Place ID:', placeId);
     const response = await fetch(
-      `${baseUrl}/details/json?place_id=${placeId}&fields=name,rating,user_ratings_total,formatted_address,formatted_phone_number,opening_hours,website,price_level,photos,types,vicinity,utc_offset&key=${GOOGLE_API_KEY}`
+      `${baseUrl}/details/json?place_id=${placeId}&fields=name,rating,user_ratings_total,formatted_address,formatted_phone_number,opening_hours,website,price_level,photos,types,vicinity,utc_offset,reviews&key=${GOOGLE_API_KEY}`
     );
 
     if (response.status === 403) {
@@ -76,7 +76,8 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
       vicinity: data.result.vicinity,
       types: data.result.types,
       userRatingsTotal: data.result.user_ratings_total,
-      utcOffset: data.result.utc_offset
+      utcOffset: data.result.utc_offset,
+      googleReviews: data.result.reviews || []
     };
   } catch (error) {
     console.error('Error fetching restaurant details:', error);

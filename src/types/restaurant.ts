@@ -7,6 +7,15 @@ export interface MenuItem {
   image?: string;
 }
 
+export interface Review {
+  author_name: string;
+  profile_photo_url: string;
+  rating: number;
+  relative_time_description: string;
+  text: string;
+  time: number;
+}
+
 export interface RestaurantDetails {
   id: string;
   name: string;
@@ -29,4 +38,5 @@ export interface RestaurantDetails {
   types?: string[];
   userRatingsTotal?: number;
   utcOffset?: number;
+  googleReviews?: Review[];
 }

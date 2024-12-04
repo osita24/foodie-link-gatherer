@@ -9,6 +9,7 @@ import RestaurantInfo from "@/components/restaurant/RestaurantInfo";
 import PopularItems from "@/components/restaurant/PopularItems";
 import MenuSection from "@/components/restaurant/MenuSection";
 import PhotosSection from "@/components/restaurant/PhotosSection";
+import ReviewsSection from "@/components/restaurant/ReviewsSection";
 import MatchScoreCard from "@/components/restaurant/MatchScoreCard";
 import { useRestaurantData } from "@/hooks/useRestaurantData";
 
@@ -128,6 +129,7 @@ const RestaurantDetails = () => {
               <PopularItems />
               <MenuSection />
               {restaurant && <PhotosSection photos={restaurant.photos} />}
+              {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
             </div>
 
             <div className="space-y-8 md:sticky md:top-24 self-start">
