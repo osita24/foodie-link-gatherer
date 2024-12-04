@@ -2,20 +2,12 @@ import { useState, useEffect } from "react";
 import { BookmarkPlus, Share2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Auth } from '@supabase/auth-ui-react';
-import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from "@/integrations/supabase/client";
+import AuthModal from "../auth/AuthModal";
 
 const ActionButtons = () => {
   const [isSaving, setIsSaving] = useState(false);
-  const [showSignUpDialog, setShowSignUpDialog] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [session, setSession] = useState(null);
 
   useEffect(() => {
@@ -32,7 +24,7 @@ const ActionButtons = () => {
       console.log("Auth state changed:", _event, session);
       setSession(session);
       if (session) {
-        setShowSignUpDialog(false);
+        setShowAuthModal(false);
         toast({
           title: "Successfully signed in!",
           description: `Welcome ${session.user.email}`,
@@ -45,8 +37,8 @@ const ActionButtons = () => {
 
   const handleSave = async () => {
     if (!session) {
-      console.log("No session, showing sign up dialog");
-      setShowSignUpDialog(true);
+      console.log("No session, showing auth modal");
+      setShowAuthModal(true);
       return;
     }
 
@@ -101,35 +93,10 @@ const ActionButtons = () => {
         </Button>
       </div>
 
-      <Dialog open={showSignUpDialog} onOpenChange={setShowSignUpDialog}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Sign up to save restaurants</DialogTitle>
-            <DialogDescription>
-              Create a free account to save your favorite restaurants and access them anytime.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="mt-4">
-            <Auth
-              supabaseClient={supabase}
-              appearance={{ 
-                theme: ThemeSupa,
-                variables: {
-                  default: {
-                    colors: {
-                      brand: '#000000',
-                      brandAccent: '#333333',
-                    },
-                  },
-                },
-              }}
-              providers={['google']}
-              onlyThirdPartyProviders
-              redirectTo={window.location.origin}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      <AuthModal 
+        open={showAuthModal}
+        onOpenChange={setShowAuthModal}
+      />
     </>
   );
 };
