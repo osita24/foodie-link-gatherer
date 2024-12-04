@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { BookmarkPlus, Share2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 const ActionButtons = () => {
   const [isSaving, setIsSaving] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = () => {
     setIsSaving(true);
