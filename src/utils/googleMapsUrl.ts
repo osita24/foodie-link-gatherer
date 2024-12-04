@@ -7,61 +7,36 @@ export const extractPlaceId = async (url: string): Promise<string | null> => {
   try {
     // Handle shortened g.co links
     if (url.includes('g.co/kgs/')) {
-      console.log('Detected shortened g.co URL, attempting to handle...');
-      const identifier = url.split('g.co/kgs/')[1];
-      if (!identifier) {
-        console.error('Could not extract identifier from shortened URL');
-        return null;
-      }
-      console.log('Extracted identifier:', identifier);
-      return identifier;
+      console.log('Detected shortened g.co URL');
+      return null; // We'll handle these differently
     }
 
-    // Handle regular Google Maps URLs
     const urlObj = new URL(url);
     const searchParams = new URLSearchParams(urlObj.search);
     
-    // Check for cid parameter (unique identifier)
-    if (searchParams.has('cid')) {
-      const cid = searchParams.get('cid');
-      console.log('Found cid parameter:', cid);
-      return `place_id:${cid}`;
-    }
-
-    // Check for place_id parameter
+    // First try to get an existing place_id
     if (searchParams.has('place_id')) {
       const placeId = searchParams.get('place_id');
       console.log('Found direct place_id:', placeId);
       return placeId;
     }
 
-    // Check for ftid parameter (specific restaurant ID)
-    if (searchParams.has('ftid')) {
-      const ftid = searchParams.get('ftid');
-      console.log('Found ftid parameter:', ftid);
-      // Extract the business reference ID
-      const businessRef = ftid?.split(':')[0];
-      if (businessRef) {
-        console.log('Extracted business reference:', businessRef);
-        return businessRef;
-      }
-    }
-
-    // Check for q parameter (search query with place details)
-    if (searchParams.has('q')) {
-      const query = searchParams.get('q');
-      console.log('Found q parameter:', query);
+    // Extract coordinates from the URL path
+    const coords = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (coords) {
+      const lat = coords[1];
+      const lng = coords[2];
+      console.log('Extracted coordinates:', lat, lng);
       
-      // If q parameter contains a place_id
-      if (query?.includes('place_id:')) {
-        const placeId = query.split('place_id:')[1];
-        console.log('Extracted Place ID from q parameter:', placeId);
+      // Use these coordinates to get the place ID
+      const placeId = await findPlaceIdFromCoordinates(lat, lng);
+      if (placeId) {
         return placeId;
       }
     }
-    
-    // Format: maps/place/.../@...,17z/data=!3m1!4b1!4m5!3m4!1s0x...
-    const matches = url.match(/!1s([^!]+)!/);
+
+    // Fallback: try to extract from URL data format
+    const matches = url.match(/!1s(ChIJ[^!]+)!/);
     if (matches && matches[1]) {
       console.log('Extracted Place ID from URL data:', matches[1]);
       return matches[1];
@@ -74,3 +49,32 @@ export const extractPlaceId = async (url: string): Promise<string | null> => {
     return null;
   }
 };
+
+async function findPlaceIdFromCoordinates(lat: string, lng: string): Promise<string | null> {
+  const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
+  const CORS_PROXY = 'https://cors-anywhere.herokuapp.com';
+  
+  try {
+    console.log('Searching for Place ID using coordinates:', lat, lng);
+    const response = await fetch(
+      `${CORS_PROXY}/https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_API_KEY}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Geocoding API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('Geocoding API response:', data);
+
+    if (data.results && data.results[0] && data.results[0].place_id) {
+      console.log('Found Place ID from coordinates:', data.results[0].place_id);
+      return data.results[0].place_id;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error finding Place ID from coordinates:', error);
+    return null;
+  }
+}
