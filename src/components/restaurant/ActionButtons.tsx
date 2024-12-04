@@ -22,7 +22,7 @@ const ActionButtons = () => {
   };
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 flex flex-col sm:flex-row gap-2 z-[100] md:sticky md:top-4 md:right-4 md:left-auto md:bottom-auto md:flex-row">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex flex-col sm:flex-row gap-2 z-[100] md:absolute md:bottom-auto md:left-auto md:right-6 md:top-6 md:translate-x-0">
       <Button
         size="lg"
         className={`bg-primary text-white hover:bg-primary/90 transition-all duration-300 w-full sm:w-auto shadow-lg
