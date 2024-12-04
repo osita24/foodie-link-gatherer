@@ -1,5 +1,6 @@
 import { Slider } from "@/components/ui/slider";
 import { Flame } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface SpiceLevelSelectorProps {
   value: number;
