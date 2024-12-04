@@ -1,36 +1,26 @@
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { PriceRange, UserPreferences } from "@/types/preferences";
+import CuisinePreferences from "./preferences/CuisinePreferences";
+import DietaryPreferences from "./preferences/DietaryPreferences";
+import { Checkbox } from "../ui/checkbox";
 
 const RestaurantPreferences = () => {
   const { toast } = useToast();
-  const [preferences, setPreferences] = useState({
+  const [preferences, setPreferences] = useState<UserPreferences>({
     cuisinePreferences: [],
     dietaryRestrictions: [],
     favoriteIngredients: [],
     spiceLevel: 3,
-    priceRange: "moderate",
+    priceRange: 'moderate',
     atmospherePreferences: [],
     specialConsiderations: "",
   });
-
-  const cuisineTypes = [
-    "Italian", "Japanese", "Mexican", "Indian", 
-    "Chinese", "Thai", "American", "Mediterranean",
-    "French", "Korean", "Vietnamese", "Spanish",
-    "Greek", "Middle Eastern", "Brazilian", "Caribbean"
-  ];
-
-  const dietaryPreferences = [
-    "Vegetarian", "Vegan", "Gluten-Free", 
-    "Halal", "Kosher", "Dairy-Free",
-    "Nut-Free", "Low-Carb", "Keto-Friendly"
-  ];
 
   const atmosphereTypes = [
     "Casual Dining", "Fine Dining", "Family-Friendly",
@@ -61,7 +51,7 @@ const RestaurantPreferences = () => {
             dietaryRestrictions: data.dietary_restrictions || [],
             favoriteIngredients: data.favorite_ingredients || [],
             spiceLevel: data.spice_level || 3,
-            priceRange: data.price_range || "moderate",
+            priceRange: data.price_range || 'moderate',
             atmospherePreferences: data.atmosphere_preferences || [],
             specialConsiderations: data.special_considerations || "",
           });
@@ -114,43 +104,15 @@ const RestaurantPreferences = () => {
 
   return (
     <div className="space-y-8">
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium">Cuisine Preferences</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {cuisineTypes.map((cuisine) => (
-            <div key={cuisine} className="flex items-center space-x-3 bg-accent/20 p-3 rounded-lg hover:bg-accent/30 transition-colors">
-              <Checkbox 
-                id={cuisine}
-                checked={preferences.cuisinePreferences.includes(cuisine)}
-                onCheckedChange={() => setPreferences(prev => ({
-                  ...prev,
-                  cuisinePreferences: toggleArrayPreference(prev.cuisinePreferences, cuisine)
-                }))}
-              />
-              <Label htmlFor={cuisine} className="cursor-pointer">{cuisine}</Label>
-            </div>
-          ))}
-        </div>
-      </div>
+      <CuisinePreferences 
+        selected={preferences.cuisinePreferences}
+        onChange={(cuisines) => setPreferences(prev => ({ ...prev, cuisinePreferences: cuisines }))}
+      />
 
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium">Dietary Preferences</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {dietaryPreferences.map((pref) => (
-            <div key={pref} className="flex items-center space-x-3 bg-accent/20 p-3 rounded-lg hover:bg-accent/30 transition-colors">
-              <Checkbox 
-                id={pref}
-                checked={preferences.dietaryRestrictions.includes(pref)}
-                onCheckedChange={() => setPreferences(prev => ({
-                  ...prev,
-                  dietaryRestrictions: toggleArrayPreference(prev.dietaryRestrictions, pref)
-                }))}
-              />
-              <Label htmlFor={pref} className="cursor-pointer">{pref}</Label>
-            </div>
-          ))}
-        </div>
-      </div>
+      <DietaryPreferences
+        selected={preferences.dietaryRestrictions}
+        onChange={(restrictions) => setPreferences(prev => ({ ...prev, dietaryRestrictions: restrictions }))}
+      />
 
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Atmosphere Preferences</h3>
@@ -213,7 +175,7 @@ const RestaurantPreferences = () => {
         <h3 className="text-lg font-medium">Price Range Preference</h3>
         <RadioGroup
           value={preferences.priceRange}
-          onValueChange={(value) => setPreferences(prev => ({ ...prev, priceRange: value }))}
+          onValueChange={(value: PriceRange) => setPreferences(prev => ({ ...prev, priceRange: value }))}
           className="grid grid-cols-2 md:grid-cols-4 gap-4"
         >
           {["budget", "moderate", "upscale", "luxury"].map((range) => (
