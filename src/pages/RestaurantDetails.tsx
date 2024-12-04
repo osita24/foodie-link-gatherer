@@ -1,4 +1,3 @@
-import RestaurantHeader from "@/components/restaurant/RestaurantHeader";
 import RestaurantInfo from "@/components/restaurant/RestaurantInfo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -6,15 +5,94 @@ import { Button } from "@/components/ui/button";
 import { Star, List, ExternalLink } from "lucide-react";
 
 const RestaurantDetails = () => {
+  const photos = [
+    "https://images.unsplash.com/photo-1414235077428-338989a2e8c0",
+    "https://images.unsplash.com/photo-1552566626-52f8b828add9",
+    "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4",
+    "https://images.unsplash.com/photo-1544148103-0773bf10d330",
+    "https://images.unsplash.com/photo-1559339352-11d035aa65de",
+    "https://images.unsplash.com/photo-1551632436-cbf8dd35adfa"
+  ];
+
+  const popularItems = [
+    {
+      name: "Signature Pasta",
+      image: "https://images.unsplash.com/photo-1473093295043-cdd812d0e601",
+      price: "$24.99",
+      description: "House-made pasta with truffle cream sauce"
+    },
+    {
+      name: "Wagyu Steak",
+      image: "https://images.unsplash.com/photo-1544025162-d76694265947",
+      price: "$59.99",
+      description: "Premium grade wagyu with seasonal vegetables"
+    },
+    {
+      name: "Fresh Seafood Platter",
+      image: "https://images.unsplash.com/photo-1559339352-11d035aa65de",
+      price: "$45.99",
+      description: "Daily selection of fresh seafood"
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-background">
-      <RestaurantHeader imageUrl="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4" />
-
-      <div className="container mx-auto px-4 pb-12">
+      <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="md:col-span-2 space-y-8">
             <RestaurantInfo />
+
+            {/* Photos Section */}
+            <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
+              <CardHeader>
+                <CardTitle className="text-2xl">Photos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {photos.map((photo, index) => (
+                    <div 
+                      key={index} 
+                      className="aspect-square overflow-hidden rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
+                    >
+                      <img
+                        src={photo}
+                        alt={`Restaurant photo ${index + 1}`}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Popular Menu Items */}
+            <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
+              <CardHeader>
+                <CardTitle className="text-2xl">Popular Items</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {popularItems.map((item, index) => (
+                    <div 
+                      key={index}
+                      className="flex gap-4 p-4 rounded-lg border border-gray-100 hover:shadow-md transition-all duration-300 hover:scale-[1.02] bg-white"
+                    >
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-24 h-24 rounded-lg object-cover"
+                      />
+                      <div>
+                        <h3 className="font-semibold text-secondary">{item.name}</h3>
+                        <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                        <p className="text-primary font-semibold mt-2">{item.price}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Recommended Menu Items */}
             <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
