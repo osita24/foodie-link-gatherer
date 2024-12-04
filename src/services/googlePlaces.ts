@@ -20,8 +20,9 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
     }
     
     console.log('Making API request with Place ID:', placeId);
+    // Request more specific fields from the API
     const response = await fetch(
-      `${baseUrl}/details/json?place_id=${placeId}&fields=name,rating,user_ratings_total,formatted_address,formatted_phone_number,opening_hours,website,price_level,photos,types,vicinity,utc_offset,reviews&key=${GOOGLE_API_KEY}`
+      `${baseUrl}/details/json?place_id=${placeId}&fields=name,rating,user_ratings_total,formatted_address,formatted_phone_number,opening_hours/weekday_text,opening_hours/periods,website,price_level,photos,types,vicinity,utc_offset,reviews&key=${GOOGLE_API_KEY}`
     );
 
     if (response.status === 403) {
@@ -60,7 +61,7 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
     // Transform the API response into our RestaurantDetails format
     const restaurantDetails: RestaurantDetails = {
       id: placeId,
-      name: data.result.name || 'Restaurant Name Not Available',
+      name: data.result.name,
       rating: data.result.rating || 0,
       reviews: data.result.user_ratings_total || 0,
       address: data.result.formatted_address || data.result.vicinity || 'Address Not Available',
@@ -73,7 +74,7 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
         periods: data.result.opening_hours.periods || [],
         weekdayText: data.result.opening_hours.weekday_text || [],
       } : undefined,
-      vicinity: data.result.vicinity || data.result.formatted_address,
+      vicinity: data.result.vicinity || '',
       types: data.result.types || [],
       userRatingsTotal: data.result.user_ratings_total || 0,
       utcOffset: data.result.utc_offset,
