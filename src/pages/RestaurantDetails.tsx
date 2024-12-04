@@ -42,7 +42,11 @@ const RestaurantDetails = () => {
   ];
 
   if (isLoading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   if (error) {
@@ -57,36 +61,37 @@ const RestaurantDetails = () => {
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-background pb-20">
       <Header />
-      <div className="min-h-screen bg-background">
-        <div className="w-full h-[300px] relative">
-          <img 
-            src={restaurant?.photos?.[0] || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4"}
-            alt="Restaurant hero"
-            className="w-full h-full object-cover"
-          />
-          <ActionButtons />
-        </div>
+      <div className="w-full h-[30vh] sm:h-[40vh] md:h-[50vh] relative">
+        <img 
+          src={restaurant?.photos?.[0] || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4"}
+          alt="Restaurant hero"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+        <ActionButtons />
+      </div>
 
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="md:col-span-2 space-y-8">
+      <div className="container mx-auto px-4 -mt-10 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-white rounded-xl shadow-sm p-6">
               {restaurant && <RestaurantInfo restaurant={restaurant} />}
-              <PopularItems />
-              <MenuSection menu={restaurant?.menu} />
-              {restaurant && <PhotosSection photos={restaurant.photos} />}
-              {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
             </div>
+            <PopularItems />
+            <MenuSection menu={restaurant?.menu} />
+            {restaurant && <PhotosSection photos={restaurant.photos} />}
+            {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
+          </div>
 
-            <div className="space-y-8 md:sticky md:top-24 self-start">
-              <MatchScoreCard categories={matchCategories} />
-              <OrderSection />
-            </div>
+          <div className="space-y-6 lg:sticky lg:top-24 self-start">
+            <MatchScoreCard categories={matchCategories} />
+            <OrderSection />
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
