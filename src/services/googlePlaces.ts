@@ -3,43 +3,12 @@ import { RestaurantDetails } from "@/types/restaurant";
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
 const CORS_PROXY = 'https://cors-anywhere.herokuapp.com';
 
-// Sample data for development and testing
-const SAMPLE_RESTAURANT: RestaurantDetails = {
-  id: 'sample-id',
-  name: 'Sample Restaurant',
-  rating: 4.5,
-  reviews: 123,
-  address: '123 Sample Street, Sample City',
-  hours: 'Monday: 9:00 AM - 10:00 PM',
-  phone: '(555) 123-4567',
-  website: 'https://example.com',
-  photos: [
-    'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4',
-    'https://images.unsplash.com/photo-1552566626-52f8b828add9',
-    'https://images.unsplash.com/photo-1414235077428-338989a2e8c0'
-  ],
-  priceLevel: 2
-};
-
 export const fetchRestaurantDetails = async (placeId: string): Promise<RestaurantDetails> => {
   console.log('Fetching restaurant details for:', placeId);
-  
-  // Return sample data if using the sample-id
-  if (placeId === 'sample-id') {
-    console.log('Using sample data for development');
-    return SAMPLE_RESTAURANT;
-  }
 
   if (!GOOGLE_API_KEY) {
     console.error('Google Places API key not found');
     throw new Error('Google Places API key not configured');
-  }
-
-  // Validate Place ID format
-  const placeIdRegex = /^[a-zA-Z0-9_-]+$/;
-  if (!placeIdRegex.test(placeId)) {
-    console.error('Invalid Place ID format:', placeId);
-    throw new Error('Invalid Google Place ID format');
   }
 
   try {
@@ -76,6 +45,7 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
       throw new Error('No restaurant data found');
     }
 
+    // Transform the API response into our RestaurantDetails format
     return {
       id: placeId,
       name: data.result.name || 'Restaurant Name Not Available',
