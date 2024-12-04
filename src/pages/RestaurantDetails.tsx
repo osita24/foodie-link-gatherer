@@ -61,7 +61,7 @@ const RestaurantDetails = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-16">
       <Header />
       <div className="w-full h-[25vh] sm:h-[35vh] md:h-[45vh] relative">
         <img 
@@ -70,6 +70,7 @@ const RestaurantDetails = () => {
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
+        <ActionButtons />
       </div>
 
       <div className="container mx-auto px-4 -mt-8 relative z-10">
@@ -81,25 +82,21 @@ const RestaurantDetails = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <MatchScoreCard categories={matchCategories} />
-              <PopularItems />
-            </div>
-
-            <MenuSection menu={restaurant?.menu} />
-            
-            <div className="block lg:hidden">
               <OrderSection />
             </div>
-            
+
+            <PopularItems />
+            <MenuSection menu={restaurant?.menu} />
             {restaurant && <PhotosSection photos={restaurant.photos} />}
             {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
           </div>
 
           <div className="hidden lg:block space-y-4 lg:sticky lg:top-24 self-start">
+            <MatchScoreCard categories={matchCategories} />
             <OrderSection />
           </div>
         </div>
       </div>
-      <ActionButtons />
     </div>
   );
 };
