@@ -74,7 +74,7 @@ const RestaurantDetails = () => {
             <div className="md:col-span-2 space-y-8">
               {restaurant && <RestaurantInfo restaurant={restaurant} />}
               <PopularItems />
-              <MenuSection />
+              <MenuSection menu={restaurant?.menu} />
               {restaurant && <PhotosSection photos={restaurant.photos} />}
               {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
             </div>

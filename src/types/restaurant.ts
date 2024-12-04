@@ -7,6 +7,11 @@ export interface MenuItem {
   image?: string;
 }
 
+export interface MenuCategory {
+  name: string;
+  items: MenuItem[];
+}
+
 export interface Review {
   author_name: string;
   profile_photo_url: string;
@@ -27,6 +32,7 @@ export interface RestaurantDetails {
   website: string;
   photos: string[];
   priceLevel: number;
+  menu?: MenuCategory[];
   openingHours?: {
     periods: {
       open: { day: number; time: string };
