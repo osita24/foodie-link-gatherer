@@ -8,6 +8,7 @@ import ReviewsSection from "@/components/restaurant/ReviewsSection";
 import MatchScoreCard from "@/components/restaurant/MatchScoreCard";
 import ActionButtons from "@/components/restaurant/ActionButtons";
 import OrderSection from "@/components/restaurant/OrderSection";
+import MenuRecommendations from "@/components/restaurant/MenuRecommendations";
 import { useRestaurantData } from "@/hooks/useRestaurantData";
 
 const RestaurantDetails = () => {
@@ -83,15 +84,17 @@ const RestaurantDetails = () => {
             {/* Mobile-first order of components */}
             <div className="block lg:hidden space-y-6">
               <MatchScoreCard categories={matchCategories} />
-              <PopularItems />
+              <MenuRecommendations />
               <MenuSection menu={restaurant?.menu} />
+              <PopularItems />
               <OrderSection />
             </div>
 
             {/* Desktop-only order of components */}
             <div className="hidden lg:block space-y-6">
-              <PopularItems />
+              <MenuRecommendations />
               <MenuSection menu={restaurant?.menu} />
+              <PopularItems />
               {restaurant && <PhotosSection photos={restaurant.photos} />}
               {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
             </div>
