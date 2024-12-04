@@ -1,17 +1,21 @@
+import { useState } from "react";
+import { useParams } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
+import { BookmarkPlus, Share2, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Header from "@/components/Header";
 import RestaurantInfo from "@/components/restaurant/RestaurantInfo";
 import PopularItems from "@/components/restaurant/PopularItems";
 import MenuSection from "@/components/restaurant/MenuSection";
 import PhotosSection from "@/components/restaurant/PhotosSection";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Star, ExternalLink, BookmarkPlus, Share2, Check } from "lucide-react";
-import Header from "@/components/Header";
-import { useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import MatchScoreCard from "@/components/restaurant/MatchScoreCard";
+import { useRestaurantData } from "@/hooks/useRestaurantData";
 
 const RestaurantDetails = () => {
+  const { id = '' } = useParams();
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const { data: restaurant, isLoading, error } = useRestaurantData(id);
 
   const handleSave = () => {
     setIsSaving(true);
@@ -23,7 +27,6 @@ const RestaurantDetails = () => {
       duration: 2000,
     });
 
-    // Reset the animation after 1 second
     setTimeout(() => {
       setIsSaving(false);
     }, 1000);
@@ -56,18 +59,24 @@ const RestaurantDetails = () => {
     }
   ];
 
+  if (isLoading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">Error loading restaurant details</div>;
+  }
+
   return (
     <>
       <Header />
       <div className="min-h-screen bg-background">
-        {/* Hero Image Section */}
         <div className="w-full h-[300px] relative">
           <img 
-            src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4"
+            src={restaurant?.photos?.[0] || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4"}
             alt="Restaurant hero"
             className="w-full h-full object-cover"
           />
-          {/* Action Buttons */}
           <div className="absolute bottom-4 right-4 flex gap-2">
             <Button
               size="lg"
@@ -98,93 +107,17 @@ const RestaurantDetails = () => {
 
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Main Content */}
             <div className="md:col-span-2 space-y-8">
-              <RestaurantInfo />
-              
-              {/* Popular Items Section */}
+              <RestaurantInfo restaurant={restaurant} />
               <PopularItems />
-
-              {/* Recommended Menu Items */}
-              <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Star className="w-6 h-6 text-yellow-400" />
-                    Recommended Menu Items
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {[1, 2, 3, 4].map((item) => (
-                      <div key={item} className="flex gap-4 p-4 rounded-lg border border-gray-100 hover:shadow-md transition-all duration-300 hover:scale-[1.02] bg-white">
-                        <img
-                          src={`https://picsum.photos/100/100?random=${item}`}
-                          alt="Menu item"
-                          className="w-24 h-24 rounded-lg object-cover"
-                        />
-                        <div>
-                          <h3 className="font-semibold text-secondary">Menu Item {item}</h3>
-                          <p className="text-sm text-gray-600 mt-1">Description of the menu item goes here</p>
-                          <p className="text-primary font-semibold mt-2">$15.99</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Full Menu Section */}
               <MenuSection />
-
-              {/* Photos Section */}
-              <PhotosSection />
+              <PhotosSection photos={restaurant?.photos || []} />
             </div>
 
-            {/* Sidebar */}
             <div className="space-y-8 md:sticky md:top-24 self-start">
-              {/* Match Score Details */}
-              <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                <CardHeader className="border-b border-gray-100">
-                  <CardTitle className="flex items-center gap-2 text-2xl">
-                    <Star className="w-6 h-6 text-yellow-400 fill-current" />
-                    Why We Think You'll Love It
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <div className="space-y-6">
-                    {matchCategories.map((item, index) => (
-                      <div
-                        key={item.category}
-                        className="space-y-2 animate-fade-up"
-                        style={{ animationDelay: `${index * 150}ms` }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xl">{item.icon}</span>
-                            <span className="font-medium text-secondary">
-                              {item.category}
-                            </span>
-                          </div>
-                          <span className="text-primary font-bold">
-                            {item.score}%
-                          </span>
-                        </div>
-                        <div className="relative pt-1">
-                          <div className="overflow-hidden h-2 text-xs flex rounded-full bg-gray-100">
-                            <div
-                              style={{ width: `${item.score}%` }}
-                              className="animate-[slideRight_1s_ease-out] shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary"
-                            />
-                          </div>
-                        </div>
-                        <p className="text-sm text-gray-600">{item.description}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Order Options */}
+              <MatchScoreCard categories={matchCategories} />
+              
+              {/* Order Options Card */}
               <Card className="hover:shadow-lg transition-shadow duration-300">
                 <CardHeader>
                   <CardTitle>Order Now</CardTitle>
