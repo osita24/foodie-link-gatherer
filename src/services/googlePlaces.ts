@@ -1,6 +1,7 @@
 import { RestaurantDetails } from "@/types/restaurant";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
+const CORS_PROXY = 'https://cors-anywhere.herokuapp.com';
 
 export const fetchRestaurantDetails = async (placeId: string): Promise<RestaurantDetails> => {
   console.log('Fetching restaurant details for:', placeId);
@@ -11,12 +12,18 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
   }
 
   try {
-    // Use a CORS proxy for development
-    const baseUrl = 'https://cors-anywhere.herokuapp.com/https://maps.googleapis.com/maps/api/place';
+    const baseUrl = `${CORS_PROXY}/https://maps.googleapis.com/maps/api/place`;
     
     const response = await fetch(
       `${baseUrl}/details/json?place_id=${placeId}&fields=name,rating,user_ratings_total,formatted_address,formatted_phone_number,opening_hours,website,price_level,photos&key=${GOOGLE_API_KEY}`
     );
+
+    if (response.status === 403) {
+      throw new Error(
+        'CORS Proxy access required. Please visit https://cors-anywhere.herokuapp.com/corsdemo ' +
+        'and click "Request temporary access to the demo server" first.'
+      );
+    }
 
     if (!response.ok) {
       throw new Error('Failed to fetch restaurant details');
@@ -24,6 +31,10 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
 
     const data = await response.json();
     console.log('Received restaurant data:', data);
+
+    if (data.status === 'INVALID_REQUEST' || data.status === 'NOT_FOUND') {
+      throw new Error(`Google Places API error: ${data.status}`);
+    }
 
     return {
       id: placeId,

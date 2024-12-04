@@ -65,7 +65,22 @@ const RestaurantDetails = () => {
   }
 
   if (error) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">Error loading restaurant details</div>;
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <h2 className="text-xl font-semibold text-red-600 mb-4">Error loading restaurant details</h2>
+          <p className="text-gray-600 mb-4">{error instanceof Error ? error.message : 'Unknown error occurred'}</p>
+          {error instanceof Error && error.message.includes('cors-anywhere') && (
+            <Button
+              onClick={() => window.open('https://cors-anywhere.herokuapp.com/corsdemo', '_blank')}
+              className="bg-primary text-white"
+            >
+              Request CORS Access
+            </Button>
+          )}
+        </div>
+      </div>
+    );
   }
 
   return (
