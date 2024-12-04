@@ -8,7 +8,7 @@ import { Star, ExternalLink } from "lucide-react";
 
 const RestaurantDetails = () => {
   return (
-    <div className="min-h-screen bg-background pt-8">
+    <div className="min-h-screen bg-background pt-24">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Main Content */}
