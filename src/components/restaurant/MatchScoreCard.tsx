@@ -2,10 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Auth } from '@supabase/auth-ui-react';
-import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from "@/integrations/supabase/client";
+import AuthModal from "@/components/auth/AuthModal";
 
 interface MatchCategory {
   category: string;
@@ -19,7 +17,7 @@ interface MatchScoreCardProps {
 }
 
 const MatchScoreCard = ({ categories }: MatchScoreCardProps) => {
-  const [showSignUpDialog, setShowSignUpDialog] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [session, setSession] = useState(null);
 
   // Listen for auth state changes
@@ -30,7 +28,7 @@ const MatchScoreCard = ({ categories }: MatchScoreCardProps) => {
   supabase.auth.onAuthStateChange((_event, session) => {
     setSession(session);
     if (session) {
-      setShowSignUpDialog(false);
+      setShowAuthModal(false);
     }
   });
 
@@ -42,7 +40,7 @@ const MatchScoreCard = ({ categories }: MatchScoreCardProps) => {
         </p>
         <div className="flex justify-center gap-4">
           <Button 
-            onClick={() => setShowSignUpDialog(true)}
+            onClick={() => setShowAuthModal(true)}
             className="bg-primary hover:bg-primary/90 text-white px-8 py-6 text-lg font-semibold
               transition-all duration-300 hover:scale-105 hover:shadow-lg rounded-lg"
           >
@@ -105,35 +103,10 @@ const MatchScoreCard = ({ categories }: MatchScoreCardProps) => {
         </CardContent>
       </Card>
 
-      <Dialog open={showSignUpDialog} onOpenChange={setShowSignUpDialog}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Sign up to see your match score</DialogTitle>
-            <DialogDescription>
-              Create a free account to unlock personalized restaurant recommendations and match scores.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="mt-4">
-            <Auth
-              supabaseClient={supabase}
-              appearance={{ 
-                theme: ThemeSupa,
-                variables: {
-                  default: {
-                    colors: {
-                      brand: '#000000',
-                      brandAccent: '#333333',
-                    },
-                  },
-                },
-              }}
-              providers={['google']}
-              onlyThirdPartyProviders
-              redirectTo={window.location.origin}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      <AuthModal 
+        open={showAuthModal}
+        onOpenChange={setShowAuthModal}
+      />
     </>
   );
 };
