@@ -9,19 +9,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Auth } from '@supabase/auth-ui-react';
+import { ThemeSupa } from '@supabase/auth-ui-shared';
+import { supabase } from "@/integrations/supabase/client";
 
 const ActionButtons = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [showSignUpDialog, setShowSignUpDialog] = useState(false);
 
   const handleSave = () => {
-    // Show sign up dialog instead of saving directly
     setShowSignUpDialog(true);
-  };
-
-  const handleSignUp = () => {
-    console.log('Redirecting to sign up...');
-    setShowSignUpDialog(false);
   };
 
   return (
@@ -60,17 +57,23 @@ const ActionButtons = () => {
               Create a free account to save your favorite restaurants and access them anytime.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-4 mt-4">
-            <Button onClick={handleSignUp} className="w-full">
-              Sign up
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowSignUpDialog(false)}
-              className="w-full"
-            >
-              Maybe later
-            </Button>
+          <div className="mt-4">
+            <Auth
+              supabaseClient={supabase}
+              appearance={{ 
+                theme: ThemeSupa,
+                variables: {
+                  default: {
+                    colors: {
+                      brand: '#000000',
+                      brandAccent: '#333333',
+                    },
+                  },
+                },
+              }}
+              providers={['google']}
+              onlyThirdPartyProviders
+            />
           </div>
         </DialogContent>
       </Dialog>
