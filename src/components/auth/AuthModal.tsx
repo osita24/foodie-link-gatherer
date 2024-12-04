@@ -64,7 +64,11 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
             }}
             providers={['google']}
             onlyThirdPartyProviders
-            redirectTo={window.location.origin}
+            redirectTo={`${window.location.origin}/`}
+            queryParams={{
+              access_type: 'offline',
+              prompt: 'consent',
+            }}
           />
         </div>
       </DialogContent>
