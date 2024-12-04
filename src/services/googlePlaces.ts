@@ -38,7 +38,7 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
     }
 
     const data = await response.json();
-    console.log('Received restaurant data:', data);
+    console.log('Raw API response:', data);
 
     if (data.status === 'INVALID_REQUEST' || data.status === 'NOT_FOUND') {
       console.error('Google Places API error:', data.status);
@@ -58,27 +58,30 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
     console.log('Generated photo URLs:', photoUrls);
 
     // Transform the API response into our RestaurantDetails format
-    return {
+    const restaurantDetails: RestaurantDetails = {
       id: placeId,
       name: data.result.name || 'Restaurant Name Not Available',
       rating: data.result.rating || 0,
       reviews: data.result.user_ratings_total || 0,
-      address: data.result.formatted_address || 'Address Not Available',
+      address: data.result.formatted_address || data.result.vicinity || 'Address Not Available',
       hours: data.result.opening_hours?.weekday_text?.[0] || 'Hours not available',
       phone: data.result.formatted_phone_number || '',
       website: data.result.website || '',
       photos: photoUrls,
       priceLevel: data.result.price_level || 0,
       openingHours: data.result.opening_hours ? {
-        periods: data.result.opening_hours.periods,
-        weekdayText: data.result.opening_hours.weekday_text,
+        periods: data.result.opening_hours.periods || [],
+        weekdayText: data.result.opening_hours.weekday_text || [],
       } : undefined,
-      vicinity: data.result.vicinity,
-      types: data.result.types,
-      userRatingsTotal: data.result.user_ratings_total,
+      vicinity: data.result.vicinity || data.result.formatted_address,
+      types: data.result.types || [],
+      userRatingsTotal: data.result.user_ratings_total || 0,
       utcOffset: data.result.utc_offset,
       googleReviews: data.result.reviews || []
     };
+
+    console.log('Transformed restaurant details:', restaurantDetails);
+    return restaurantDetails;
   } catch (error) {
     console.error('Error fetching restaurant details:', error);
     throw error;
