@@ -3,25 +3,48 @@ import { RestaurantDetails } from "@/types/restaurant";
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
 const CORS_PROXY = 'https://cors-anywhere.herokuapp.com';
 
-export const fetchRestaurantDetails = async (placeId: string): Promise<RestaurantDetails> => {
-  console.log('Fetching restaurant details for:', placeId);
-
-  if (!GOOGLE_API_KEY) {
-    console.error('Google Places API key not found');
-    throw new Error('Google Places API key not configured');
+// Helper function to extract Place ID from Google Maps URL
+const extractPlaceId = (placeId: string): string => {
+  // If it's already a place ID, return it
+  if (placeId.startsWith('ChIJ')) {
+    return placeId;
   }
 
+  // Try to extract from Google Maps URL
   try {
+    const url = new URL(placeId);
+    const pathParts = url.pathname.split('/');
+    const placeIndex = pathParts.indexOf('place') + 1;
+    if (placeIndex > 0 && placeIndex < pathParts.length) {
+      const locationPart = pathParts[placeIndex];
+      const matches = locationPart.match(/.*!3m.*!1s(.*?)!/);
+      if (matches && matches[1]) {
+        console.log('Extracted Place ID:', matches[1]);
+        return matches[1];
+      }
+    }
+    throw new Error('Could not extract Place ID from URL');
+  } catch (error) {
+    console.error('Error extracting Place ID:', error);
+    throw new Error('Invalid Place ID or URL format');
+  }
+};
+
+export const fetchRestaurantDetails = async (inputId: string): Promise<RestaurantDetails> => {
+  console.log('Input ID/URL:', inputId);
+  
+  try {
+    const placeId = extractPlaceId(inputId);
+    console.log('Processed Place ID:', placeId);
+
+    if (!GOOGLE_API_KEY) {
+      console.error('Google Places API key not found');
+      throw new Error('Google Places API key not configured');
+    }
+
     const baseUrl = `${CORS_PROXY}/https://maps.googleapis.com/maps/api/place`;
     
-    if (!placeId.startsWith('ChIJ')) {
-      console.error('Invalid Place ID format:', placeId);
-      throw new Error('Invalid Place ID format. Please try using a different URL format.');
-    }
-    
-    console.log('Making API request with Place ID:', placeId);
-    
-    // Explicitly request all fields we need, including opening_hours
+    // Request specific fields we need
     const fields = [
       'name',
       'rating',
@@ -40,6 +63,8 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
       'reviews'
     ].join(',');
 
+    console.log('Making API request for fields:', fields);
+    
     const response = await fetch(
       `${baseUrl}/details/json?place_id=${placeId}&fields=${fields}&key=${GOOGLE_API_KEY}`
     );
