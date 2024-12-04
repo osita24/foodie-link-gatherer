@@ -1,70 +1,66 @@
-import { Star, Clock, Phone, MapPin, ExternalLink, DollarSign, Info } from "lucide-react";
+import { Phone, MapPin, Clock, Globe } from "lucide-react";
 import { RestaurantDetails } from "@/types/restaurant";
-import { Badge } from "@/components/ui/badge";
+import { formatPhoneNumber } from "@/utils/formatPhoneNumber";
 
 interface RestaurantInfoProps {
   restaurant: RestaurantDetails;
 }
 
 const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
-  const getPriceLevel = (level: number) => {
-    const priceMap: { [key: number]: string } = {
-      1: 'Inexpensive',
-      2: 'Moderate',
-      3: 'Expensive',
-      4: 'Very Expensive'
-    };
-    
+  const formatRating = (rating: number) => {
+    return rating.toFixed(1);
+  };
+
+  const formatReviewCount = (count: number) => {
+    if (count >= 1000) {
+      return `${(count / 1000).toFixed(1)}K`;
+    }
+    return count.toString();
+  };
+
+  const RatingStars = ({ rating }: { rating: number }) => {
     return (
-      <div className="flex items-center gap-2">
-        <span className="font-semibold text-green-600">
-          {'$'.repeat(level)}
-        </span>
-        <span className="text-sm text-gray-600">
-          ({priceMap[level] || 'Price not available'})
-        </span>
+      <div className="flex items-center">
+        <span className="text-yellow-400">★</span>
+        <span className="ml-1">{formatRating(rating)}</span>
       </div>
     );
   };
 
-  const getTodayHours = (hoursText: string): string => {
+  const getTodayHours = (hoursText?: string): string => {
+    if (!hoursText) return 'Hours not available';
+    
     const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const today = daysOfWeek[new Date().getDay()];
     
-    if (hoursText.includes('|')) {
-      // Split the hours text and find today's hours
-      const allHours = hoursText.split('|').map(day => day.trim());
-      const todayHours = allHours.find(day => day.startsWith(today));
-      return todayHours ? todayHours : 'Hours not available for today';
+    try {
+      if (hoursText.includes('|')) {
+        // Split the hours text and find today's hours
+        const allHours = hoursText.split('|').map(day => day.trim());
+        const todayHours = allHours.find(day => day.startsWith(today));
+        return todayHours ? todayHours : 'Hours not available for today';
+      }
+      
+      return hoursText;
+    } catch (error) {
+      console.error('Error parsing hours:', error);
+      return 'Hours not available';
     }
-    
-    return hoursText;
   };
 
   return (
-    <div className="bg-white rounded-xl p-8 shadow-lg -mt-20 relative z-10">
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-secondary mb-2">{restaurant.name}</h1>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-gray-600">
-              <Star className="w-5 h-5 text-yellow-400 fill-current" />
-              <span className="font-medium">{restaurant.rating}</span>
-              <span className="text-gray-500">({restaurant.reviews.toLocaleString()}+ reviews)</span>
-            </div>
-            {restaurant.priceLevel > 0 && (
-              <Badge variant="secondary" className="text-sm">
-                {getPriceLevel(restaurant.priceLevel)}
-              </Badge>
-            )}
-          </div>
-        </div>
-        <div className="bg-primary text-white px-6 py-3 rounded-full animate-fade-in">
-          <span className="text-lg font-semibold">95% Match</span>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-4xl font-bold mb-4">{restaurant.name}</h1>
+        <div className="flex items-center gap-4">
+          <RatingStars rating={restaurant.rating} />
+          <span className="text-muted-foreground">
+            {formatReviewCount(restaurant.reviews)} reviews
+          </span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-600">
+      <div className="space-y-3">
         <div className="flex items-center gap-2 hover:text-primary transition-colors">
           <MapPin className="w-5 h-5" />
           <span>{restaurant.address}</span>
@@ -76,14 +72,19 @@ const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
         {restaurant.phone && (
           <div className="flex items-center gap-2 hover:text-primary transition-colors">
             <Phone className="w-5 h-5" />
-            <a href={`tel:${restaurant.phone}`}>{restaurant.phone}</a>
+            <span>{formatPhoneNumber(restaurant.phone)}</span>
           </div>
         )}
         {restaurant.website && (
-          <div className="flex items-center gap-2">
-            <ExternalLink className="w-5 h-5" />
-            <a href={restaurant.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-              Visit Website
+          <div className="flex items-center gap-2 hover:text-primary transition-colors">
+            <Globe className="w-5 h-5" />
+            <a
+              href={restaurant.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline"
+            >
+              Visit website
             </a>
           </div>
         )}
