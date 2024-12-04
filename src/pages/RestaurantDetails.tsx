@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { Share2, Bookmark, Star, Clock, Phone, MapPin, ExternalLink } from "lucide-react";
+import { Share2, Bookmark, Star, Clock, Phone, MapPin, ExternalLink, List } from "lucide-react";
 import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const RestaurantDetails = () => {
   const handleShare = () => {
@@ -60,8 +62,8 @@ const RestaurantDetails = () => {
                     <span>4.5 (500+ reviews)</span>
                   </div>
                 </div>
-                <div className="bg-primary/10 px-4 py-2 rounded-full">
-                  <span className="text-primary font-semibold">95% Match</span>
+                <div className="bg-primary text-white px-6 py-3 rounded-full">
+                  <span className="text-lg font-semibold">95% Match</span>
                 </div>
               </div>
 
@@ -85,73 +87,144 @@ const RestaurantDetails = () => {
               </div>
             </div>
 
-            {/* Menu Section */}
-            <div className="bg-white rounded-xl p-8 shadow-lg">
-              <h2 className="text-2xl font-bold text-secondary mb-6">Popular Menu Items</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[1, 2, 3, 4].map((item) => (
-                  <div key={item} className="flex gap-4 p-4 rounded-lg border border-gray-100 hover:shadow-md transition-shadow">
-                    <img
-                      src={`https://picsum.photos/100/100?random=${item}`}
-                      alt="Menu item"
-                      className="w-24 h-24 rounded-lg object-cover"
-                    />
-                    <div>
-                      <h3 className="font-semibold text-secondary">Menu Item {item}</h3>
-                      <p className="text-sm text-gray-600 mt-1">Description of the menu item goes here</p>
-                      <p className="text-primary font-semibold mt-2">$15.99</p>
+            {/* Recommended Menu Items */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="w-6 h-6 text-yellow-400" />
+                  Recommended Menu Items
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {[1, 2, 3, 4].map((item) => (
+                    <div key={item} className="flex gap-4 p-4 rounded-lg border border-gray-100 hover:shadow-md transition-shadow">
+                      <img
+                        src={`https://picsum.photos/100/100?random=${item}`}
+                        alt="Menu item"
+                        className="w-24 h-24 rounded-lg object-cover"
+                      />
+                      <div>
+                        <h3 className="font-semibold text-secondary">Menu Item {item}</h3>
+                        <p className="text-sm text-gray-600 mt-1">Description of the menu item goes here</p>
+                        <p className="text-primary font-semibold mt-2">$15.99</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Full Menu */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <List className="w-6 h-6" />
+                  Full Menu
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Price</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[1, 2, 3, 4, 5].map((item) => (
+                      <TableRow key={item}>
+                        <TableCell className="font-medium">Menu Item {item}</TableCell>
+                        <TableCell>Delicious description of menu item {item}</TableCell>
+                        <TableCell>${(10 + item).toFixed(2)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-8">
             {/* Match Score Details */}
-            <div className="bg-white rounded-xl p-8 shadow-lg">
-              <h2 className="text-2xl font-bold text-secondary mb-6">Match Details</h2>
-              <div className="space-y-4">
-                {["Taste Profile", "Price Range", "Atmosphere", "Service"].map((category) => (
-                  <div key={category} className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">{category}</span>
-                      <span className="text-primary font-semibold">90%</span>
+            <Card>
+              <CardHeader>
+                <CardTitle>Why We Think You'll Love It</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {["Taste Profile", "Price Range", "Atmosphere", "Service"].map((category) => (
+                    <div key={category} className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">{category}</span>
+                        <span className="text-primary font-semibold">90%</span>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-primary rounded-full" style={{ width: "90%" }} />
+                      </div>
                     </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-primary rounded-full" style={{ width: "90%" }} />
-                    </div>
-                  </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Order Options */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Order Now</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {[
+                  { name: "OpenTable", link: "#" },
+                  { name: "DoorDash", link: "#" },
+                  { name: "Uber Eats", link: "#" }
+                ].map((platform) => (
+                  <Button
+                    key={platform.name}
+                    variant="outline"
+                    className="w-full justify-between"
+                    asChild
+                  >
+                    <a href={platform.link} target="_blank" rel="noopener noreferrer">
+                      {platform.name}
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </Button>
                 ))}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Additional Info */}
-            <div className="bg-white rounded-xl p-8 shadow-lg">
-              <h2 className="text-2xl font-bold text-secondary mb-6">Additional Information</h2>
-              <div className="space-y-4 text-gray-600">
-                <div>
-                  <h3 className="font-semibold mb-2">Cuisine Type</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {["Italian", "Mediterranean", "European"].map((cuisine) => (
-                      <span key={cuisine} className="px-3 py-1 bg-primary/10 rounded-full text-primary text-sm">
-                        {cuisine}
-                      </span>
-                    ))}
+            <Card>
+              <CardHeader>
+                <CardTitle>Additional Information</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4 text-gray-600">
+                  <div>
+                    <h3 className="font-semibold mb-2">Cuisine Type</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {["Italian", "Mediterranean", "European"].map((cuisine) => (
+                        <span key={cuisine} className="px-3 py-1 bg-primary/10 rounded-full text-primary text-sm">
+                          {cuisine}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-2">Features</h3>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>Outdoor seating</li>
+                      <li>Wheelchair accessible</li>
+                      <li>Free Wi-Fi</li>
+                      <li>Takes reservations</li>
+                    </ul>
                   </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold mb-2">Features</h3>
-                  <ul className="list-disc list-inside space-y-1">
-                    <li>Outdoor seating</li>
-                    <li>Wheelchair accessible</li>
-                    <li>Free Wi-Fi</li>
-                    <li>Takes reservations</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
