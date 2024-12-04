@@ -15,14 +15,14 @@ interface MatchScoreCardProps {
 const MatchScoreCard = ({ categories }: MatchScoreCardProps) => {
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
-      <CardHeader className="border-b border-gray-100 p-4">
-        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-          <Star className="w-5 h-5 text-yellow-400 fill-current" />
+      <CardHeader className="border-b border-gray-100">
+        <CardTitle className="flex items-center gap-2 text-2xl">
+          <Star className="w-6 h-6 text-yellow-400 fill-current" />
           Why We Think You'll Love It
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-4">
-        <div className="space-y-4">
+      <CardContent className="pt-6">
+        <div className="space-y-6">
           {categories.map((item, index) => (
             <div
               key={item.category}
@@ -31,24 +31,24 @@ const MatchScoreCard = ({ categories }: MatchScoreCardProps) => {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">{item.icon}</span>
-                  <span className="font-medium text-secondary text-sm">
+                  <span className="text-xl">{item.icon}</span>
+                  <span className="font-medium text-secondary">
                     {item.category}
                   </span>
                 </div>
-                <span className="text-primary font-bold text-sm">
+                <span className="text-primary font-bold">
                   {item.score}%
                 </span>
               </div>
               <div className="relative pt-1">
-                <div className="overflow-hidden h-1.5 text-xs flex rounded-full bg-gray-100">
+                <div className="overflow-hidden h-2 text-xs flex rounded-full bg-gray-100">
                   <div
                     style={{ width: `${item.score}%` }}
                     className="animate-[slideRight_1s_ease-out] shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary"
                   />
                 </div>
               </div>
-              <p className="text-xs text-gray-600">{item.description}</p>
+              <p className="text-sm text-gray-600">{item.description}</p>
             </div>
           ))}
         </div>
