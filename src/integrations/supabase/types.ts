@@ -9,7 +9,51 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      user_preferences: {
+        Row: {
+          atmosphere_preferences: string[] | null
+          created_at: string | null
+          cuisine_preferences: string[] | null
+          dietary_restrictions: string[] | null
+          favorite_ingredients: string[] | null
+          id: string
+          preferred_dining_times: string[] | null
+          price_range: Database["public"]["Enums"]["price_range"] | null
+          special_considerations: string | null
+          spice_level: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          atmosphere_preferences?: string[] | null
+          created_at?: string | null
+          cuisine_preferences?: string[] | null
+          dietary_restrictions?: string[] | null
+          favorite_ingredients?: string[] | null
+          id?: string
+          preferred_dining_times?: string[] | null
+          price_range?: Database["public"]["Enums"]["price_range"] | null
+          special_considerations?: string | null
+          spice_level?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          atmosphere_preferences?: string[] | null
+          created_at?: string | null
+          cuisine_preferences?: string[] | null
+          dietary_restrictions?: string[] | null
+          favorite_ingredients?: string[] | null
+          id?: string
+          preferred_dining_times?: string[] | null
+          price_range?: Database["public"]["Enums"]["price_range"] | null
+          special_considerations?: string | null
+          spice_level?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +62,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      price_range: "budget" | "moderate" | "upscale" | "luxury"
     }
     CompositeTypes: {
       [_ in never]: never
