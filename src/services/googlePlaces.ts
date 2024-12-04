@@ -20,9 +20,8 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
     }
     
     console.log('Making API request with Place ID:', placeId);
-    // Request more specific fields from the API
     const response = await fetch(
-      `${baseUrl}/details/json?place_id=${placeId}&fields=name,rating,user_ratings_total,formatted_address,formatted_phone_number,opening_hours/weekday_text,opening_hours/periods,website,price_level,photos,types,vicinity,utc_offset,reviews&key=${GOOGLE_API_KEY}`
+      `${baseUrl}/details/json?place_id=${placeId}&fields=name,rating,user_ratings_total,formatted_address,formatted_phone_number,opening_hours,website,price_level,photos,types,vicinity,utc_offset,reviews&key=${GOOGLE_API_KEY}`
     );
 
     if (response.status === 403) {
@@ -57,6 +56,15 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
     ) || [];
 
     console.log('Generated photo URLs:', photoUrls);
+    console.log('Opening hours data:', data.result.opening_hours);
+
+    let hoursText = 'Hours not available';
+    if (data.result.opening_hours?.weekday_text?.length > 0) {
+      hoursText = data.result.opening_hours.weekday_text.join(', ');
+    } else if (data.result.opening_hours?.periods) {
+      // Fallback to using periods if weekday_text is not available
+      hoursText = 'Open - Check with restaurant for specific hours';
+    }
 
     // Transform the API response into our RestaurantDetails format
     const restaurantDetails: RestaurantDetails = {
@@ -65,7 +73,7 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
       rating: data.result.rating || 0,
       reviews: data.result.user_ratings_total || 0,
       address: data.result.formatted_address || data.result.vicinity || 'Address Not Available',
-      hours: data.result.opening_hours?.weekday_text?.[0] || 'Hours not available',
+      hours: hoursText,
       phone: data.result.formatted_phone_number || '',
       website: data.result.website || '',
       photos: photoUrls,
