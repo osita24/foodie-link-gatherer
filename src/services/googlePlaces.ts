@@ -3,26 +3,52 @@ import { RestaurantDetails } from "@/types/restaurant";
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
 const CORS_PROXY = 'https://cors-anywhere.herokuapp.com';
 
-// Helper function to extract Place ID from Google Maps URL
 const extractPlaceId = (placeId: string): string => {
+  console.log('Attempting to extract Place ID from:', placeId);
+  
   // If it's already a place ID, return it
   if (placeId.startsWith('ChIJ')) {
     return placeId;
   }
 
-  // Try to extract from Google Maps URL
   try {
     const url = new URL(placeId);
-    const pathParts = url.pathname.split('/');
-    const placeIndex = pathParts.indexOf('place') + 1;
-    if (placeIndex > 0 && placeIndex < pathParts.length) {
-      const locationPart = pathParts[placeIndex];
-      const matches = locationPart.match(/.*!3m.*!1s(.*?)!/);
-      if (matches && matches[1]) {
-        console.log('Extracted Place ID:', matches[1]);
-        return matches[1];
+    
+    // Try to extract from URL parameters
+    const urlParams = new URLSearchParams(url.search);
+    const paths = url.pathname.split('/');
+    
+    // Check for place ID in the URL parameters
+    for (const [key, value] of urlParams.entries()) {
+      if (value.startsWith('0x')) {
+        const placeId = value;
+        console.log('Found Place ID in URL parameters:', placeId);
+        return placeId;
       }
     }
+    
+    // Try to extract from pathname
+    const placeIndex = paths.indexOf('place');
+    if (placeIndex !== -1 && placeIndex + 1 < paths.length) {
+      const nextSegment = paths[placeIndex + 1];
+      if (nextSegment.includes('@')) {
+        // Handle case where coordinates are in the path
+        const coordMatch = nextSegment.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+        if (coordMatch) {
+          console.log('Found coordinates in path:', coordMatch[1], coordMatch[2]);
+          // You might want to implement reverse geocoding here
+        }
+      }
+    }
+
+    // Look for place ID in the entire URL
+    const fullUrl = decodeURIComponent(url.toString());
+    const placeIdMatch = fullUrl.match(/!1s(0x[a-fA-F0-9]+:[a-fA-F0-9]+)!/);
+    if (placeIdMatch && placeIdMatch[1]) {
+      console.log('Extracted Place ID from URL:', placeIdMatch[1]);
+      return placeIdMatch[1];
+    }
+
     throw new Error('Could not extract Place ID from URL');
   } catch (error) {
     console.error('Error extracting Place ID:', error);
@@ -44,23 +70,21 @@ export const fetchRestaurantDetails = async (inputId: string): Promise<Restauran
 
     const baseUrl = `${CORS_PROXY}/https://maps.googleapis.com/maps/api/place`;
     
-    // Request specific fields we need
+    // Request all necessary fields
     const fields = [
       'name',
       'rating',
       'user_ratings_total',
       'formatted_address',
       'formatted_phone_number',
-      'opening_hours/weekday_text',
-      'opening_hours/periods',
       'opening_hours',
       'website',
       'price_level',
       'photos',
+      'reviews',
       'types',
       'vicinity',
-      'utc_offset',
-      'reviews'
+      'utc_offset'
     ].join(',');
 
     console.log('Making API request for fields:', fields);
@@ -118,7 +142,7 @@ export const fetchRestaurantDetails = async (inputId: string): Promise<Restauran
     // Transform the API response into our RestaurantDetails format
     const restaurantDetails: RestaurantDetails = {
       id: placeId,
-      name: data.result.name || 'Restaurant Name Not Available',
+      name: data.result.name,
       rating: data.result.rating || 0,
       reviews: data.result.user_ratings_total || 0,
       address: data.result.formatted_address || data.result.vicinity || 'Address Not Available',
