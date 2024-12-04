@@ -11,7 +11,16 @@ const RestaurantDetails = () => {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-background pt-24">
+      <div className="min-h-screen bg-background">
+        {/* Hero Image Section */}
+        <div className="w-full h-[300px] relative">
+          <img 
+            src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4"
+            alt="Restaurant hero"
+            className="w-full h-full object-cover"
+          />
+        </div>
+
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Main Content */}
@@ -57,7 +66,7 @@ const RestaurantDetails = () => {
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-8 md:sticky md:top-8 self-start">
+            <div className="space-y-8 md:sticky md:top-24 self-start">
               {/* Match Score Details */}
               <Card className="hover:shadow-lg transition-shadow duration-300">
                 <CardHeader>
