@@ -1,6 +1,4 @@
 import { RestaurantDetails } from "@/types/restaurant";
-import { fetchYelpMenuData } from "./yelpApi";
-import { fetchOpenTableMenuData } from "./openTableApi";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
 const CORS_PROXY = 'https://cors-anywhere.herokuapp.com';
@@ -52,24 +50,12 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
       throw new Error('No restaurant data found');
     }
 
-    // Create photo URLs
+    // Create photo URLs without CORS proxy
     const photoUrls = data.result.photos?.map((photo: any) => 
       `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${GOOGLE_API_KEY}`
     ) || [];
 
-    // Try to fetch menu data from backup sources
-    let menuData = null;
-    if (data.result.name && data.result.formatted_address) {
-      console.log('Attempting to fetch menu data from backup sources');
-      
-      // Try Yelp first
-      menuData = await fetchYelpMenuData(data.result.name, data.result.formatted_address);
-      
-      // If no Yelp data, try OpenTable
-      if (!menuData) {
-        menuData = await fetchOpenTableMenuData(data.result.name, data.result.formatted_address);
-      }
-    }
+    console.log('Generated photo URLs:', photoUrls);
 
     // Transform the API response into our RestaurantDetails format
     return {
@@ -83,7 +69,6 @@ export const fetchRestaurantDetails = async (placeId: string): Promise<Restauran
       website: data.result.website || '',
       photos: photoUrls,
       priceLevel: data.result.price_level || 0,
-      menu: menuData?.menu || undefined,
       openingHours: data.result.opening_hours ? {
         periods: data.result.opening_hours.periods,
         weekdayText: data.result.opening_hours.weekday_text,
