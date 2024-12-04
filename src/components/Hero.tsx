@@ -2,9 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const Hero = () => {
   const [restaurantUrl, setRestaurantUrl] = useState("");
+  const navigate = useNavigate();
 
   const handleImport = () => {
     if (!restaurantUrl) {
@@ -16,16 +18,17 @@ const Hero = () => {
     // Clear the input after submission
     setRestaurantUrl("");
     toast.success("Processing your restaurant...");
+    
+    // Navigate to the restaurant details page
+    // In a real app, you'd first process the URL and get the restaurant ID
+    navigate('/restaurant/sample-id');
   };
 
   return (
-    <section className="pt-32 pb-20 px-4 bg-gradient-to-b from-accent/30 to-background overflow-hidden">
-      <div className="container mx-auto text-center">
-        <h1 className="text-4xl md:text-6xl font-bold text-secondary mb-6 animate-fade-up">
-          Welcome to
-          <span className="block text-primary animate-fade-up" style={{ animationDelay: "200ms" }}>
-            FindDine
-          </span>
+    <section className="py-20 md:py-32 bg-gradient-to-b from-white to-gray-50">
+      <div className="container px-4 mx-auto text-center">
+        <h1 className="text-4xl md:text-6xl font-bold mb-8 animate-fade-up">
+          Find Your Perfect Dining Match with FindDine
         </h1>
         <p className="text-lg md:text-xl text-gray-600 mb-12 max-w-2xl mx-auto animate-fade-up" style={{ animationDelay: "400ms" }}>
           Discover restaurants that perfectly match your taste. Import from Google Maps and get personalized menu recommendations.
