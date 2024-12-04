@@ -6,47 +6,36 @@ const CORS_PROXY = 'https://cors-anywhere.herokuapp.com';
 const extractPlaceId = (placeId: string): string => {
   console.log('Attempting to extract Place ID from:', placeId);
   
-  // If it's already a place ID, return it
-  if (placeId.startsWith('ChIJ')) {
+  // If it's already a place ID starting with ChIJ or 0x, return it
+  if (placeId.startsWith('ChIJ') || placeId.startsWith('0x')) {
+    console.log('Using provided Place ID:', placeId);
     return placeId;
   }
 
   try {
     const url = new URL(placeId);
-    
-    // Try to extract from URL parameters
     const urlParams = new URLSearchParams(url.search);
-    const paths = url.pathname.split('/');
     
-    // Check for place ID in the URL parameters
-    for (const [key, value] of urlParams.entries()) {
-      if (value.startsWith('0x')) {
-        const placeId = value;
-        console.log('Found Place ID in URL parameters:', placeId);
-        return placeId;
-      }
-    }
-    
-    // Try to extract from pathname
-    const placeIndex = paths.indexOf('place');
-    if (placeIndex !== -1 && placeIndex + 1 < paths.length) {
-      const nextSegment = paths[placeIndex + 1];
-      if (nextSegment.includes('@')) {
-        // Handle case where coordinates are in the path
-        const coordMatch = nextSegment.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-        if (coordMatch) {
-          console.log('Found coordinates in path:', coordMatch[1], coordMatch[2]);
-          // You might want to implement reverse geocoding here
-        }
-      }
+    // First try: Check for place ID in the URL parameters
+    const placeParam = urlParams.get('place_id');
+    if (placeParam) {
+      console.log('Found Place ID in URL parameters:', placeParam);
+      return placeParam;
     }
 
-    // Look for place ID in the entire URL
+    // Second try: Look for the hex format ID in the URL
     const fullUrl = decodeURIComponent(url.toString());
-    const placeIdMatch = fullUrl.match(/!1s(0x[a-fA-F0-9]+:[a-fA-F0-9]+)!/);
-    if (placeIdMatch && placeIdMatch[1]) {
-      console.log('Extracted Place ID from URL:', placeIdMatch[1]);
-      return placeIdMatch[1];
+    const hexMatch = fullUrl.match(/!1s(0x[a-fA-F0-9]+:[a-fA-F0-9]+)/);
+    if (hexMatch && hexMatch[1]) {
+      console.log('Found hex format Place ID:', hexMatch[1]);
+      return hexMatch[1];
+    }
+
+    // Third try: Look for a ChIJ format ID
+    const chijMatch = fullUrl.match(/!1s(ChIJ[^!]+)/);
+    if (chijMatch && chijMatch[1]) {
+      console.log('Found ChIJ format Place ID:', chijMatch[1]);
+      return chijMatch[1];
     }
 
     throw new Error('Could not extract Place ID from URL');
