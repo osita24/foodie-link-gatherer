@@ -127,7 +127,7 @@ const RestaurantDetails = () => {
               {restaurant && <RestaurantInfo restaurant={restaurant} />}
               <PopularItems />
               <MenuSection />
-              <PhotosSection />
+              {restaurant && <PhotosSection photos={restaurant.photos} />}
             </div>
 
             <div className="space-y-8 md:sticky md:top-24 self-start">

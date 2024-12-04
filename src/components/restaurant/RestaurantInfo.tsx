@@ -8,7 +8,23 @@ interface RestaurantInfoProps {
 
 const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
   const getPriceLevel = (level: number) => {
-    return Array(level).fill('$').join('');
+    const priceMap: { [key: number]: string } = {
+      1: 'Inexpensive',
+      2: 'Moderate',
+      3: 'Expensive',
+      4: 'Very Expensive'
+    };
+    
+    return (
+      <div className="flex items-center gap-2">
+        <span className="font-semibold text-green-600">
+          {'$'.repeat(level)}
+        </span>
+        <span className="text-sm text-gray-600">
+          ({priceMap[level] || 'Price not available'})
+        </span>
+      </div>
+    );
   };
 
   return (
