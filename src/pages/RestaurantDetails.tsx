@@ -4,7 +4,7 @@ import MenuSection from "@/components/restaurant/MenuSection";
 import PhotosSection from "@/components/restaurant/PhotosSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Star, ExternalLink, BookmarkPlus } from "lucide-react";
+import { Star, ExternalLink, BookmarkPlus, Share2 } from "lucide-react";
 import Header from "@/components/Header";
 
 const RestaurantDetails = () => {
@@ -19,15 +19,26 @@ const RestaurantDetails = () => {
             alt="Restaurant hero"
             className="w-full h-full object-cover"
           />
-          {/* Save Button - Floating on hero image */}
-          <Button
-            variant="outline"
-            className="absolute top-4 right-4 bg-white/80 backdrop-blur-sm hover:bg-white"
-            onClick={() => console.log('Restaurant saved')}
-          >
-            <BookmarkPlus className="mr-2 h-4 w-4" />
-            Save
-          </Button>
+          {/* Action Buttons */}
+          <div className="absolute bottom-4 right-4 flex gap-2">
+            <Button
+              size="lg"
+              className="bg-primary text-white hover:bg-primary/90"
+              onClick={() => console.log('Restaurant saved')}
+            >
+              <BookmarkPlus className="mr-2 h-5 w-5" />
+              Save
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="bg-white/80 backdrop-blur-sm hover:bg-white"
+              onClick={() => console.log('Share clicked')}
+            >
+              <Share2 className="mr-2 h-5 w-5" />
+              Share
+            </Button>
+          </div>
         </div>
 
         <div className="container mx-auto px-4">
