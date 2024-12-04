@@ -27,6 +27,20 @@ const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
     );
   };
 
+  const getTodayHours = (hoursText: string): string => {
+    const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const today = daysOfWeek[new Date().getDay()];
+    
+    if (hoursText.includes('|')) {
+      // Split the hours text and find today's hours
+      const allHours = hoursText.split('|').map(day => day.trim());
+      const todayHours = allHours.find(day => day.startsWith(today));
+      return todayHours ? todayHours : 'Hours not available for today';
+    }
+    
+    return hoursText;
+  };
+
   return (
     <div className="bg-white rounded-xl p-8 shadow-lg -mt-20 relative z-10">
       <div className="flex justify-between items-start mb-6">
@@ -57,7 +71,7 @@ const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
         </div>
         <div className="flex items-center gap-2 hover:text-primary transition-colors">
           <Clock className="w-5 h-5" />
-          <span>{restaurant.hours}</span>
+          <span>{getTodayHours(restaurant.hours)}</span>
         </div>
         {restaurant.phone && (
           <div className="flex items-center gap-2 hover:text-primary transition-colors">
