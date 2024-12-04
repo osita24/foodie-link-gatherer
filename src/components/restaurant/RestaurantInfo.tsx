@@ -35,7 +35,6 @@ const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
     
     try {
       if (hoursText.includes('|')) {
-        // Split the hours text and find today's hours
         const allHours = hoursText.split('|').map(day => day.trim());
         const todayHours = allHours.find(day => day.startsWith(today));
         return todayHours ? todayHours : 'Hours not available for today';
