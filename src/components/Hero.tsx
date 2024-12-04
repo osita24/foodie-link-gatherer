@@ -7,25 +7,35 @@ import { extractPlaceId } from "@/utils/googleMapsUrl";
 
 const Hero = () => {
   const [restaurantUrl, setRestaurantUrl] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (!restaurantUrl) {
       toast.error("Please enter a restaurant URL");
       return;
     }
     
+    setIsProcessing(true);
     console.log("Importing restaurant:", restaurantUrl);
-    const placeId = extractPlaceId(restaurantUrl);
     
-    if (!placeId) {
-      toast.error("Please use a direct Google Maps link. Shortened URLs (g.co) are not supported yet.");
-      return;
-    }
+    try {
+      const placeId = await extractPlaceId(restaurantUrl);
+      
+      if (!placeId) {
+        toast.error("Could not extract restaurant information from the URL. Please check the link and try again.");
+        return;
+      }
 
-    setRestaurantUrl("");
-    toast.success("Processing your restaurant...");
-    navigate(`/restaurant/${placeId}`);
+      setRestaurantUrl("");
+      toast.success("Processing your restaurant...");
+      navigate(`/restaurant/${placeId}`);
+    } catch (error) {
+      console.error("Error processing URL:", error);
+      toast.error("An error occurred while processing the URL. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -51,14 +61,16 @@ const Hero = () => {
               className="flex-grow text-lg p-6 bg-white border-2 border-gray-200 
                 focus:border-primary focus:ring-2 focus:ring-primary/20
                 rounded-lg transition-all duration-300"
+              disabled={isProcessing}
             />
             <Button 
               onClick={handleImport}
               className="bg-primary hover:bg-primary/90 text-white px-8 py-6 text-lg font-semibold
                 transition-all duration-300 hover:scale-105 hover:shadow-lg rounded-lg
                 focus:ring-4 focus:ring-primary/20 active:scale-95"
+              disabled={isProcessing}
             >
-              Find Match
+              {isProcessing ? "Processing..." : "Find Match"}
             </Button>
           </div>
           <p className="text-sm text-gray-500 mt-4 animate-fade-up" style={{ animationDelay: "600ms" }}>

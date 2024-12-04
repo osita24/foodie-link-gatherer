@@ -1,16 +1,22 @@
 /**
  * Extracts place ID from various Google Maps URL formats
  */
-export const extractPlaceId = (url: string): string | null => {
+export const extractPlaceId = async (url: string): Promise<string | null> => {
   console.log('Attempting to extract Place ID from URL:', url);
 
   try {
     // Handle shortened g.co links
     if (url.includes('g.co/kgs/')) {
-      console.log('Detected shortened g.co URL');
-      // For shortened URLs, we'll need to make an API call to get the actual place ID
-      // For now, return null to indicate we need a different URL format
-      return null;
+      console.log('Detected shortened g.co URL, following redirect...');
+      try {
+        const response = await fetch(url);
+        const fullUrl = response.url;
+        console.log('Resolved shortened URL to:', fullUrl);
+        return extractPlaceId(fullUrl);
+      } catch (error) {
+        console.error('Error resolving shortened URL:', error);
+        return null;
+      }
     }
 
     // Handle regular Google Maps URLs
@@ -39,6 +45,13 @@ export const extractPlaceId = (url: string): string | null => {
     if (matches && matches[1]) {
       console.log('Extracted Place ID from URL data:', matches[1]);
       return matches[1];
+    }
+
+    // Format: maps/place/.../data=!4m[numbers]!1s[placeId]!
+    const altMatches = url.match(/!1s([^!]+)(?:!|$)/);
+    if (altMatches && altMatches[1]) {
+      console.log('Extracted Place ID from alternative URL format:', altMatches[1]);
+      return altMatches[1];
     }
 
     console.log('No Place ID found in URL');
