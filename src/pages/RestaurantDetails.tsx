@@ -29,6 +29,33 @@ const RestaurantDetails = () => {
     }, 1000);
   };
 
+  const matchCategories = [
+    {
+      category: "Taste Profile",
+      score: 90,
+      description: "Matches your preference for spicy Asian cuisine",
+      icon: "🌶️"
+    },
+    {
+      category: "Price Range",
+      score: 85,
+      description: "Within your typical dining budget",
+      icon: "💰"
+    },
+    {
+      category: "Atmosphere",
+      score: 95,
+      description: "Casual dining with modern ambiance",
+      icon: "✨"
+    },
+    {
+      category: "Service",
+      score: 88,
+      description: "Known for attentive staff",
+      icon: "👨‍🍳"
+    }
+  ];
+
   return (
     <>
       <Header />
@@ -116,24 +143,41 @@ const RestaurantDetails = () => {
             {/* Sidebar */}
             <div className="space-y-8 md:sticky md:top-24 self-start">
               {/* Match Score Details */}
-              <Card className="hover:shadow-lg transition-shadow duration-300">
-                <CardHeader>
-                  <CardTitle>Why We Think You'll Love It</CardTitle>
+              <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                <CardHeader className="border-b border-gray-100">
+                  <CardTitle className="flex items-center gap-2 text-2xl">
+                    <Star className="w-6 h-6 text-yellow-400 fill-current" />
+                    Why We Think You'll Love It
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {["Taste Profile", "Price Range", "Atmosphere", "Service"].map((category) => (
-                      <div key={category} className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">{category}</span>
-                          <span className="text-primary font-semibold">90%</span>
+                <CardContent className="pt-6">
+                  <div className="space-y-6">
+                    {matchCategories.map((item, index) => (
+                      <div
+                        key={item.category}
+                        className="space-y-2 animate-fade-up"
+                        style={{ animationDelay: `${index * 150}ms` }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">{item.icon}</span>
+                            <span className="font-medium text-secondary">
+                              {item.category}
+                            </span>
+                          </div>
+                          <span className="text-primary font-bold">
+                            {item.score}%
+                          </span>
                         </div>
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-primary rounded-full transition-all duration-500" 
-                            style={{ width: "90%" }} 
-                          />
+                        <div className="relative pt-1">
+                          <div className="overflow-hidden h-2 text-xs flex rounded-full bg-gray-100">
+                            <div
+                              style={{ width: `${item.score}%` }}
+                              className="animate-[slideRight_1s_ease-out] shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary"
+                            />
+                          </div>
                         </div>
+                        <p className="text-sm text-gray-600">{item.description}</p>
                       </div>
                     ))}
                   </div>
