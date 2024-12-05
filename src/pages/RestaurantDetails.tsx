@@ -14,42 +14,49 @@ import { RestaurantDetails as RestaurantDetailsType } from "@/types/restaurant";
 
 const RestaurantDetails = () => {
   const [restaurant, setRestaurant] = useState<RestaurantDetailsType | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const loadRestaurantData = () => {
-      try {
-        // Get restaurant data from sessionStorage
-        const storedData = sessionStorage.getItem('currentRestaurant');
-        console.log("Retrieved stored data:", storedData);
-        
-        if (!storedData) {
-          console.log("No restaurant data found in storage");
-          navigate('/');
-          return;
-        }
+    // Try to load restaurant data from localStorage
+    const storedData = localStorage.getItem('currentRestaurant');
+    
+    if (!storedData) {
+      toast.error("No restaurant data found");
+      navigate('/');
+      return;
+    }
 
-        const parsedData = JSON.parse(storedData);
-        console.log("Parsed restaurant data:", parsedData);
-        
-        if (!parsedData) {
-          console.log("Invalid restaurant data");
-          navigate('/');
-          return;
-        }
-
-        setRestaurant(parsedData);
-      } catch (error) {
-        console.error("Error loading restaurant data:", error);
-        navigate('/');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadRestaurantData();
+    try {
+      const restaurantData = JSON.parse(storedData);
+      setRestaurant(restaurantData);
+    } catch (error) {
+      console.error("Error loading restaurant data:", error);
+      navigate('/');
+    }
   }, [navigate]);
+
+  // Show loading state while data is being loaded
+  if (!restaurant) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="animate-fade-up space-y-4 p-4">
+          <div className="w-full h-[40vh] bg-gray-200 animate-pulse rounded-lg" />
+          <div className="container mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+                  <div className="h-8 bg-gray-200 animate-pulse rounded w-3/4" />
+                  <div className="h-4 bg-gray-200 animate-pulse rounded w-1/2" />
+                  <div className="h-4 bg-gray-200 animate-pulse rounded w-2/3" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const matchCategories = [
     {
@@ -77,28 +84,6 @@ const RestaurantDetails = () => {
       icon: "👨‍🍳"
     }
   ];
-
-  if (isLoading || !restaurant) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="animate-fade-up space-y-4 p-4">
-          <div className="w-full h-[40vh] bg-gray-200 animate-pulse rounded-lg" />
-          <div className="container mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-6">
-                <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-                  <div className="h-8 bg-gray-200 animate-pulse rounded w-3/4" />
-                  <div className="h-4 bg-gray-200 animate-pulse rounded w-1/2" />
-                  <div className="h-4 bg-gray-200 animate-pulse rounded w-2/3" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background pb-20 animate-fade-up">

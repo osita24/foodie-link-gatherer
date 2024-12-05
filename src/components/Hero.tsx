@@ -17,38 +17,25 @@ const Hero = () => {
     }
     
     setIsProcessing(true);
-    console.log("Starting URL expansion process for:", restaurantUrl);
     
     try {
-      console.log("Calling edge function with URL:", restaurantUrl);
+      // Call the edge function to get restaurant data
       const { data, error } = await supabase.functions.invoke('google-maps-proxy', {
         body: { url: restaurantUrl }
       });
 
-      console.log("Edge function response data:", data);
+      if (error) throw error;
+      if (!data?.result) throw new Error("No restaurant data found");
 
-      if (error) {
-        console.error("Edge function error:", error);
-        throw new Error(error.message);
-      }
-
-      if (!data?.result) {
-        throw new Error("No restaurant data found in response");
-      }
-
-      // Store the restaurant data in sessionStorage
-      const restaurantData = data.result;
-      console.log("Storing restaurant data:", restaurantData);
-      sessionStorage.setItem('currentRestaurant', JSON.stringify(restaurantData));
+      // Store in localStorage instead of sessionStorage for better persistence
+      localStorage.setItem('currentRestaurant', JSON.stringify(data.result));
       
-      // Navigate to restaurant details page
+      // Navigate to details page
       navigate('/restaurant/details');
       
-      toast.success("Found restaurant!");
-      
     } catch (error) {
-      console.error("Error processing URL:", error);
-      toast.error(error instanceof Error ? error.message : "An error occurred while processing the URL");
+      console.error("Error:", error);
+      toast.error("Failed to find restaurant. Please try again.");
     } finally {
       setIsProcessing(false);
     }
