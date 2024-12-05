@@ -10,8 +10,17 @@ export async function searchRestaurant(url: string): Promise<any> {
   }
 
   try {
+    // First expand the URL if it's shortened
+    let fullUrl = url;
+    if (url.includes('goo.gl')) {
+      console.log('📎 Expanding shortened URL...');
+      const response = await fetch(url, { redirect: 'follow' });
+      fullUrl = response.url;
+      console.log('📎 Expanded URL:', fullUrl);
+    }
+
     // Extract search text from URL
-    const searchText = extractSearchText(url);
+    const searchText = extractSearchText(fullUrl);
     console.log('📝 Search text extracted:', searchText);
 
     // Search using Places API
@@ -23,6 +32,9 @@ export async function searchRestaurant(url: string): Promise<any> {
     const response = await fetch(searchUrl.toString());
     const data: PlacesSearchResponse = await response.json();
     
+    console.log('📊 Places API response status:', data.status);
+    console.log('📊 Number of results:', data.results?.length || 0);
+    
     if (data.status !== 'OK') {
       console.error('❌ Places API error:', data);
       throw new Error(data.error_message || `Places API error: ${data.status}`);
@@ -33,7 +45,9 @@ export async function searchRestaurant(url: string): Promise<any> {
     }
     
     // Get details for the first (best) result
-    return await getPlaceDetails(data.results[0].place_id);
+    const details = await getPlaceDetails(data.results[0].place_id);
+    console.log('✅ Successfully retrieved place details');
+    return details;
   } catch (error) {
     console.error('❌ Error in searchRestaurant:', error);
     throw error;
@@ -50,7 +64,7 @@ function extractSearchText(url: string): string {
     const searchParams = [
       urlObj.searchParams.get('q'),
       urlObj.searchParams.get('query'),
-      urlObj.pathname.split('/').filter(Boolean).join(' ')
+      decodeURIComponent(urlObj.pathname).split('/').filter(Boolean).join(' ')
     ].filter(Boolean);
 
     const searchText = searchParams[0] || url;

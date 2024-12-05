@@ -20,18 +20,9 @@ serve(async (req) => {
       throw new Error('URL is required');
     }
 
-    // Get the expanded URL if it's a shortened one
-    let fullUrl = url;
-    if (url.includes('goo.gl')) {
-      console.log('📎 Expanding shortened URL...');
-      const response = await fetch(url, { redirect: 'follow' });
-      fullUrl = response.url;
-      console.log('📎 Expanded URL:', fullUrl);
-    }
-
     // Search directly with the URL text
     console.log('🔎 Searching for restaurant...');
-    const result = await searchRestaurant(fullUrl);
+    const result = await searchRestaurant(url);
     console.log('✅ Found restaurant details:', result);
 
     return new Response(
