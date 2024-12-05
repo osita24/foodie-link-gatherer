@@ -3,6 +3,7 @@ import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from "@/integrations/supabase/client";
 import { BookmarkPlus, Sparkles, UserCircle } from "lucide-react";
+import { useEffect } from "react";
 
 interface AuthModalProps {
   open: boolean;
@@ -11,6 +12,21 @@ interface AuthModalProps {
 
 const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   console.log("Rendering AuthModal with open:", open);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", event, session?.user?.id);
+      if (session) {
+        console.log("User is authenticated, closing modal");
+        onOpenChange(false);
+      }
+    });
+
+    return () => {
+      console.log("Cleaning up auth subscription");
+      subscription.unsubscribe();
+    };
+  }, [onOpenChange]);
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
