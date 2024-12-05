@@ -33,7 +33,6 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
         console.log('📎 Expanded URL:', finalUrl);
       } catch (error) {
         console.error('Error expanding shortened URL:', error);
-        // If URL expansion fails, try to extract search text from original URL
         finalUrl = url;
       }
     }
@@ -198,6 +197,7 @@ async function getPlaceDetails(placeId: string): Promise<any> {
     'types',
     'user_ratings_total',
     'utc_offset',
+    'place_id',
     'vicinity',
     'business_status',
     'delivery',
@@ -216,7 +216,7 @@ async function getPlaceDetails(placeId: string): Promise<any> {
   
   detailsUrl.searchParams.set('fields', fields);
   
-  console.log('🌐 Making place details request');
+  console.log('🌐 Making place details request with URL:', detailsUrl.toString());
   const response = await fetch(detailsUrl.toString());
   
   if (!response.ok) {
