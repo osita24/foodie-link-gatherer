@@ -2,13 +2,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
 import { fetchRestaurantDetails } from "@/services/googlePlaces";
+import RestaurantPreviewCard from "./restaurant/RestaurantPreviewCard";
+import { RestaurantDetails } from "@/types/restaurant";
 
 const Hero = () => {
   const [restaurantUrl, setRestaurantUrl] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const navigate = useNavigate();
+  const [matchingRestaurants, setMatchingRestaurants] = useState<RestaurantDetails[]>([]);
 
   const handleImport = async () => {
     if (!restaurantUrl) {
@@ -27,9 +28,11 @@ const Hero = () => {
         throw new Error("Could not find restaurant details");
       }
       
+      // For now, we'll just show the single restaurant as a match
+      // In a real implementation, you'd fetch similar restaurants based on preferences
+      setMatchingRestaurants([restaurantDetails]);
       setRestaurantUrl("");
-      toast.success("Processing your restaurant...");
-      navigate(`/restaurant/${restaurantDetails.id}`);
+      toast.success("Found matching restaurants!");
     } catch (error) {
       console.error("Error processing URL:", error);
       toast.error(error instanceof Error ? error.message : "An error occurred while processing the URL");
@@ -40,8 +43,8 @@ const Hero = () => {
 
   return (
     <section className="relative min-h-[70vh] bg-background">
-      <div className="container px-4 mx-auto min-h-[70vh] flex items-center justify-center">
-        <div className="max-w-3xl w-full text-center space-y-8 p-8 rounded-2xl">
+      <div className="container px-4 mx-auto min-h-[70vh]">
+        <div className="max-w-3xl w-full mx-auto text-center space-y-8 p-8 rounded-2xl">
           <h1 className="text-4xl md:text-6xl font-bold mb-8 text-secondary animate-fade-up">
             Find Your Perfect Dining Match with FindDine
           </h1>
@@ -77,6 +80,24 @@ const Hero = () => {
             Works with all Google Maps URLs including shortened links (goo.gl/maps) and share links
           </p>
         </div>
+
+        {matchingRestaurants.length > 0 && (
+          <div className="mt-16 animate-fade-up">
+            <h2 className="text-2xl font-semibold mb-8 text-center">Restaurants That Match Your Taste</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {matchingRestaurants.map((restaurant) => (
+                <RestaurantPreviewCard
+                  key={restaurant.id}
+                  id={restaurant.id}
+                  name={restaurant.name}
+                  rating={restaurant.rating}
+                  address={restaurant.address}
+                  imageUrl={restaurant.photos?.[0]}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
