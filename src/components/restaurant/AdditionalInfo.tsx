@@ -40,18 +40,41 @@ const AdditionalInfo = ({ restaurant }: AdditionalInfoProps) => {
   }
 
   return (
-    <Card className="overflow-hidden bg-background/80 backdrop-blur-sm border-accent hover:shadow-md transition-all duration-300">
-      <CardHeader className="bg-gradient-to-r from-accent to-background pb-4">
-        <CardTitle className="flex items-center gap-2 text-secondary text-lg">
+    <Card className="overflow-hidden bg-white shadow-md hover:shadow-lg transition-all duration-300">
+      <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/20 pb-6">
+        <CardTitle className="flex items-center gap-2.5 text-secondary">
           <Info className="w-5 h-5 text-primary" />
           Additional Information
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 p-4">
-        <InfoSection features={features} />
-        <InfoSection features={meals} />
-        <InfoSection features={drinks} />
-        <InfoSection features={vegetarianOption} />
+      <CardContent className="p-6 space-y-6">
+        {features.length > 0 && (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-secondary/80 mb-3">Services & Amenities</h4>
+            <InfoSection features={features} />
+          </div>
+        )}
+        
+        {meals.length > 0 && (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-secondary/80 mb-3">Meal Service</h4>
+            <InfoSection features={meals} />
+          </div>
+        )}
+        
+        {drinks.length > 0 && (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-secondary/80 mb-3">Beverages</h4>
+            <InfoSection features={drinks} />
+          </div>
+        )}
+        
+        {vegetarianOption.length > 0 && (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-secondary/80 mb-3">Dietary Options</h4>
+            <InfoSection features={vegetarianOption} />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

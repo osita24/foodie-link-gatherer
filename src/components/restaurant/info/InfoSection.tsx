@@ -17,7 +17,7 @@ const InfoSection = ({ features }: InfoSectionProps) => {
   if (!features.length) return null;
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2.5">
       {features.map(feature => (
         <InfoFeature
           key={feature.label}

@@ -9,13 +9,12 @@ const InfoFeature = ({ icon: Icon, label }: InfoFeatureProps) => {
   console.log("Rendering InfoFeature:", label);
   
   return (
-    <span
-      className="px-3 py-1 bg-accent/50 rounded-full text-sm flex items-center gap-1.5 
-                hover:bg-accent transition-colors duration-200 cursor-default"
-    >
+    <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent/20 rounded-full 
+                  hover:bg-accent/30 transition-colors duration-200 cursor-default
+                  border border-accent/10">
       <Icon className="w-3.5 h-3.5 text-primary" />
-      <span className="text-secondary">{label}</span>
-    </span>
+      <span className="text-sm font-medium text-secondary">{label}</span>
+    </div>
   );
 };
 
