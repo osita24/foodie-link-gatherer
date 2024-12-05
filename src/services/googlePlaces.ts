@@ -3,14 +3,34 @@ import { RestaurantDetails } from "@/types/restaurant";
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
 const CORS_PROXY = 'https://cors-anywhere.herokuapp.com';
 
+const cleanPlaceId = (placeId: string): string => {
+  console.log('Cleaning Place ID:', placeId);
+  try {
+    // First decode any URL encoding
+    const decoded = decodeURIComponent(placeId);
+    console.log('Decoded Place ID:', decoded);
+    
+    // Remove any non-alphanumeric characters except underscore
+    const cleaned = decoded.replace(/[^\w]/g, '');
+    console.log('Cleaned Place ID:', cleaned);
+    
+    return cleaned;
+  } catch (error) {
+    console.error('Error cleaning Place ID:', error);
+    return placeId;
+  }
+};
+
 const extractPlaceId = (input: string): string => {
   console.log('Attempting to extract Place ID from:', input);
   
   try {
-    // If it's already a place ID, just return it
+    // If it's already a place ID, clean and return it
     if (input.startsWith('ChIJ') || input.startsWith('0x')) {
       console.log('Input is already a Place ID');
-      return input;
+      const cleaned = cleanPlaceId(input);
+      console.log('Cleaned existing Place ID:', cleaned);
+      return cleaned;
     }
 
     // Try to parse as URL
@@ -20,23 +40,26 @@ const extractPlaceId = (input: string): string => {
     // Check for place_id in URL parameters
     const placeParam = urlParams.get('place_id');
     if (placeParam) {
-      console.log('Found Place ID in URL parameters:', placeParam);
-      return placeParam;
+      const cleaned = cleanPlaceId(placeParam);
+      console.log('Found and cleaned Place ID from URL parameters:', cleaned);
+      return cleaned;
     }
 
     // Look for hex format ID
     const fullUrl = decodeURIComponent(url.toString());
     const hexMatch = fullUrl.match(/!1s(0x[a-fA-F0-9]+:[a-fA-F0-9]+)/);
     if (hexMatch && hexMatch[1]) {
-      console.log('Found hex format Place ID:', hexMatch[1]);
-      return hexMatch[1];
+      const cleaned = cleanPlaceId(hexMatch[1]);
+      console.log('Found and cleaned hex format Place ID:', cleaned);
+      return cleaned;
     }
 
     // Look for ChIJ format ID
     const chijMatch = fullUrl.match(/!1s(ChIJ[^!]+)/);
     if (chijMatch && chijMatch[1]) {
-      console.log('Found ChIJ format Place ID:', chijMatch[1]);
-      return chijMatch[1];
+      const cleaned = cleanPlaceId(chijMatch[1]);
+      console.log('Found and cleaned ChIJ format Place ID:', cleaned);
+      return cleaned;
     }
 
     throw new Error('Could not extract Place ID from URL');
@@ -51,7 +74,7 @@ export const fetchRestaurantDetails = async (inputId: string): Promise<Restauran
   
   try {
     const placeId = extractPlaceId(inputId);
-    console.log('Extracted Place ID:', placeId);
+    console.log('Final extracted and cleaned Place ID:', placeId);
 
     if (!GOOGLE_API_KEY) {
       console.error('Google Places API key not found');
@@ -79,9 +102,7 @@ export const fetchRestaurantDetails = async (inputId: string): Promise<Restauran
 
     console.log('Making API request for fields:', fields);
     
-    // Properly encode the place_id parameter
-    const encodedPlaceId = encodeURIComponent(placeId);
-    const apiUrl = `${baseUrl}/details/json?place_id=${encodedPlaceId}&fields=${fields}&key=${GOOGLE_API_KEY}`;
+    const apiUrl = `${baseUrl}/details/json?place_id=${placeId}&fields=${fields}&key=${GOOGLE_API_KEY}`;
     console.log('Final API URL:', apiUrl);
     
     const response = await fetch(apiUrl);
