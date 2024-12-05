@@ -67,7 +67,22 @@ const RestaurantDetails = () => {
           types: restaurantData.types || [],
           userRatingsTotal: restaurantData.user_ratings_total || 0,
           utcOffset: restaurantData.utc_offset,
-          googleReviews: restaurantData.reviews || []
+          googleReviews: restaurantData.reviews || [],
+          businessStatus: restaurantData.business_status,
+          curbsidePickup: restaurantData.curbside_pickup,
+          delivery: restaurantData.delivery,
+          dineIn: restaurantData.dine_in,
+          priceRange: restaurantData.price_range,
+          reservable: restaurantData.reservable,
+          servesBeer: restaurantData.serves_beer,
+          servesBreakfast: restaurantData.serves_breakfast,
+          servesBrunch: restaurantData.serves_brunch,
+          servesLunch: restaurantData.serves_lunch,
+          servesDinner: restaurantData.serves_dinner,
+          servesVegetarianFood: restaurantData.serves_vegetarian_food,
+          servesWine: restaurantData.serves_wine,
+          takeout: restaurantData.takeout,
+          wheelchairAccessible: restaurantData.wheelchair_accessible_entrance,
         };
 
         setRestaurant(transformedData);
