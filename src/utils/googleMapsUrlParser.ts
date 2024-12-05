@@ -1,6 +1,7 @@
 /**
  * Utility functions for parsing and handling Google Maps URLs
  */
+import { supabase } from "@/integrations/supabase/client";
 
 // Common URL patterns for Google Maps
 const URL_PATTERNS = {
