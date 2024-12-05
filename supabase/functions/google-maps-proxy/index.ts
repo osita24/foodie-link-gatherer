@@ -8,17 +8,17 @@ const corsHeaders = {
 }
 
 async function expandUrl(shortUrl: string): Promise<string> {
-  console.log('Expanding URL:', shortUrl)
+  console.log('🔍 Expanding URL:', shortUrl)
   try {
     const response = await fetch(shortUrl, {
       method: 'GET',
       redirect: 'follow',
     })
     const expandedUrl = response.url
-    console.log('🔍 EXPANDED URL:', expandedUrl)  // Added this log
+    console.log('✨ Expanded URL:', expandedUrl)
     return expandedUrl
   } catch (error) {
-    console.error('Error expanding URL:', error)
+    console.error('❌ Error expanding URL:', error)
     throw new Error('Failed to expand shortened URL')
   }
 }
