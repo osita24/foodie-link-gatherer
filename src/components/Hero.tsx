@@ -20,7 +20,6 @@ const Hero = () => {
     console.log("Starting URL expansion process for:", restaurantUrl);
     
     try {
-      // Call the edge function to expand URL and get place ID
       console.log("Calling edge function with URL:", restaurantUrl);
       const { data, error } = await supabase.functions.invoke('google-maps-proxy', {
         body: { url: restaurantUrl }
@@ -34,9 +33,10 @@ const Hero = () => {
       }
 
       // Navigate to restaurant details with the response data
-      const navigationPath = `/restaurant/${data.result.place_id}`;
-      console.log("Navigating to:", navigationPath);
-      navigate(navigationPath);
+      navigate(`/restaurant/${data.result.place_id}`, { 
+        state: { restaurantData: data.result }
+      });
+      
       toast.success("Found restaurant!");
       
     } catch (error) {

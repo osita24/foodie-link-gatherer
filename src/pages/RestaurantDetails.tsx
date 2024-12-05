@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import Header from "@/components/Header";
 import RestaurantInfo from "@/components/restaurant/RestaurantInfo";
 import PopularItems from "@/components/restaurant/PopularItems";
@@ -13,7 +13,12 @@ import { useRestaurantData } from "@/hooks/useRestaurantData";
 
 const RestaurantDetails = () => {
   const { id = '' } = useParams();
-  const { data: restaurant, isLoading, error } = useRestaurantData(id);
+  const location = useLocation();
+  const initialData = location.state?.restaurantData;
+  
+  console.log("Initial restaurant data from navigation:", initialData);
+  
+  const { data: restaurant, isLoading, error } = useRestaurantData(id, initialData);
 
   const matchCategories = [
     {
@@ -47,21 +52,15 @@ const RestaurantDetails = () => {
       <div className="min-h-screen bg-background">
         <Header />
         <div className="animate-fade-up space-y-4 p-4">
-          {/* Hero section skeleton */}
           <div className="w-full h-[40vh] bg-gray-200 animate-pulse rounded-lg" />
-          
-          {/* Content skeleton */}
           <div className="container mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
-                {/* Restaurant info skeleton */}
                 <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
                   <div className="h-8 bg-gray-200 animate-pulse rounded w-3/4" />
                   <div className="h-4 bg-gray-200 animate-pulse rounded w-1/2" />
                   <div className="h-4 bg-gray-200 animate-pulse rounded w-2/3" />
                 </div>
-                
-                {/* Menu recommendations skeleton */}
                 <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
                   <div className="h-6 bg-gray-200 animate-pulse rounded w-1/3" />
                   <div className="grid grid-cols-2 gap-4">
@@ -70,8 +69,6 @@ const RestaurantDetails = () => {
                   </div>
                 </div>
               </div>
-              
-              {/* Sidebar skeleton */}
               <div className="hidden lg:block space-y-6">
                 <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
                   <div className="h-6 bg-gray-200 animate-pulse rounded w-2/3" />
@@ -116,7 +113,6 @@ const RestaurantDetails = () => {
               {restaurant && <RestaurantInfo restaurant={restaurant} />}
             </div>
             
-            {/* Mobile-first order of components */}
             <div className="block lg:hidden space-y-6">
               <MatchScoreCard categories={matchCategories} />
               <MenuRecommendations />
@@ -125,7 +121,6 @@ const RestaurantDetails = () => {
               <OrderSection />
             </div>
 
-            {/* Desktop-only order of components */}
             <div className="hidden lg:block space-y-6">
               <MenuRecommendations />
               <MenuSection menu={restaurant?.menu} />
@@ -134,14 +129,12 @@ const RestaurantDetails = () => {
               {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
             </div>
 
-            {/* Mobile-only remaining components */}
             <div className="block lg:hidden space-y-6">
               {restaurant && <PhotosSection photos={restaurant.photos} />}
               {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
             </div>
           </div>
 
-          {/* Desktop sidebar */}
           <div className="hidden lg:block space-y-6 lg:sticky lg:top-24 self-start">
             <MatchScoreCard categories={matchCategories} />
             <OrderSection />
