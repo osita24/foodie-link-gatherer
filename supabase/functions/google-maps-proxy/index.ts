@@ -20,9 +20,23 @@ serve(async (req) => {
       throw new Error('Either URL or placeId is required');
     }
 
+    // If it's a shortened URL, expand it first
+    let finalUrl = url;
+    if (url?.includes('goo.gl') || url?.includes('maps.app.goo.gl')) {
+      console.log('📎 Expanding shortened URL:', url);
+      try {
+        const response = await fetch(url, { redirect: 'follow' });
+        finalUrl = response.url;
+        console.log('📎 Expanded URL:', finalUrl);
+      } catch (error) {
+        console.error('❌ Error expanding URL:', error);
+        throw new Error('Failed to expand shortened URL');
+      }
+    }
+
     // Search directly with the URL text or get details with placeId
     console.log('🔎 Fetching restaurant details...');
-    const result = await searchRestaurant(url, placeId);
+    const result = await searchRestaurant(finalUrl, placeId);
     console.log('✅ Found restaurant details');
 
     return new Response(
@@ -32,8 +46,14 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('❌ Error:', error);
+    
+    // Return a more detailed error response
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: error.stack,
+        timestamp: new Date().toISOString()
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400 

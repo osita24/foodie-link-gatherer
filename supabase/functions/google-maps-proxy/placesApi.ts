@@ -1,5 +1,3 @@
-import { PlacesSearchResponse } from './types.ts';
-
 const GOOGLE_API_KEY = Deno.env.get('GOOGLE_PLACES_API_KEY');
 
 export async function searchRestaurant(url?: string, placeId?: string): Promise<any> {
@@ -19,34 +17,34 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
       throw new Error('Either URL or placeId must be provided');
     }
 
-    // First expand the URL if it's shortened
-    let fullUrl = url;
-    if (url.includes('goo.gl')) {
-      console.log('📎 Expanding shortened URL...');
-      const response = await fetch(url, { redirect: 'follow' });
-      fullUrl = response.url;
-      console.log('📎 Expanded URL:', fullUrl);
-    }
-
     // Extract search text from URL
-    const searchText = extractSearchText(fullUrl);
+    const searchText = extractSearchText(url);
     console.log('📝 Search text extracted:', searchText);
 
-    // Search using Places API
+    // First try text search
     const searchUrl = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json');
     searchUrl.searchParams.set('key', GOOGLE_API_KEY);
     searchUrl.searchParams.set('query', searchText);
     
     console.log('🌐 Making request to Places API with URL:', searchUrl.toString());
     const response = await fetch(searchUrl.toString());
-    const data: PlacesSearchResponse = await response.json();
+    const data = await response.json();
     
     console.log('📊 Places API response status:', data.status);
     console.log('📊 Number of results:', data.results?.length || 0);
     
+    if (data.status === 'ZERO_RESULTS') {
+      // If text search fails, try nearby search using coordinates from URL
+      const coords = extractCoordinates(url);
+      if (coords) {
+        console.log('🌍 Trying nearby search with coordinates:', coords);
+        return await searchNearby(coords.lat, coords.lng);
+      }
+    }
+    
     if (data.status !== 'OK') {
       console.error('❌ Places API error:', data);
-      throw new Error(data.error_message || `Places API error: ${data.status}`);
+      throw new Error(`Places API error: ${data.status}`);
     }
     
     if (!data.results || data.results.length === 0) {
@@ -72,7 +70,9 @@ function extractSearchText(url: string): string {
     const searchParams = [
       urlObj.searchParams.get('q'),
       urlObj.searchParams.get('query'),
-      decodeURIComponent(urlObj.pathname).split('/').filter(Boolean).join(' ')
+      urlObj.pathname.split('/').filter(part => 
+        part && !part.includes('@') && !part.includes(',')
+      ).join(' ')
     ].filter(Boolean);
 
     const searchText = searchParams[0] || url;
@@ -82,6 +82,34 @@ function extractSearchText(url: string): string {
     console.log('⚠️ Error parsing URL, using full URL as search text');
     return url;
   }
+}
+
+function extractCoordinates(url: string): { lat: number; lng: number } | null {
+  const coordsMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (coordsMatch) {
+    return {
+      lat: parseFloat(coordsMatch[1]),
+      lng: parseFloat(coordsMatch[2])
+    };
+  }
+  return null;
+}
+
+async function searchNearby(lat: number, lng: number): Promise<any> {
+  const nearbyUrl = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json');
+  nearbyUrl.searchParams.set('key', GOOGLE_API_KEY);
+  nearbyUrl.searchParams.set('location', `${lat},${lng}`);
+  nearbyUrl.searchParams.set('radius', '100'); // Small radius since we know exact location
+  nearbyUrl.searchParams.set('type', 'restaurant');
+
+  const response = await fetch(nearbyUrl.toString());
+  const data = await response.json();
+
+  if (data.status !== 'OK' || !data.results?.[0]) {
+    throw new Error('No restaurants found at this location');
+  }
+
+  return await getPlaceDetails(data.results[0].place_id);
 }
 
 async function getPlaceDetails(placeId: string): Promise<any> {
@@ -102,7 +130,8 @@ async function getPlaceDetails(placeId: string): Promise<any> {
     'types',
     'user_ratings_total',
     'utc_offset',
-    'place_id'
+    'place_id',
+    'vicinity'
   ].join(','));
   detailsUrl.searchParams.set('key', GOOGLE_API_KEY);
   
