@@ -2,8 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { toast } from "sonner";
-import { fetchRestaurantDetails } from "@/services/googlePlaces";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const Hero = () => {
   const [restaurantUrl, setRestaurantUrl] = useState("");
@@ -17,19 +17,28 @@ const Hero = () => {
     }
     
     setIsProcessing(true);
-    console.log("Starting import process for URL:", restaurantUrl);
+    console.log("Starting URL expansion process for:", restaurantUrl);
     
     try {
-      const restaurantDetails = await fetchRestaurantDetails(restaurantUrl);
-      console.log("Received restaurant details:", restaurantDetails);
-      
-      if (!restaurantDetails?.id) {
+      // Step 1: Call the edge function to expand URL and get place ID
+      const { data, error } = await supabase.functions.invoke('google-maps-proxy', {
+        body: { url: restaurantUrl }
+      });
+
+      console.log("Edge function response:", data);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (!data?.result?.place_id) {
         throw new Error("Could not find restaurant details");
       }
-      
-      // Navigate directly to restaurant details page
-      navigate(`/restaurant/${restaurantDetails.id}`);
+
+      // Navigate to restaurant details with the place ID
+      navigate(`/restaurant/${data.result.place_id}`);
       toast.success("Found restaurant!");
+      
     } catch (error) {
       console.error("Error processing URL:", error);
       toast.error(error instanceof Error ? error.message : "An error occurred while processing the URL");

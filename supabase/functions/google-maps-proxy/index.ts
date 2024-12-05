@@ -8,12 +8,19 @@ const corsHeaders = {
 }
 
 async function expandShortUrl(url: string): Promise<string> {
-  console.log('🔄 Expanding short URL:', url);
+  console.log('🔄 Expanding URL:', url);
+  
+  // If it's not a shortened URL, return as is
+  if (!url.includes('goo.gl') && !url.includes('maps.app.goo.gl')) {
+    return url;
+  }
+
   try {
     const response = await fetch(url, {
       method: 'HEAD',
       redirect: 'follow',
     });
+    
     console.log('📍 Expanded URL:', response.url);
     return response.url;
   } catch (error) {
@@ -23,7 +30,7 @@ async function expandShortUrl(url: string): Promise<string> {
 }
 
 async function extractPlaceId(url: string): Promise<string | null> {
-  console.log('🔍 Attempting to extract Place ID from URL:', url);
+  console.log('🔍 Extracting place ID from URL:', url);
   try {
     const urlObj = new URL(url);
     const searchParams = new URLSearchParams(urlObj.search);
@@ -52,6 +59,12 @@ async function extractPlaceId(url: string): Promise<string | null> {
       }
     }
 
+    // If no place ID found, try to extract the query
+    const query = url.split('/place/')[1]?.split('/')[0];
+    if (query) {
+      return await searchPlaceIdByQuery(decodeURIComponent(query.replace(/\+/g, ' ')));
+    }
+
     console.log('❌ No place_id found in URL');
     return null;
   } catch (error) {
@@ -60,8 +73,8 @@ async function extractPlaceId(url: string): Promise<string | null> {
   }
 }
 
-async function searchPlace(query: string) {
-  console.log('🔍 Searching for place:', query);
+async function searchPlaceIdByQuery(query: string): Promise<string | null> {
+  console.log('🔍 Searching for place ID by query:', query);
   
   const searchUrl = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json');
   searchUrl.searchParams.set('query', query);
@@ -69,26 +82,22 @@ async function searchPlace(query: string) {
 
   try {
     const response = await fetch(searchUrl.toString());
-    if (!response.ok) {
-      throw new Error(`Place Search API error: ${response.status}`);
-    }
-    
     const data = await response.json();
-    console.log('📍 Place search response:', data);
     
-    if (data.status !== 'OK' || !data.results?.length) {
-      throw new Error('No places found matching the search criteria');
+    if (data.status === 'OK' && data.results?.[0]?.place_id) {
+      console.log('✅ Found place_id through search:', data.results[0].place_id);
+      return data.results[0].place_id;
     }
     
-    return await getPlaceDetails(data.results[0].place_id);
+    return null;
   } catch (error) {
-    console.error('❌ Error searching place:', error);
-    throw error;
+    console.error('❌ Error searching for place:', error);
+    return null;
   }
 }
 
 async function getPlaceDetails(placeId: string) {
-  console.log('🔍 Fetching place details for ID:', placeId);
+  console.log('🔍 Getting place details for ID:', placeId);
   
   const detailsUrl = new URL('https://maps.googleapis.com/maps/api/place/details/json');
   detailsUrl.searchParams.set('place_id', placeId);
@@ -97,16 +106,13 @@ async function getPlaceDetails(placeId: string) {
 
   try {
     const response = await fetch(detailsUrl.toString());
-    if (!response.ok) {
-      throw new Error(`Place Details API error: ${response.status}`);
-    }
     const data = await response.json();
-    console.log('📍 Place details response:', data);
     
     if (data.status !== 'OK') {
       throw new Error(`Place Details API error: ${data.status}`);
     }
     
+    console.log('✅ Successfully retrieved place details');
     return data;
   } catch (error) {
     console.error('❌ Error fetching place details:', error);
@@ -132,32 +138,20 @@ serve(async (req) => {
       throw new Error('URL is required');
     }
 
-    // Handle shortened URLs
-    let expandedUrl = url;
-    if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
-      expandedUrl = await expandShortUrl(url);
-      console.log('📍 Expanded URL:', expandedUrl);
-    }
+    // Step 1: Expand shortened URL if necessary
+    const expandedUrl = await expandShortUrl(url);
+    console.log('📍 Working with URL:', expandedUrl);
 
-    // Try to extract place ID from the URL
+    // Step 2: Extract place ID from the expanded URL
     const placeId = await extractPlaceId(expandedUrl);
-    console.log('🔍 Extracted place ID:', placeId);
-
-    let result;
-    if (placeId) {
-      result = await getPlaceDetails(placeId);
-    } else {
-      // Extract search terms from the URL
-      const urlObj = new URL(expandedUrl);
-      const pathSegments = urlObj.pathname.split('/').filter(segment => 
-        segment && !segment.includes('maps') && !segment.includes('http')
-      );
-      const searchQuery = pathSegments.join(' ');
-      console.log('🔍 Searching with query:', searchQuery);
-      result = await searchPlace(searchQuery);
+    if (!placeId) {
+      throw new Error('Could not find place ID from the provided URL');
     }
 
-    return new Response(JSON.stringify(result), {
+    // Step 3: Get place details
+    const placeDetails = await getPlaceDetails(placeId);
+
+    return new Response(JSON.stringify(placeDetails), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
