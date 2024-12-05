@@ -1,1 +1,4 @@
 project_id = "gnkgrlnirzpgqnzbgfcd"
+
+[functions.resolve-maps-url]
+verify_jwt = false

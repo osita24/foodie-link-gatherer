@@ -4,15 +4,23 @@ import { supabase } from "@/integrations/supabase/client";
  * Resolves a shortened URL to its full form
  */
 async function resolveShortUrl(url: string): Promise<string> {
+  console.log('Attempting to resolve shortened URL:', url);
+  
   const { data, error } = await supabase.functions.invoke('resolve-maps-url', {
     body: { url }
   });
 
   if (error) {
     console.error('Error resolving shortened URL:', error);
-    throw new Error('Failed to resolve shortened URL');
+    throw new Error('SHORTENED_URL_RESOLUTION_FAILED');
   }
 
+  if (!data?.resolvedUrl) {
+    console.error('No resolved URL returned');
+    throw new Error('SHORTENED_URL_RESOLUTION_FAILED');
+  }
+
+  console.log('Successfully resolved URL to:', data.resolvedUrl);
   return data.resolvedUrl;
 }
 
@@ -80,7 +88,7 @@ export const extractPlaceId = async (url: string): Promise<string | null> => {
   } catch (error) {
     console.error('Error parsing Google Maps URL:', error);
     if (error instanceof Error && error.message === 'SHORTENED_URL_RESOLUTION_FAILED') {
-      throw new Error('Failed to resolve the shortened URL. Please try again or use the full Google Maps URL.');
+      throw error;
     }
     return null;
   }
