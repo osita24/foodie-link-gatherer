@@ -14,24 +14,41 @@ import { RestaurantDetails as RestaurantDetailsType } from "@/types/restaurant";
 
 const RestaurantDetails = () => {
   const [restaurant, setRestaurant] = useState<RestaurantDetailsType | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get restaurant data from sessionStorage
-    const storedData = sessionStorage.getItem('currentRestaurant');
-    if (!storedData) {
-      navigate('/');
-      return;
-    }
+    const loadRestaurantData = () => {
+      try {
+        // Get restaurant data from sessionStorage
+        const storedData = sessionStorage.getItem('currentRestaurant');
+        console.log("Retrieved stored data:", storedData);
+        
+        if (!storedData) {
+          console.log("No restaurant data found in storage");
+          navigate('/');
+          return;
+        }
 
-    try {
-      const parsedData = JSON.parse(storedData);
-      console.log("Loaded restaurant data:", parsedData);
-      setRestaurant(parsedData);
-    } catch (error) {
-      console.error("Error parsing restaurant data:", error);
-      navigate('/');
-    }
+        const parsedData = JSON.parse(storedData);
+        console.log("Parsed restaurant data:", parsedData);
+        
+        if (!parsedData) {
+          console.log("Invalid restaurant data");
+          navigate('/');
+          return;
+        }
+
+        setRestaurant(parsedData);
+      } catch (error) {
+        console.error("Error loading restaurant data:", error);
+        navigate('/');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadRestaurantData();
   }, [navigate]);
 
   const matchCategories = [
@@ -61,7 +78,7 @@ const RestaurantDetails = () => {
     }
   ];
 
-  if (!restaurant) {
+  if (isLoading || !restaurant) {
     return (
       <div className="min-h-screen bg-background">
         <Header />

@@ -25,7 +25,7 @@ const Hero = () => {
         body: { url: restaurantUrl }
       });
 
-      console.log("Edge function response:", data);
+      console.log("Edge function response data:", data);
 
       if (error) {
         console.error("Edge function error:", error);
@@ -37,7 +37,9 @@ const Hero = () => {
       }
 
       // Store the restaurant data in sessionStorage
-      sessionStorage.setItem('currentRestaurant', JSON.stringify(data.result));
+      const restaurantData = data.result;
+      console.log("Storing restaurant data:", restaurantData);
+      sessionStorage.setItem('currentRestaurant', JSON.stringify(restaurantData));
       
       // Navigate to restaurant details page
       navigate('/restaurant/details');
