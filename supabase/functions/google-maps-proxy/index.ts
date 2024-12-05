@@ -50,7 +50,7 @@ function extractPlaceDetails(url: string) {
     const longitude = coordsMatch ? coordsMatch[2] : null;
     
     // Extract place ID
-    const placeIdMatch = url.match(/!1s([^!]+)!8m/);
+    const placeIdMatch = url.match(/!1s(ChIJ[^!]+)!/);
     const placeId = placeIdMatch ? placeIdMatch[1] : null;
     
     console.log('✨ Extracted details:', { name, latitude, longitude, placeId });
