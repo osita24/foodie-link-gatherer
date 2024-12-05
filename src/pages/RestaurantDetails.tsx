@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import Header from "@/components/Header";
 import RestaurantInfo from "@/components/restaurant/RestaurantInfo";
 import PopularItems from "@/components/restaurant/PopularItems";
@@ -16,50 +16,39 @@ import { RestaurantDetails as RestaurantDetailsType } from "@/types/restaurant";
 const RestaurantDetails = () => {
   const [restaurant, setRestaurant] = useState<RestaurantDetailsType | null>(null);
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const { id } = useParams(); // Get restaurant ID from URL
+  const { id } = useParams();
 
   useEffect(() => {
+    console.log("Loading restaurant details for ID:", id);
+    
     if (!id) {
-      toast({
-        title: "Error",
-        description: "No restaurant ID provided",
-        variant: "destructive",
-      });
+      console.error("No restaurant ID provided");
+      toast.error("Restaurant not found");
       navigate('/');
       return;
     }
 
-    console.log("Loading restaurant data for ID:", id);
-    
     // Try to load restaurant data from localStorage using the ID
     const storedData = localStorage.getItem(`restaurant_${id}`);
+    console.log("Retrieved stored data:", storedData ? "Found" : "Not found");
     
     if (!storedData) {
       console.error("No stored data found for restaurant ID:", id);
-      toast({
-        title: "Error",
-        description: "Restaurant not found",
-        variant: "destructive",
-      });
+      toast.error("Restaurant not found");
       navigate('/');
       return;
     }
 
     try {
       const restaurantData = JSON.parse(storedData);
-      console.log("Successfully loaded restaurant data:", restaurantData);
+      console.log("Successfully parsed restaurant data:", restaurantData);
       setRestaurant(restaurantData);
     } catch (error) {
       console.error("Error parsing restaurant data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load restaurant data",
-        variant: "destructive",
-      });
+      toast.error("Failed to load restaurant data");
       navigate('/');
     }
-  }, [navigate, toast, id]);
+  }, [id, navigate]);
 
   // Show loading state while data is being loaded
   if (!restaurant) {
@@ -94,7 +83,7 @@ const RestaurantDetails = () => {
     },
     {
       category: "Price Range",
-      score: restaurant.priceLevel ? (5 - restaurant.priceLevel) * 20 : 80,
+      score: restaurant.price_level ? (5 - restaurant.price_level) * 20 : 80,
       description: "Within your typical dining budget",
       icon: "💰"
     },
@@ -106,8 +95,8 @@ const RestaurantDetails = () => {
     },
     {
       category: "Service",
-      score: restaurant.userRatingsTotal > 100 ? 88 : 80,
-      description: `Based on ${restaurant.userRatingsTotal || 0} reviews`,
+      score: restaurant.user_ratings_total > 100 ? 88 : 80,
+      description: `Based on ${restaurant.user_ratings_total || 0} reviews`,
       icon: "👨‍🍳"
     }
   ];
@@ -144,13 +133,13 @@ const RestaurantDetails = () => {
               <MenuRecommendations />
               <MenuSection menu={restaurant?.menu} />
               <PopularItems />
-              {restaurant && <PhotosSection photos={restaurant.photos} />}
-              {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
+              {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}
+              {restaurant?.reviews && <ReviewsSection reviews={restaurant.reviews} />}
             </div>
 
             <div className="block lg:hidden space-y-6">
-              {restaurant && <PhotosSection photos={restaurant.photos} />}
-              {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
+              {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}
+              {restaurant?.reviews && <ReviewsSection reviews={restaurant.reviews} />}
             </div>
           </div>
 

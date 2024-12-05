@@ -26,15 +26,22 @@ const Hero = () => {
       });
 
       if (error) throw error;
-      if (!data?.result) throw new Error("No restaurant data found");
+      
+      console.log("Received response:", data);
+      
+      if (!data?.result?.result?.place_id) {
+        throw new Error("No restaurant data found");
+      }
 
-      console.log("Received restaurant data:", data.result);
+      const restaurantData = data.result.result;
+      console.log("Processing restaurant data:", restaurantData);
       
       // Store in localStorage with the place_id as key
-      const placeId = data.result.place_id;
-      localStorage.setItem(`restaurant_${placeId}`, JSON.stringify(data.result));
+      const placeId = restaurantData.place_id;
+      localStorage.setItem(`restaurant_${placeId}`, JSON.stringify(restaurantData));
       
       // Navigate to restaurant-specific URL
+      console.log("Navigating to restaurant page with ID:", placeId);
       navigate(`/restaurant/${placeId}`);
       
     } catch (error) {
