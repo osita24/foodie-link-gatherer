@@ -67,9 +67,29 @@ const RestaurantDetails = () => {
           types: restaurantData.types || [],
           userRatingsTotal: restaurantData.user_ratings_total || 0,
           utcOffset: restaurantData.utc_offset,
-          googleReviews: restaurantData.reviews || []
+          googleReviews: restaurantData.reviews || [],
+          // Add new fields from business_status
+          businessStatus: restaurantData.business_status,
+          // Add delivery and dining options
+          curbsidePickup: restaurantData.curbside_pickup || false,
+          delivery: restaurantData.delivery || false,
+          dineIn: restaurantData.dine_in || false,
+          takeout: restaurantData.takeout || false,
+          reservable: restaurantData.reservable || false,
+          // Add meal service options
+          servesBreakfast: restaurantData.serves_breakfast || false,
+          servesBrunch: restaurantData.serves_brunch || false,
+          servesLunch: restaurantData.serves_lunch || false,
+          servesDinner: restaurantData.serves_dinner || false,
+          // Add drink options
+          servesBeer: restaurantData.serves_beer || false,
+          servesWine: restaurantData.serves_wine || false,
+          // Add accessibility and dietary options
+          wheelchairAccessible: restaurantData.wheelchair_accessible_entrance || false,
+          servesVegetarianFood: restaurantData.serves_vegetarian_food || false
         };
 
+        console.log("Transformed restaurant data:", transformedData);
         setRestaurant(transformedData);
       } catch (error) {
         console.error("Error fetching restaurant details:", error);
