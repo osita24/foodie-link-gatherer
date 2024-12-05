@@ -2,25 +2,25 @@ import { RestaurantDetails } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
 
 export const fetchRestaurantDetails = async (inputUrl: string): Promise<RestaurantDetails> => {
-  console.log('Starting restaurant details fetch for:', inputUrl);
+  console.log('🔍 Starting restaurant details fetch for:', inputUrl);
 
   try {
-    console.log('Calling Edge Function with URL:', inputUrl);
+    console.log('🌐 Calling Edge Function with URL:', inputUrl);
     const { data, error } = await supabase.functions.invoke('google-maps-proxy', {
       body: { url: inputUrl }
     });
 
     if (error) {
-      console.error('Error from Edge Function:', error);
+      console.error('❌ Error from Edge Function:', error);
       throw new Error(error.message || 'Failed to fetch restaurant details');
     }
 
     if (!data || !data.result) {
-      console.error('No result found in API response:', data);
+      console.error('❌ No result found in API response:', data);
       throw new Error('No restaurant data found');
     }
 
-    console.log('Received data from Edge Function:', data);
+    console.log('✅ Received data from Edge Function:', data);
 
     // Create photo URLs
     const photoUrls = data.result.photos?.map((photo: any) => 
@@ -50,10 +50,10 @@ export const fetchRestaurantDetails = async (inputUrl: string): Promise<Restaura
       googleReviews: data.result.reviews || []
     };
 
-    console.log('Successfully transformed restaurant details:', restaurantDetails);
+    console.log('✅ Successfully transformed restaurant details:', restaurantDetails);
     return restaurantDetails;
   } catch (error) {
-    console.error('Error fetching restaurant details:', error);
+    console.error('❌ Error fetching restaurant details:', error);
     throw error;
   }
 };
