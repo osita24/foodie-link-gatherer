@@ -30,35 +30,35 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-center">Join FindDine</DialogTitle>
-          <DialogDescription className="text-center">
+      <DialogContent className="sm:max-w-[400px] p-4">
+        <DialogHeader className="mb-2">
+          <DialogTitle className="text-xl font-semibold">Join FindDine</DialogTitle>
+          <DialogDescription className="text-sm">
             Create your free account to unlock all features
           </DialogDescription>
         </DialogHeader>
         
-        <div className="my-6 space-y-4">
-          <div className="grid grid-cols-1 gap-4">
-            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-              <BookmarkPlus className="h-5 w-5 text-primary" />
-              <div className="text-sm">
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-2">
+            <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+              <BookmarkPlus className="h-4 w-4 text-primary" />
+              <div className="text-xs">
                 <p className="font-medium">Save Your Favorites</p>
                 <p className="text-gray-600">Keep track of restaurants you love</p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-              <Sparkles className="h-5 w-5 text-primary" />
-              <div className="text-sm">
+            <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <div className="text-xs">
                 <p className="font-medium">Personalized Recommendations</p>
                 <p className="text-gray-600">Get suggestions based on your taste</p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-              <UserCircle className="h-5 w-5 text-primary" />
-              <div className="text-sm">
+            <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+              <UserCircle className="h-4 w-4 text-primary" />
+              <div className="text-xs">
                 <p className="font-medium">Custom Profile</p>
                 <p className="text-gray-600">Set your dining preferences</p>
               </div>
@@ -66,7 +66,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
           </div>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-2">
           <Auth
             supabaseClient={supabase}
             appearance={{ 
@@ -82,10 +82,13 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               style: {
                 button: {
                   borderRadius: '6px',
-                  height: '44px',
+                  height: '40px',
                 },
                 container: {
-                  gap: '16px',
+                  gap: '12px',
+                },
+                input: {
+                  height: '40px',
                 },
               },
             }}
