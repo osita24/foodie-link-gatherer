@@ -16,18 +16,31 @@ async function expandUrl(shortUrl: string): Promise<string> {
   return response.url
 }
 
-async function getPlaceDetails(placeId: string) {
-  console.log('Fetching place details for:', placeId)
-  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${GOOGLE_API_KEY}&fields=place_id,name,rating,user_ratings_total,formatted_address,formatted_phone_number,opening_hours,website,price_level,photos,reviews,types,vicinity,utc_offset`
+async function findRestaurantFromCoordinates(lat: string, lng: string) {
+  console.log('Searching for restaurant at coordinates:', lat, lng)
   
-  const response = await fetch(url)
-  const data = await response.json()
+  // First search for nearby restaurants
+  const nearbyUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=100&type=restaurant&key=${GOOGLE_API_KEY}`
   
-  if (data.status !== 'OK') {
-    throw new Error(`Place Details API error: ${data.status}`)
+  const nearbyResponse = await fetch(nearbyUrl)
+  const nearbyData = await nearbyResponse.json()
+  
+  if (nearbyData.status !== 'OK' || !nearbyData.results?.length) {
+    throw new Error('No restaurants found at these coordinates')
+  }
+
+  // Get details for the first (closest) restaurant
+  const placeId = nearbyData.results[0].place_id
+  const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${GOOGLE_API_KEY}&fields=place_id,name,rating,user_ratings_total,formatted_address,formatted_phone_number,opening_hours,website,price_level,photos,reviews,types,vicinity,utc_offset`
+  
+  const detailsResponse = await fetch(detailsUrl)
+  const detailsData = await detailsResponse.json()
+  
+  if (detailsData.status !== 'OK') {
+    throw new Error('Could not get restaurant details')
   }
   
-  return data
+  return detailsData
 }
 
 serve(async (req) => {
@@ -44,17 +57,17 @@ serve(async (req) => {
     const expandedUrl = url.includes('goo.gl') ? await expandUrl(url) : url
     console.log('Working with URL:', expandedUrl)
 
-    // 2. Extract place ID from URL
-    const placeIdMatch = expandedUrl.match(/place\/(.*?)(\/|$|\?)/i)
-    if (!placeIdMatch) {
-      throw new Error('Could not extract place ID from URL')
+    // 2. Extract coordinates from the URL
+    const coordsMatch = expandedUrl.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
+    if (!coordsMatch) {
+      throw new Error('Could not extract coordinates from URL')
     }
 
-    const placeId = placeIdMatch[1]
-    console.log('Extracted place ID:', placeId)
+    const [, lat, lng] = coordsMatch
+    console.log('Extracted coordinates:', lat, lng)
 
-    // 3. Get place details
-    const placeDetails = await getPlaceDetails(placeId)
+    // 3. Find restaurant at these coordinates
+    const placeDetails = await findRestaurantFromCoordinates(lat, lng)
     console.log('Successfully retrieved place details')
 
     return new Response(
