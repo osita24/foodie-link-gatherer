@@ -1,10 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { corsHeaders } from '../_shared/cors.ts'
 
-const GOOGLE_API_KEY = Deno.env.get('GOOGLE_PLACES_API_KEY')
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+interface RequestBody {
+  url: string;
 }
 
 async function expandUrl(shortUrl: string): Promise<string> {
@@ -14,7 +12,7 @@ async function expandUrl(shortUrl: string): Promise<string> {
       method: 'GET',
       redirect: 'follow',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
       }
     });
     
@@ -38,65 +36,50 @@ async function expandUrl(shortUrl: string): Promise<string> {
   }
 }
 
-function extractPlaceId(url: string): string | null {
-  console.log('🔍 Attempting to extract Place ID from URL:', url);
+function extractPlaceDetails(url: string) {
+  console.log('📍 Extracting place details from URL:', url);
+  
   try {
-    const urlObj = new URL(url);
-    const searchParams = new URLSearchParams(urlObj.search);
+    // Extract place name from URL
+    const nameMatch = url.match(/place\/([^/@]+)/);
+    const name = nameMatch ? decodeURIComponent(nameMatch[1].replace(/\+/g, ' ')) : null;
     
-    // Check for place_id in URL parameters
-    if (searchParams.has('place_id')) {
-      const placeId = searchParams.get('place_id');
-      console.log('✨ Found direct place_id:', placeId);
-      return placeId;
+    // Extract coordinates
+    const coordsMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    const latitude = coordsMatch ? coordsMatch[1] : null;
+    const longitude = coordsMatch ? coordsMatch[2] : null;
+    
+    // Extract place ID
+    const placeIdMatch = url.match(/!1s([^!]+)!8m/);
+    const placeId = placeIdMatch ? placeIdMatch[1] : null;
+    
+    console.log('✨ Extracted details:', { name, latitude, longitude, placeId });
+    
+    if (!name || !latitude || !longitude) {
+      throw new Error('Could not extract required place details from URL');
     }
-
-    // Extract from the URL path for newer format URLs
-    const pathMatch = url.match(/place\/[^/]+\/([^/]+)/);
-    if (pathMatch && pathMatch[1]) {
-      const placeId = pathMatch[1];
-      if (placeId.startsWith('ChIJ')) {
-        console.log('✨ Extracted Place ID from path:', placeId);
-        return placeId;
-      }
-    }
-
-    // Extract from the data parameter
-    const dataParam = searchParams.get('data');
-    if (dataParam) {
-      const placeIdMatch = dataParam.match(/!1s(ChIJ[^!]+)!/);
-      if (placeIdMatch && placeIdMatch[1]) {
-        console.log('✨ Extracted Place ID from data parameter:', placeIdMatch[1]);
-        return placeIdMatch[1];
-      }
-    }
-
-    // Look for the place ID in the URL format: 0x....:0x....
-    const placeIdMatch = url.match(/!1s(0x[0-9a-fA-F]+:0x[0-9a-fA-F]+)/);
-    if (placeIdMatch && placeIdMatch[1]) {
-      console.log('✨ Extracted Place ID from URL:', placeIdMatch[1]);
-      return placeIdMatch[1];
-    }
-
-    console.log('❌ No Place ID found in URL');
-    return null;
+    
+    return {
+      name: name.replace(/\+/g, ' '),
+      latitude,
+      longitude,
+      id: placeId || `${latitude},${longitude}` // Fallback ID if place ID not found
+    };
   } catch (error) {
-    console.error('❌ Error parsing URL:', error);
-    return null;
+    console.error('❌ Error extracting place details:', error);
+    throw new Error('Failed to extract place details from URL');
   }
 }
 
-async function getPlaceDetails(placeId: string) {
-  console.log('🔍 Fetching details for place:', placeId);
-  
-  const detailsUrl = new URL('https://maps.googleapis.com/maps/api/place/details/json');
-  detailsUrl.searchParams.set('place_id', placeId);
-  detailsUrl.searchParams.set('key', GOOGLE_API_KEY!);
-  detailsUrl.searchParams.set('fields', [
-    'place_id',
+async function fetchPlaceDetails(placeId: string) {
+  const GOOGLE_API_KEY = Deno.env.get('GOOGLE_PLACES_API_KEY');
+  if (!GOOGLE_API_KEY) {
+    throw new Error('Google Places API key not configured');
+  }
+
+  const fields = [
     'name',
     'rating',
-    'user_ratings_total',
     'formatted_address',
     'formatted_phone_number',
     'opening_hours',
@@ -105,66 +88,92 @@ async function getPlaceDetails(placeId: string) {
     'photos',
     'reviews',
     'types',
-    'vicinity',
-    'utc_offset'
-  ].join(','));
+    'user_ratings_total'
+  ].join(',');
 
-  const response = await fetch(detailsUrl.toString());
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${GOOGLE_API_KEY}`;
   
-  if (!response.ok) {
-    console.error('❌ Place Details API error:', await response.text());
-    throw new Error('Failed to fetch place details');
+  try {
+    console.log('🔍 Fetching place details from Google Places API');
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    if (data.status !== 'OK') {
+      console.error('❌ Google Places API error:', data);
+      throw new Error(`Google Places API error: ${data.status}`);
+    }
+    
+    console.log('✨ Successfully fetched place details');
+    return data;
+  } catch (error) {
+    console.error('❌ Error fetching place details:', error);
+    throw error;
   }
-
-  const data = await response.json();
-  console.log('✨ Place Details API response status:', data.status);
-  
-  if (data.status !== 'OK') {
-    throw new Error(`Places API error: ${data.status}`);
-  }
-
-  return data;
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { url } = await req.json();
-    console.log('📥 Original URL received:', url);
+    const { url } = await req.json() as RequestBody;
+    console.log('🎯 Processing URL:', url);
 
-    // Expand the URL if it's shortened
-    const expandedUrl = url.includes('maps.app.goo.gl') ? 
-      await expandUrl(url) : url;
-    console.log('📍 Working with URL:', expandedUrl);
-
-    // Try to extract place ID from the expanded URL
-    const placeId = extractPlaceId(expandedUrl);
-    if (!placeId) {
-      console.error('❌ Could not extract place ID from URL:', expandedUrl);
-      throw new Error('Could not extract place ID from URL');
+    if (!url) {
+      throw new Error('URL is required');
     }
 
-    console.log('✅ Successfully extracted place ID:', placeId);
+    // Handle both shortened and full URLs
+    const finalUrl = url.includes('goo.gl') ? await expandUrl(url) : url;
+    console.log('📍 Final URL to process:', finalUrl);
 
-    // Get place details using the place ID
-    const placeDetails = await getPlaceDetails(placeId);
-    console.log('✅ Successfully fetched place details');
-    
+    // Extract basic details from the URL
+    const placeDetails = extractPlaceDetails(finalUrl);
+    console.log('📝 Extracted place details:', placeDetails);
+
+    // If we have a place ID, fetch additional details from Google Places API
+    let fullDetails = null;
+    if (placeDetails.id && placeDetails.id.startsWith('ChIJ')) {
+      fullDetails = await fetchPlaceDetails(placeDetails.id);
+    }
+
     return new Response(
-      JSON.stringify(placeDetails),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({
+        status: 'success',
+        result: fullDetails?.result || {
+          place_id: placeDetails.id,
+          name: placeDetails.name,
+          geometry: {
+            location: {
+              lat: parseFloat(placeDetails.latitude),
+              lng: parseFloat(placeDetails.longitude)
+            }
+          }
+        }
+      }),
+      {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
+        status: 200,
+      }
     );
   } catch (error) {
     console.error('❌ Error processing request:', error);
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      JSON.stringify({
+        status: 'error',
+        message: error.message
+      }),
+      {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
+        status: 400,
       }
     );
   }
