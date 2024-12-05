@@ -1,16 +1,11 @@
 import { RestaurantDetails } from "@/types/restaurant";
-import { parseGoogleMapsUrl } from "@/utils/googleMapsUrlParser";
 import { supabase } from "@/integrations/supabase/client";
 
 export const fetchRestaurantDetails = async (inputUrl: string): Promise<RestaurantDetails> => {
   console.log('Starting restaurant details fetch for:', inputUrl);
 
   try {
-    // Parse the input URL
-    await parseGoogleMapsUrl(inputUrl);
-    console.log('Parsed URL, proceeding with Edge Function');
-
-    // Get the place details from our Edge Function
+    console.log('Calling Edge Function with URL:', inputUrl);
     const { data, error } = await supabase.functions.invoke('google-maps-proxy', {
       body: { url: inputUrl }
     });
@@ -22,8 +17,10 @@ export const fetchRestaurantDetails = async (inputUrl: string): Promise<Restaura
 
     if (!data.result) {
       console.error('No result found in API response:', data);
-      throw new Error('No restaurant data found');
+      throw new Error(data.error || 'No restaurant data found');
     }
+
+    console.log('Received data from Edge Function:', data);
 
     // Create photo URLs
     const photoUrls = data.result.photos?.map((photo: any) => 

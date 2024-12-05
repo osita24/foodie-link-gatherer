@@ -8,7 +8,6 @@ const corsHeaders = {
 const GOOGLE_API_KEY = Deno.env.get('GOOGLE_PLACES_API_KEY')
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -19,7 +18,7 @@ serve(async (req) => {
 
     // First, expand the shortened URL if needed
     let expandedUrl = url
-    if (url.includes('goo.gl')) {
+    if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
       console.log('Expanding shortened URL')
       const response = await fetch(url, {
         method: 'HEAD',
@@ -29,44 +28,49 @@ serve(async (req) => {
       console.log('Expanded URL:', expandedUrl)
     }
 
-    // Extract location information from the URL
+    // Extract search query from URL
     let searchQuery = ''
     try {
       const urlObj = new URL(expandedUrl)
       
-      // Handle different URL formats
+      // Try to get query from q parameter
       if (urlObj.searchParams.has('q')) {
         searchQuery = urlObj.searchParams.get('q') || ''
-      } else {
-        // For app.goo.gl links, extract location from the path
+      }
+      
+      // If no q parameter, try to extract from the path
+      if (!searchQuery) {
         const pathParts = urlObj.pathname.split('/').filter(Boolean)
-        if (pathParts.length > 0) {
-          const lastPart = decodeURIComponent(pathParts[pathParts.length - 1])
-          searchQuery = lastPart.replace(/\+/g, ' ')
+        if (pathParts.includes('place')) {
+          const placeIndex = pathParts.indexOf('place')
+          if (placeIndex + 1 < pathParts.length) {
+            searchQuery = decodeURIComponent(pathParts[placeIndex + 1]).replace(/\+/g, ' ')
+          }
         }
       }
+      
+      console.log('Extracted search query:', searchQuery)
     } catch (error) {
       console.error('Error parsing URL:', error)
       throw new Error('Invalid URL format')
     }
 
     if (!searchQuery) {
-      throw new Error('Could not extract location from URL')
+      throw new Error('Could not extract search query from URL')
     }
 
-    console.log('Search query:', searchQuery)
-
     // Use Places API Text Search to find the place
+    console.log('Making Text Search request with query:', searchQuery)
     const searchUrl = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json')
     searchUrl.searchParams.set('query', searchQuery)
     searchUrl.searchParams.set('key', GOOGLE_API_KEY)
 
-    console.log('Making Text Search request')
     const searchResponse = await fetch(searchUrl.toString())
     const searchData = await searchResponse.json()
-
+    console.log('Text Search response status:', searchResponse.status)
+    
     if (!searchData.results?.[0]?.place_id) {
-      console.error('No place found:', searchData)
+      console.error('No place found in search results:', searchData)
       throw new Error('No place found')
     }
 
@@ -96,6 +100,7 @@ serve(async (req) => {
     console.log('Fetching place details')
     const detailsResponse = await fetch(detailsUrl.toString())
     const detailsData = await detailsResponse.json()
+    console.log('Place Details response status:', detailsResponse.status)
 
     if (!detailsData.result) {
       console.error('No details found:', detailsData)
