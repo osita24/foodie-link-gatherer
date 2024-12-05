@@ -9,8 +9,8 @@ const URL_PATTERNS = {
   PLACE_ID: /!1s(ChIJ[^!]+)/,
   PLACE_ID_PARAM: /place_id=([^&]+)/,
   COORDINATES: /@(-?\d+\.\d+),(-?\d+\.\d+)/,
-  CID: /!3m7!1s([^!]+)!/,
-  FTID: /ftid=([^&]+)/,
+  CID: /!3m7!1s(\d+)!/,
+  FTID: /0x[a-fA-F0-9]+:0x[a-fA-F0-9]+/,
 };
 
 interface ParsedMapUrl {
@@ -71,11 +71,11 @@ const extractCoordinates = (url: string) => {
  * Extracts and formats place ID from various URL formats
  */
 const extractPlaceId = (url: string): string | null => {
-  // Try to get CID (newer format)
-  const cidMatch = url.match(URL_PATTERNS.CID);
-  if (cidMatch?.[1]) {
-    console.log('Found CID:', cidMatch[1]);
-    return cidMatch[1];
+  // Try to extract FTID (hex format)
+  const ftidMatch = url.match(URL_PATTERNS.FTID);
+  if (ftidMatch?.[0]) {
+    console.log('Found FTID:', ftidMatch[0]);
+    return ftidMatch[0];
   }
 
   // Try to get place_id parameter
@@ -85,13 +85,18 @@ const extractPlaceId = (url: string): string | null => {
     return placeIdMatch[1];
   }
 
-  // Try to get FTID parameter
-  const ftidMatch = url.match(URL_PATTERNS.FTID);
-  if (ftidMatch?.[1]) {
-    // Convert hex format to regular place ID format
-    const placeId = ftidMatch[1].replace(/^0x/, '').replace(':', '');
-    console.log('Found and converted FTID:', placeId);
-    return placeId;
+  // Try to get CID
+  const cidMatch = url.match(URL_PATTERNS.CID);
+  if (cidMatch?.[1]) {
+    console.log('Found CID:', cidMatch[1]);
+    return cidMatch[1];
+  }
+
+  // Try to get ChIJ format
+  const chijMatch = url.match(URL_PATTERNS.PLACE_ID);
+  if (chijMatch?.[1]) {
+    console.log('Found ChIJ format:', chijMatch[1]);
+    return chijMatch[1];
   }
 
   return null;
