@@ -46,7 +46,6 @@ const RestaurantDetails = () => {
         console.log("Received restaurant data:", restaurantData);
 
         // Transform the data to match our type
-
         const transformedData: RestaurantDetailsType = {
           id: restaurantData.place_id,
           name: restaurantData.name,
@@ -68,40 +67,9 @@ const RestaurantDetails = () => {
           types: restaurantData.types || [],
           userRatingsTotal: restaurantData.user_ratings_total || 0,
           utcOffset: restaurantData.utc_offset,
-          googleReviews: restaurantData.reviews || [],
-          // Business status and basic info
-          businessStatus: restaurantData.business_status,
-          // Delivery and dining options
-          curbsidePickup: restaurantData.curbside_pickup || false,
-          delivery: restaurantData.delivery || false,
-          dineIn: restaurantData.dine_in || false,
-          takeout: restaurantData.takeout || false,
-          reservable: restaurantData.reservable || false,
-          // Meal service options
-          servesBreakfast: restaurantData.serves_breakfast || false,
-          servesBrunch: restaurantData.serves_brunch || false,
-          servesLunch: restaurantData.serves_lunch || false,
-          servesDinner: restaurantData.serves_dinner || false,
-          // Drink options
-          servesBeer: restaurantData.serves_beer || false,
-          servesWine: restaurantData.serves_wine || false,
-          servesCocktails: restaurantData.serves_cocktails || false,
-          servesCoffee: restaurantData.serves_coffee || false,
-          // Food options
-          servesDessert: restaurantData.serves_dessert || false,
-          servesVegetarianFood: restaurantData.serves_vegetarian_food || false,
-          // Amenities
-          wheelchairAccessible: restaurantData.wheelchair_accessible_entrance || false,
-          outdoorSeating: restaurantData.outdoor_seating || false,
-          hasHappyHour: restaurantData.happy_hour || false,
-          hasLiveMusic: restaurantData.live_music || false,
-          hasParking: restaurantData.parking || false,
-          hasWifi: restaurantData.wifi || false,
-          smokingAllowed: restaurantData.smoking_allowed || false,
-          noiseLevel: restaurantData.noise_level || ''
+          googleReviews: restaurantData.reviews || []
         };
 
-        console.log("Transformed restaurant data:", transformedData);
         setRestaurant(transformedData);
       } catch (error) {
         console.error("Error fetching restaurant details:", error);
