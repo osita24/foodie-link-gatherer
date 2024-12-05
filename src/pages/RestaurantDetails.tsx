@@ -12,46 +12,77 @@ import ActionButtons from "@/components/restaurant/ActionButtons";
 import OrderSection from "@/components/restaurant/OrderSection";
 import MenuRecommendations from "@/components/restaurant/MenuRecommendations";
 import { RestaurantDetails as RestaurantDetailsType } from "@/types/restaurant";
+import { supabase } from "@/integrations/supabase/client";
 
 const RestaurantDetails = () => {
   const [restaurant, setRestaurant] = useState<RestaurantDetailsType | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { id } = useParams();
 
   useEffect(() => {
-    console.log("Loading restaurant details for ID:", id);
-    
-    if (!id) {
-      console.error("No restaurant ID provided");
-      toast.error("Restaurant not found");
-      navigate('/');
-      return;
-    }
+    const fetchRestaurantDetails = async () => {
+      if (!id) {
+        console.error("No restaurant ID provided");
+        toast.error("Restaurant not found");
+        navigate('/');
+        return;
+      }
 
-    // Try to load restaurant data from localStorage using the ID
-    const storedData = localStorage.getItem(`restaurant_${id}`);
-    console.log("Retrieved stored data:", storedData ? "Found" : "Not found");
-    
-    if (!storedData) {
-      console.error("No stored data found for restaurant ID:", id);
-      toast.error("Restaurant not found");
-      navigate('/');
-      return;
-    }
+      try {
+        console.log("Fetching details for restaurant ID:", id);
+        const { data, error } = await supabase.functions.invoke('google-maps-proxy', {
+          body: { placeId: id }
+        });
 
-    try {
-      const restaurantData = JSON.parse(storedData);
-      console.log("Successfully parsed restaurant data:", restaurantData);
-      setRestaurant(restaurantData);
-    } catch (error) {
-      console.error("Error parsing restaurant data:", error);
-      toast.error("Failed to load restaurant data");
-      navigate('/');
-    }
+        if (error) throw error;
+
+        if (!data?.result?.result) {
+          throw new Error("No restaurant data found");
+        }
+
+        const restaurantData = data.result.result;
+        console.log("Received restaurant data:", restaurantData);
+
+        // Transform the data to match our type
+        const transformedData: RestaurantDetailsType = {
+          id: restaurantData.place_id,
+          name: restaurantData.name,
+          rating: restaurantData.rating || 0,
+          reviews: restaurantData.user_ratings_total || 0,
+          address: restaurantData.formatted_address || restaurantData.vicinity || 'Address Not Available',
+          hours: restaurantData.opening_hours?.weekday_text?.join(' | ') || 'Hours not available',
+          phone: restaurantData.formatted_phone_number || '',
+          website: restaurantData.website || '',
+          photos: restaurantData.photos?.map((photo: any) => 
+            `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${import.meta.env.VITE_GOOGLE_PLACES_API_KEY}`
+          ) || [],
+          priceLevel: restaurantData.price_level || 0,
+          openingHours: restaurantData.opening_hours ? {
+            periods: restaurantData.opening_hours.periods || [],
+            weekdayText: restaurantData.opening_hours.weekday_text || [],
+          } : undefined,
+          vicinity: restaurantData.vicinity || '',
+          types: restaurantData.types || [],
+          userRatingsTotal: restaurantData.user_ratings_total || 0,
+          utcOffset: restaurantData.utc_offset,
+          googleReviews: restaurantData.reviews || []
+        };
+
+        setRestaurant(transformedData);
+      } catch (error) {
+        console.error("Error fetching restaurant details:", error);
+        toast.error("Failed to load restaurant details");
+        navigate('/');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRestaurantDetails();
   }, [id, navigate]);
 
-  // Show loading state while data is being loaded
-  if (!restaurant) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -71,6 +102,10 @@ const RestaurantDetails = () => {
         </div>
       </div>
     );
+  }
+
+  if (!restaurant) {
+    return null;
   }
 
   // Generate match categories based on restaurant data

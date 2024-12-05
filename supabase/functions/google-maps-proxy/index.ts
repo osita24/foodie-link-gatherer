@@ -13,17 +13,17 @@ serve(async (req) => {
   }
 
   try {
-    const { url } = await req.json();
-    console.log('🔍 Processing URL:', url);
+    const { url, placeId } = await req.json();
+    console.log('🔍 Processing request:', { url, placeId });
 
-    if (!url) {
-      throw new Error('URL is required');
+    if (!url && !placeId) {
+      throw new Error('Either URL or placeId is required');
     }
 
-    // Search directly with the URL text
-    console.log('🔎 Searching for restaurant...');
-    const result = await searchRestaurant(url);
-    console.log('✅ Found restaurant details:', result);
+    // Search directly with the URL text or get details with placeId
+    console.log('🔎 Fetching restaurant details...');
+    const result = await searchRestaurant(url, placeId);
+    console.log('✅ Found restaurant details');
 
     return new Response(
       JSON.stringify({ result }),

@@ -2,14 +2,23 @@ import { PlacesSearchResponse } from './types.ts';
 
 const GOOGLE_API_KEY = Deno.env.get('GOOGLE_PLACES_API_KEY');
 
-export async function searchRestaurant(url: string): Promise<any> {
-  console.log('🔍 Starting restaurant search from URL:', url);
+export async function searchRestaurant(url?: string, placeId?: string): Promise<any> {
+  console.log('🔍 Starting restaurant search with:', { url, placeId });
   
   if (!GOOGLE_API_KEY) {
     throw new Error('Google Places API key is not configured');
   }
 
   try {
+    if (placeId) {
+      // Get details directly with place ID
+      return await getPlaceDetails(placeId);
+    }
+
+    if (!url) {
+      throw new Error('Either URL or placeId must be provided');
+    }
+
     // First expand the URL if it's shortened
     let fullUrl = url;
     if (url.includes('goo.gl')) {
@@ -32,7 +41,6 @@ export async function searchRestaurant(url: string): Promise<any> {
     const response = await fetch(searchUrl.toString());
     const data: PlacesSearchResponse = await response.json();
     
-    console.log('📊 Places API response:', data);
     console.log('📊 Places API response status:', data.status);
     console.log('📊 Number of results:', data.results?.length || 0);
     
@@ -47,9 +55,7 @@ export async function searchRestaurant(url: string): Promise<any> {
     
     // Get details for the first (best) result
     console.log('🔍 Getting details for place_id:', data.results[0].place_id);
-    const details = await getPlaceDetails(data.results[0].place_id);
-    console.log('✅ Successfully retrieved place details:', details);
-    return details;
+    return await getPlaceDetails(data.results[0].place_id);
   } catch (error) {
     console.error('❌ Error in searchRestaurant:', error);
     throw error;

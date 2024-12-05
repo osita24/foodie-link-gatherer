@@ -33,14 +33,7 @@ const Hero = () => {
         throw new Error("No restaurant data found");
       }
 
-      const restaurantData = data.result.result;
-      console.log("Processing restaurant data:", restaurantData);
-      
-      // Store in localStorage with the place_id as key
-      const placeId = restaurantData.place_id;
-      localStorage.setItem(`restaurant_${placeId}`, JSON.stringify(restaurantData));
-      
-      // Navigate to restaurant-specific URL
+      const placeId = data.result.result.place_id;
       console.log("Navigating to restaurant page with ID:", placeId);
       navigate(`/restaurant/${placeId}`);
       
