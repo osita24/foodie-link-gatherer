@@ -8,8 +8,9 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
   }
 
   try {
+    // If placeId is provided, use it directly
     if (placeId) {
-      // Get details directly with place ID
+      console.log('🎯 Using provided place ID:', placeId);
       return await getPlaceDetails(placeId);
     }
 
@@ -17,43 +18,61 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
       throw new Error('Either URL or placeId must be provided');
     }
 
-    // Extract search text from URL
-    const searchText = extractSearchText(url);
-    console.log('📝 Search text extracted:', searchText);
+    // Handle shortened URLs first
+    let finalUrl = url;
+    if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
+      console.log('📎 Expanding shortened URL:', url);
+      try {
+        const response = await fetch(url, { redirect: 'follow' });
+        finalUrl = response.url;
+        console.log('📎 Expanded URL:', finalUrl);
+      } catch (error) {
+        console.error('❌ Error expanding URL:', error);
+        throw new Error('Failed to expand shortened URL');
+      }
+    }
 
-    // First try text search
+    // Try to extract place ID from URL first
+    const urlObj = new URL(finalUrl);
+    const searchParams = new URLSearchParams(urlObj.search);
+    const extractedPlaceId = searchParams.get('place_id') || 
+                            finalUrl.match(/place\/[^/]+\/([^/?]+)/)?.[1];
+
+    if (extractedPlaceId?.startsWith('ChIJ')) {
+      console.log('🎯 Found place ID in URL:', extractedPlaceId);
+      return await getPlaceDetails(extractedPlaceId);
+    }
+
+    // Extract search text and try text search
+    const searchText = extractSearchText(finalUrl);
+    console.log('🔍 Searching with text:', searchText);
+
     const searchUrl = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json');
     searchUrl.searchParams.set('key', GOOGLE_API_KEY);
     searchUrl.searchParams.set('query', searchText);
+    searchUrl.searchParams.set('type', 'restaurant');
     
-    console.log('🌐 Making request to Places API with URL:', searchUrl.toString());
+    console.log('🌐 Making text search request');
     const response = await fetch(searchUrl.toString());
     const data = await response.json();
     
-    console.log('📊 Places API response status:', data.status);
-    console.log('📊 Number of results:', data.results?.length || 0);
-    
     if (data.status === 'ZERO_RESULTS') {
-      // If text search fails, try nearby search using coordinates from URL
-      const coords = extractCoordinates(url);
+      console.log('⚠️ No results from text search, trying nearby search');
+      const coords = extractCoordinates(finalUrl);
       if (coords) {
-        console.log('🌍 Trying nearby search with coordinates:', coords);
         return await searchNearby(coords.lat, coords.lng);
       }
     }
     
-    if (data.status !== 'OK') {
+    if (data.status !== 'OK' || !data.results?.[0]) {
       console.error('❌ Places API error:', data);
       throw new Error(`Places API error: ${data.status}`);
     }
     
-    if (!data.results || data.results.length === 0) {
-      throw new Error('No places found matching the search criteria');
-    }
-    
-    // Get details for the first (best) result
-    console.log('🔍 Getting details for place_id:', data.results[0].place_id);
-    return await getPlaceDetails(data.results[0].place_id);
+    const foundPlaceId = data.results[0].place_id;
+    console.log('✅ Found place ID:', foundPlaceId);
+    return await getPlaceDetails(foundPlaceId);
+
   } catch (error) {
     console.error('❌ Error in searchRestaurant:', error);
     throw error;
@@ -61,21 +80,22 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
 }
 
 function extractSearchText(url: string): string {
-  console.log('📑 Extracting search text from URL:', url);
-  
   try {
     const urlObj = new URL(url);
     
-    // Try different possible parameters where the search text might be
+    // Try different parameters where the search text might be
     const searchParams = [
       urlObj.searchParams.get('q'),
       urlObj.searchParams.get('query'),
-      urlObj.pathname.split('/').filter(part => 
-        part && !part.includes('@') && !part.includes(',')
-      ).join(' ')
+      decodeURIComponent(urlObj.pathname.split('/place/')[1]?.split('/')[0] || '')
+        .replace(/\+/g, ' ')
     ].filter(Boolean);
 
-    const searchText = searchParams[0] || url;
+    // Use the first non-empty value or fallback to the URL path
+    const searchText = searchParams[0] || 
+                      url.split('/place/')[1]?.split('/')[0]?.replace(/\+/g, ' ') || 
+                      url;
+
     console.log('📝 Extracted search text:', searchText);
     return searchText;
   } catch (error) {
@@ -85,21 +105,32 @@ function extractSearchText(url: string): string {
 }
 
 function extractCoordinates(url: string): { lat: number; lng: number } | null {
-  const coordsMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-  if (coordsMatch) {
-    return {
-      lat: parseFloat(coordsMatch[1]),
-      lng: parseFloat(coordsMatch[2])
-    };
+  // Try to match coordinates in different formats
+  const patterns = [
+    /@(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/,
+    /ll=(-?\d+\.\d+),(-?\d+\.\d+)/
+  ];
+
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) {
+      return {
+        lat: parseFloat(match[1]),
+        lng: parseFloat(match[2])
+      };
+    }
   }
   return null;
 }
 
 async function searchNearby(lat: number, lng: number): Promise<any> {
+  console.log('🌍 Performing nearby search at coordinates:', { lat, lng });
+  
   const nearbyUrl = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json');
   nearbyUrl.searchParams.set('key', GOOGLE_API_KEY);
   nearbyUrl.searchParams.set('location', `${lat},${lng}`);
-  nearbyUrl.searchParams.set('radius', '100'); // Small radius since we know exact location
+  nearbyUrl.searchParams.set('radius', '100');
   nearbyUrl.searchParams.set('type', 'restaurant');
 
   const response = await fetch(nearbyUrl.toString());
@@ -109,6 +140,7 @@ async function searchNearby(lat: number, lng: number): Promise<any> {
     throw new Error('No restaurants found at this location');
   }
 
+  console.log('✅ Found restaurant via nearby search');
   return await getPlaceDetails(data.results[0].place_id);
 }
 
@@ -135,20 +167,14 @@ async function getPlaceDetails(placeId: string): Promise<any> {
   ].join(','));
   detailsUrl.searchParams.set('key', GOOGLE_API_KEY);
   
-  try {
-    console.log('🌐 Making request to Place Details API');
-    const response = await fetch(detailsUrl.toString());
-    const data = await response.json();
-    
-    if (data.status !== 'OK') {
-      console.error('❌ Place Details API error:', data);
-      throw new Error(data.error_message || `Place Details API error: ${data.status}`);
-    }
-    
-    console.log('✅ Successfully retrieved place details');
-    return data;
-  } catch (error) {
-    console.error('❌ Error in getPlaceDetails:', error);
-    throw error;
+  const response = await fetch(detailsUrl.toString());
+  const data = await response.json();
+  
+  if (data.status !== 'OK') {
+    console.error('❌ Place Details API error:', data);
+    throw new Error(`Place Details API error: ${data.status}`);
   }
+  
+  console.log('✅ Successfully retrieved place details');
+  return data;
 }
