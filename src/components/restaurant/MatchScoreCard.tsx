@@ -33,23 +33,30 @@ const MatchScoreCard = ({ categories }: MatchScoreCardProps) => {
   });
 
   const UnauthenticatedContent = () => (
-    <div className="space-y-6 text-center py-4">
-      <div className="space-y-4">
-        <p className="text-gray-600 max-w-md mx-auto">
-          Find out exactly why this restaurant matches your taste preferences. Our AI analyzes hundreds of data points to create your personalized match score.
-        </p>
-        <div className="flex justify-center gap-4">
+    <div className="space-y-8 text-center py-6">
+      <div className="space-y-6">
+        <div className="space-y-4">
+          <h3 className="text-2xl font-semibold text-secondary">
+            Discover Your Perfect Match
+          </h3>
+          <p className="text-gray-600 max-w-md mx-auto leading-relaxed">
+            Find out exactly why this restaurant matches your taste preferences. Our AI analyzes hundreds of data points to create your personalized match score.
+          </p>
+        </div>
+        <div className="flex flex-col items-center gap-4">
           <Button 
             onClick={() => setShowAuthModal(true)}
             className="bg-primary hover:bg-primary/90 text-white px-8 py-6 text-lg font-semibold
-              transition-all duration-300 hover:scale-105 hover:shadow-lg rounded-lg"
+              transition-all duration-300 hover:scale-105 hover:shadow-lg rounded-lg
+              relative overflow-hidden group"
           >
-            View My Match Score
+            <span className="relative z-10">View My Match Score</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </Button>
+          <p className="text-sm text-gray-500">
+            Sign up in seconds to unlock your personalized restaurant matches
+          </p>
         </div>
-        <p className="text-sm text-gray-500 mt-2">
-          Sign up in seconds to unlock your personalized restaurant matches
-        </p>
       </div>
     </div>
   );
@@ -65,7 +72,7 @@ const MatchScoreCard = ({ categories }: MatchScoreCardProps) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 md:gap-2">
               <span className="text-lg md:text-xl">{item.icon}</span>
-              <span className="font-medium text-secondary text-sm md:text-base text-left">
+              <span className="font-medium text-secondary text-sm md:text-base">
                 {item.category}
               </span>
             </div>
@@ -81,7 +88,7 @@ const MatchScoreCard = ({ categories }: MatchScoreCardProps) => {
               />
             </div>
           </div>
-          <p className="text-xs md:text-sm text-gray-600 text-left">{item.description}</p>
+          <p className="text-xs md:text-sm text-gray-600">{item.description}</p>
         </div>
       ))}
     </div>
@@ -89,12 +96,14 @@ const MatchScoreCard = ({ categories }: MatchScoreCardProps) => {
 
   return (
     <>
-      <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 relative z-[90]">
+      <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 relative z-[90]
+        bg-white border-accent/20">
         {session && (
-          <CardHeader className="border-b border-gray-100 md:p-6 p-4">
-            <CardTitle className="flex items-center gap-2 text-xl md:text-2xl text-left">
+          <CardHeader className="border-b border-accent/20 md:p-6 p-4 
+            bg-gradient-to-r from-primary/5 to-accent/10">
+            <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
               <Star className="w-5 h-5 md:w-6 md:h-6 text-yellow-400 fill-current" />
-              Why We Think You'll Love It
+              Your Personalized Match Score
             </CardTitle>
           </CardHeader>
         )}
