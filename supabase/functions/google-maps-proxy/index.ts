@@ -1,5 +1,6 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { searchRestaurant } from "./placesApi.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { searchRestaurant } from "./urlParser.ts";
+import { getPlaceDetails } from "./placesApi.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,25 +16,38 @@ serve(async (req) => {
   try {
     console.log('🔍 Received request:', req.method);
     
-    const body = await req.json().catch(() => ({}));
-    const { url, placeId } = body;
+    const body = await req.json().catch(() => {
+      throw new Error('Failed to parse request body');
+    });
     
+    const { url, placeId } = body;
     console.log('📝 Request parameters:', { url, placeId });
 
     if (!url && !placeId) {
-      console.error('❌ Missing required parameters');
-      return new Response(
-        JSON.stringify({ error: 'Either URL or placeId is required' }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      throw new Error('Either URL or placeId is required');
     }
 
-    console.log('🔎 Fetching restaurant details...');
-    const result = await searchRestaurant(url, placeId);
-    console.log('✅ Found restaurant details');
+    const apiKey = Deno.env.get("GOOGLE_PLACES_API_KEY");
+    if (!apiKey) {
+      throw new Error('Google Places API key not configured');
+    }
+
+    let finalPlaceId = placeId;
+    
+    // If URL is provided, extract place ID from it
+    if (url) {
+      console.log('🔎 Extracting place ID from URL:', url);
+      finalPlaceId = await searchRestaurant(url, apiKey);
+      console.log('✅ Extracted place ID:', finalPlaceId);
+    }
+
+    if (!finalPlaceId) {
+      throw new Error('Failed to determine place ID');
+    }
+
+    console.log('🔎 Fetching place details...');
+    const result = await getPlaceDetails(finalPlaceId, apiKey);
+    console.log('✅ Successfully fetched place details');
 
     return new Response(
       JSON.stringify({ result }),
@@ -53,7 +67,7 @@ serve(async (req) => {
         timestamp: new Date().toISOString()
       }),
       { 
-        status: error.status || 400,
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
