@@ -7,18 +7,19 @@ interface RestaurantInfoProps {
 }
 
 const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
-  const formatRating = (rating: number) => {
-    return rating.toFixed(1);
+  const formatRating = (rating: number | undefined) => {
+    return rating?.toFixed(1) ?? "N/A";
   };
 
-  const formatReviewCount = (count: number) => {
+  const formatReviewCount = (count: number | undefined) => {
+    if (!count) return "0";
     if (count >= 1000) {
       return `${(count / 1000).toFixed(1)}K`;
     }
     return count.toString();
   };
 
-  const RatingStars = ({ rating }: { rating: number }) => {
+  const RatingStars = ({ rating }: { rating: number | undefined }) => {
     return (
       <div className="flex items-center">
         <span className="text-yellow-400">★</span>
@@ -47,34 +48,39 @@ const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
     }
   };
 
+  // Add console logs to help debug the data
+  console.log("Restaurant data in RestaurantInfo:", restaurant);
+
   return (
     <div className="space-y-6 text-left">
       <div>
-        <h1 className="text-4xl font-bold mb-4 text-left">{restaurant.name}</h1>
+        <h1 className="text-4xl font-bold mb-4 text-left">{restaurant?.name ?? 'Restaurant Name Not Available'}</h1>
         <div className="flex items-center gap-4">
-          <RatingStars rating={restaurant.rating} />
+          <RatingStars rating={restaurant?.rating} />
           <span className="text-muted-foreground">
-            {formatReviewCount(restaurant.reviews)} reviews
+            {formatReviewCount(restaurant?.reviews)} reviews
           </span>
         </div>
       </div>
 
       <div className="space-y-3">
-        <div className="flex items-start gap-2 hover:text-primary transition-colors">
-          <MapPin className="w-5 h-5 mt-1 shrink-0" />
-          <span className="text-left">{restaurant.address}</span>
-        </div>
+        {restaurant?.address && (
+          <div className="flex items-start gap-2 hover:text-primary transition-colors">
+            <MapPin className="w-5 h-5 mt-1 shrink-0" />
+            <span className="text-left">{restaurant.address}</span>
+          </div>
+        )}
         <div className="flex items-start gap-2 hover:text-primary transition-colors">
           <Clock className="w-5 h-5 mt-1 shrink-0" />
-          <span className="text-left">{getTodayHours(restaurant.hours)}</span>
+          <span className="text-left">{getTodayHours(restaurant?.hours)}</span>
         </div>
-        {restaurant.phone && (
+        {restaurant?.phone && (
           <div className="flex items-start gap-2 hover:text-primary transition-colors">
             <Phone className="w-5 h-5 mt-1 shrink-0" />
             <span className="text-left">{formatPhoneNumber(restaurant.phone)}</span>
           </div>
         )}
-        {restaurant.website && (
+        {restaurant?.website && (
           <div className="flex items-start gap-2 hover:text-primary transition-colors">
             <Globe className="w-5 h-5 mt-1 shrink-0" />
             <a
