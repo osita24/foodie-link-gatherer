@@ -5,28 +5,10 @@ export const extractPlaceId = async (url: string): Promise<string | null> => {
   console.log('Attempting to extract Place ID from URL:', url);
 
   try {
-    // Handle shortened g.co links
-    if (url.includes('g.co/kgs/')) {
-      console.log('Detected shortened g.co URL');
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Failed to resolve shortened URL');
-      }
-      const fullUrl = response.url;
-      console.log('Resolved shortened URL to:', fullUrl);
-      return extractPlaceId(fullUrl);
-    }
-
-    // Handle maps.app.goo.gl links
-    if (url.includes('maps.app.goo.gl')) {
-      console.log('Detected maps.app.goo.gl URL');
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Failed to resolve maps app URL');
-      }
-      const fullUrl = response.url;
-      console.log('Resolved maps app URL to:', fullUrl);
-      return extractPlaceId(fullUrl);
+    // For shortened URLs, we'll need to inform the user to use full URLs instead
+    if (url.includes('g.co/kgs/') || url.includes('maps.app.goo.gl')) {
+      console.log('Detected shortened URL format');
+      throw new Error('SHORTENED_URL');
     }
 
     const urlObj = new URL(url);
@@ -59,20 +41,6 @@ export const extractPlaceId = async (url: string): Promise<string | null> => {
       }
     }
 
-    // Extract coordinates from the URL path
-    const coords = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-    if (coords) {
-      const lat = coords[1];
-      const lng = coords[2];
-      console.log('Extracted coordinates:', lat, lng);
-      
-      // Use these coordinates to get the place ID
-      const placeId = await findPlaceIdFromCoordinates(lat, lng);
-      if (placeId) {
-        return placeId;
-      }
-    }
-
     // Try to extract from the URL path for business listings
     const businessMatch = url.match(/!1s([^!]+)!8m2/);
     if (businessMatch && businessMatch[1].startsWith('0x')) {
@@ -85,35 +53,9 @@ export const extractPlaceId = async (url: string): Promise<string | null> => {
     return null;
   } catch (error) {
     console.error('Error parsing Google Maps URL:', error);
+    if (error instanceof Error && error.message === 'SHORTENED_URL') {
+      throw new Error('SHORTENED_URL');
+    }
     return null;
   }
 };
-
-async function findPlaceIdFromCoordinates(lat: string, lng: string): Promise<string | null> {
-  const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
-  const CORS_PROXY = 'https://cors-anywhere.herokuapp.com';
-  
-  try {
-    console.log('Searching for Place ID using coordinates:', lat, lng);
-    const response = await fetch(
-      `${CORS_PROXY}/https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_API_KEY}`
-    );
-
-    if (!response.ok) {
-      throw new Error(`Geocoding API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log('Geocoding API response:', data);
-
-    if (data.results && data.results[0] && data.results[0].place_id) {
-      console.log('Found Place ID from coordinates:', data.results[0].place_id);
-      return data.results[0].place_id;
-    }
-
-    return null;
-  } catch (error) {
-    console.error('Error finding Place ID from coordinates:', error);
-    return null;
-  }
-}

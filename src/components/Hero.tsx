@@ -20,15 +20,10 @@ const Hero = () => {
     console.log("Importing restaurant:", restaurantUrl);
     
     try {
-      // Check if it's a shortened URL
-      if (restaurantUrl.includes('g.co/kgs/')) {
-        toast.info("Processing shortened URL. This might take a moment...");
-      }
-      
       const placeId = await extractPlaceId(restaurantUrl);
       
       if (!placeId) {
-        toast.error("Could not extract restaurant information from the URL. Please try using a full Google Maps URL instead of a shortened link.");
+        toast.error("Could not extract restaurant information. Please use a full Google Maps URL (maps.google.com)");
         return;
       }
 
@@ -36,8 +31,14 @@ const Hero = () => {
       toast.success("Processing your restaurant...");
       navigate(`/restaurant/${placeId}`);
     } catch (error) {
-      console.error("Error processing URL:", error);
-      toast.error("An error occurred while processing the URL. Please try using a full Google Maps URL.");
+      if (error instanceof Error && error.message === 'SHORTENED_URL') {
+        toast.error(
+          "For mobile share links (g.co or maps.app.goo.gl), please open the link first and copy the full Google Maps URL",
+          { duration: 6000 }
+        );
+      } else {
+        toast.error("An error occurred. Please try using a full Google Maps URL.");
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -79,11 +80,11 @@ const Hero = () => {
             </Button>
           </div>
           <div className="text-sm text-gray-500 mt-4 space-y-2 animate-fade-up" style={{ animationDelay: "600ms" }}>
-            <p>Supported URL formats:</p>
+            <p>How to share restaurant links:</p>
             <ul className="space-y-1">
-              <li>• Full Google Maps URLs (maps.google.com)</li>
-              <li>• Mobile share links (maps.app.goo.gl)</li>
-              <li>• Shortened links (g.co/kgs)</li>
+              <li>• Use full Google Maps URLs (maps.google.com)</li>
+              <li>• For mobile shares: Open the shared link first, then copy the full URL from your browser</li>
+              <li>• Tip: Look for URLs starting with "maps.google.com"</li>
             </ul>
           </div>
         </div>
