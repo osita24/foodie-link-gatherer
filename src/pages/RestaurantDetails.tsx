@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import RestaurantInfo from "@/components/restaurant/RestaurantInfo";
@@ -17,15 +17,29 @@ const RestaurantDetails = () => {
   const [restaurant, setRestaurant] = useState<RestaurantDetailsType | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { id } = useParams(); // Get restaurant ID from URL
 
   useEffect(() => {
-    // Try to load restaurant data from localStorage
-    const storedData = localStorage.getItem('currentRestaurant');
-    
-    if (!storedData) {
+    if (!id) {
       toast({
         title: "Error",
-        description: "No restaurant data found",
+        description: "No restaurant ID provided",
+        variant: "destructive",
+      });
+      navigate('/');
+      return;
+    }
+
+    console.log("Loading restaurant data for ID:", id);
+    
+    // Try to load restaurant data from localStorage using the ID
+    const storedData = localStorage.getItem(`restaurant_${id}`);
+    
+    if (!storedData) {
+      console.error("No stored data found for restaurant ID:", id);
+      toast({
+        title: "Error",
+        description: "Restaurant not found",
         variant: "destructive",
       });
       navigate('/');
@@ -34,9 +48,10 @@ const RestaurantDetails = () => {
 
     try {
       const restaurantData = JSON.parse(storedData);
+      console.log("Successfully loaded restaurant data:", restaurantData);
       setRestaurant(restaurantData);
     } catch (error) {
-      console.error("Error loading restaurant data:", error);
+      console.error("Error parsing restaurant data:", error);
       toast({
         title: "Error",
         description: "Failed to load restaurant data",
@@ -44,7 +59,7 @@ const RestaurantDetails = () => {
       });
       navigate('/');
     }
-  }, [navigate, toast]);
+  }, [navigate, toast, id]);
 
   // Show loading state while data is being loaded
   if (!restaurant) {
@@ -69,29 +84,30 @@ const RestaurantDetails = () => {
     );
   }
 
+  // Generate match categories based on restaurant data
   const matchCategories = [
     {
       category: "Taste Profile",
-      score: 90,
-      description: "Matches your preference for spicy Asian cuisine",
+      score: restaurant.types?.includes("restaurant") ? 90 : 75,
+      description: `Matches your dining preferences`,
       icon: "🌶️"
     },
     {
       category: "Price Range",
-      score: 85,
+      score: restaurant.priceLevel ? (5 - restaurant.priceLevel) * 20 : 80,
       description: "Within your typical dining budget",
       icon: "💰"
     },
     {
       category: "Atmosphere",
-      score: 95,
-      description: "Casual dining with modern ambiance",
+      score: restaurant.rating ? Math.round(restaurant.rating * 20) : 85,
+      description: restaurant.types?.includes("casual") ? "Casual dining atmosphere" : "Restaurant atmosphere",
       icon: "✨"
     },
     {
       category: "Service",
-      score: 88,
-      description: "Known for attentive staff",
+      score: restaurant.userRatingsTotal > 100 ? 88 : 80,
+      description: `Based on ${restaurant.userRatingsTotal || 0} reviews`,
       icon: "👨‍🍳"
     }
   ];

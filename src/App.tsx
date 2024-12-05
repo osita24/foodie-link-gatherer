@@ -1,18 +1,18 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Index from "@/pages/Index";
-import RestaurantDetails from "@/pages/RestaurantDetails";
 import Profile from "@/pages/Profile";
+import RestaurantDetails from "@/pages/RestaurantDetails";
 
-function App() {
+const App = () => {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Index />} />
-        <Route path="/restaurant/:id" element={<RestaurantDetails />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/restaurant/:id" element={<RestaurantDetails />} />
       </Routes>
     </Router>
   );
-}
+};
 
 export default App;

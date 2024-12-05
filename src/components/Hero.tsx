@@ -19,7 +19,8 @@ const Hero = () => {
     setIsProcessing(true);
     
     try {
-      // Call the edge function to get restaurant data
+      console.log("Fetching restaurant data for URL:", restaurantUrl);
+      
       const { data, error } = await supabase.functions.invoke('google-maps-proxy', {
         body: { url: restaurantUrl }
       });
@@ -27,11 +28,14 @@ const Hero = () => {
       if (error) throw error;
       if (!data?.result) throw new Error("No restaurant data found");
 
-      // Store in localStorage instead of sessionStorage for better persistence
-      localStorage.setItem('currentRestaurant', JSON.stringify(data.result));
+      console.log("Received restaurant data:", data.result);
       
-      // Navigate to details page
-      navigate('/restaurant/details');
+      // Store in localStorage with the place_id as key
+      const placeId = data.result.place_id;
+      localStorage.setItem(`restaurant_${placeId}`, JSON.stringify(data.result));
+      
+      // Navigate to restaurant-specific URL
+      navigate(`/restaurant/${placeId}`);
       
     } catch (error) {
       console.error("Error:", error);
