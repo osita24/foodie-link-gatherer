@@ -7,17 +7,25 @@ const corsHeaders = {
 }
 
 async function expandUrl(shortUrl: string): Promise<string> {
-  console.log('Expanding URL:', shortUrl)
+  console.log('Starting URL expansion for:', shortUrl)
   try {
+    // Use GET instead of HEAD to ensure we get the full redirect chain
     const response = await fetch(shortUrl, {
-      method: 'HEAD',
+      method: 'GET',
       redirect: 'follow'
     })
-    console.log('Expanded URL:', response.url)
-    return response.url
+    
+    // Get the final URL after all redirects
+    const finalUrl = response.url
+    console.log('Final expanded URL:', finalUrl)
+    
+    // For debugging, log the response status
+    console.log('Response status:', response.status)
+    
+    return finalUrl
   } catch (error) {
     console.error('Error expanding URL:', error)
-    throw new Error('Failed to expand shortened URL')
+    throw new Error(`Failed to expand shortened URL: ${error.message}`)
   }
 }
 
@@ -29,14 +37,18 @@ function extractCoordinates(url: string): { lat: string, lng: string } {
     /@(-?\d+\.\d+),(-?\d+\.\d+)/, // Standard format
     /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/, // Alternate format
     /ll=(-?\d+\.\d+),(-?\d+\.\d+)/, // Another format
-    /center=(-?\d+\.\d+),(-?\d+\.\d+)/ // Center parameter format
+    /center=(-?\d+\.\d+),(-?\d+\.\d+)/, // Center parameter format
+    /data=!3m1!4b1!4m[0-9]+!3m[0-9]+!1s0x[0-9a-f]+:0x[0-9a-f]+!8m2!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/ // Complex format
   ]
 
   for (const pattern of patterns) {
     const match = url.match(pattern)
     if (match) {
-      console.log('Found coordinates:', match[1], match[2])
-      return { lat: match[1], lng: match[2] }
+      // For the complex format, coordinates are in different group positions
+      const lat = match[1]
+      const lng = match[2]
+      console.log('Found coordinates:', lat, lng)
+      return { lat, lng }
     }
   }
 
@@ -49,8 +61,18 @@ async function findRestaurantFromCoordinates(lat: string, lng: string) {
   // First search for nearby restaurants with increased radius
   const nearbyUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=500&type=restaurant&key=${GOOGLE_API_KEY}`
   
+  console.log('Making request to Places API:', nearbyUrl)
   const nearbyResponse = await fetch(nearbyUrl)
+  
+  if (!nearbyResponse.ok) {
+    const errorText = await nearbyResponse.text()
+    console.error('Places API error:', errorText)
+    throw new Error(`Places API error: ${nearbyResponse.status}`)
+  }
+  
   const nearbyData = await nearbyResponse.json()
+  console.log('Places API response status:', nearbyData.status)
+  console.log('Number of results:', nearbyData.results?.length || 0)
   
   if (nearbyData.status !== 'OK' || !nearbyData.results?.length) {
     throw new Error('No restaurants found at these coordinates')
