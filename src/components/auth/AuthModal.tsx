@@ -89,8 +89,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 },
               },
             }}
-            providers={['google']}
-            onlyThirdPartyProviders
+            providers={[]}
             redirectTo={`${window.location.origin}/profile`}
           />
         </div>
