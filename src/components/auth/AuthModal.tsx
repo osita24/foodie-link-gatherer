@@ -10,6 +10,8 @@ interface AuthModalProps {
 }
 
 const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
+  console.log("Rendering AuthModal with open:", open);
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -64,7 +66,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
             }}
             providers={['google']}
             onlyThirdPartyProviders
-            redirectTo={window.location.origin}
+            redirectTo={`${window.location.origin}/profile`}
           />
         </div>
       </DialogContent>
