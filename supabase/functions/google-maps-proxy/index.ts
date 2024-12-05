@@ -25,7 +25,6 @@ serve(async (req) => {
         redirect: 'follow'
       })
       
-      // Get the final URL after all redirects
       expandedUrl = response.url
       console.log('Expanded URL:', expandedUrl)
 
@@ -37,51 +36,76 @@ serve(async (req) => {
         // Use Places API Nearby Search with coordinates
         const nearbyUrl = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json')
         nearbyUrl.searchParams.set('location', `${coords[1]},${coords[2]}`)
-        nearbyUrl.searchParams.set('radius', '50') // Small radius since we know exact location
+        nearbyUrl.searchParams.set('radius', '200') // Increased radius to 200 meters
+        nearbyUrl.searchParams.set('type', 'restaurant') // Specifically look for restaurants
         nearbyUrl.searchParams.set('key', GOOGLE_API_KEY)
 
-        console.log('Making Nearby Search request')
+        console.log('Making Nearby Search request to:', nearbyUrl.toString())
         const nearbyResponse = await fetch(nearbyUrl.toString())
+        if (!nearbyResponse.ok) {
+          console.error('Nearby Search API error:', await nearbyResponse.text())
+          throw new Error('Failed to fetch nearby places')
+        }
+
         const nearbyData = await nearbyResponse.json()
         console.log('Nearby Search response:', nearbyData)
 
-        if (nearbyData.results?.[0]?.place_id) {
-          // Get detailed place information
-          const placeId = nearbyData.results[0].place_id
-          console.log('Found place ID from coordinates:', placeId)
-
-          const detailsUrl = new URL('https://maps.googleapis.com/maps/api/place/details/json')
-          detailsUrl.searchParams.set('place_id', placeId)
-          detailsUrl.searchParams.set('key', GOOGLE_API_KEY)
-          detailsUrl.searchParams.set('fields', [
-            'name',
-            'rating',
-            'user_ratings_total',
-            'formatted_address',
-            'formatted_phone_number',
-            'opening_hours',
-            'website',
-            'price_level',
-            'photos',
-            'reviews',
-            'types',
-            'vicinity',
-            'utc_offset'
-          ].join(','))
-
-          console.log('Fetching place details')
-          const detailsResponse = await fetch(detailsUrl.toString())
-          const detailsData = await detailsResponse.json()
-          console.log('Place Details response:', detailsData)
-
-          return new Response(
-            JSON.stringify(detailsData),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
+        if (nearbyData.status !== 'OK') {
+          console.error('Nearby Search API error status:', nearbyData.status)
+          throw new Error(`Places API error: ${nearbyData.status}`)
         }
+
+        if (!nearbyData.results?.length) {
+          console.error('No restaurants found near coordinates')
+          throw new Error('No restaurants found at this location')
+        }
+
+        // Get detailed place information
+        const placeId = nearbyData.results[0].place_id
+        console.log('Found place ID from coordinates:', placeId)
+
+        const detailsUrl = new URL('https://maps.googleapis.com/maps/api/place/details/json')
+        detailsUrl.searchParams.set('place_id', placeId)
+        detailsUrl.searchParams.set('key', GOOGLE_API_KEY)
+        detailsUrl.searchParams.set('fields', [
+          'place_id',
+          'name',
+          'rating',
+          'user_ratings_total',
+          'formatted_address',
+          'formatted_phone_number',
+          'opening_hours',
+          'website',
+          'price_level',
+          'photos',
+          'reviews',
+          'types',
+          'vicinity',
+          'utc_offset'
+        ].join(','))
+
+        console.log('Fetching place details')
+        const detailsResponse = await fetch(detailsUrl.toString())
+        if (!detailsResponse.ok) {
+          console.error('Place Details API error:', await detailsResponse.text())
+          throw new Error('Failed to fetch place details')
+        }
+
+        const detailsData = await detailsResponse.json()
+        console.log('Place Details response:', detailsData)
+
+        if (detailsData.status !== 'OK') {
+          console.error('Place Details API error status:', detailsData.status)
+          throw new Error(`Places API error: ${detailsData.status}`)
+        }
+
+        return new Response(
+          JSON.stringify(detailsData),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
       }
       
-      throw new Error('Could not find restaurant at coordinates')
+      throw new Error('Could not extract coordinates from URL')
     }
 
     // For regular URLs, try to extract search query
@@ -113,15 +137,26 @@ serve(async (req) => {
     console.log('Making Text Search request with query:', searchQuery)
     const searchUrl = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json')
     searchUrl.searchParams.set('query', searchQuery)
+    searchUrl.searchParams.set('type', 'restaurant')
     searchUrl.searchParams.set('key', GOOGLE_API_KEY)
 
     const searchResponse = await fetch(searchUrl.toString())
+    if (!searchResponse.ok) {
+      console.error('Text Search API error:', await searchResponse.text())
+      throw new Error('Failed to search for place')
+    }
+
     const searchData = await searchResponse.json()
     console.log('Text Search response:', searchData)
     
-    if (!searchData.results?.[0]?.place_id) {
-      console.error('No place found in search results:', searchData)
-      throw new Error('No place found')
+    if (searchData.status !== 'OK') {
+      console.error('Text Search API error status:', searchData.status)
+      throw new Error(`Places API error: ${searchData.status}`)
+    }
+
+    if (!searchData.results?.length) {
+      console.error('No places found in search results')
+      throw new Error('No restaurants found matching the search')
     }
 
     // Get detailed place information
@@ -132,6 +167,7 @@ serve(async (req) => {
     detailsUrl.searchParams.set('place_id', placeId)
     detailsUrl.searchParams.set('key', GOOGLE_API_KEY)
     detailsUrl.searchParams.set('fields', [
+      'place_id',
       'name',
       'rating',
       'user_ratings_total',
@@ -149,12 +185,17 @@ serve(async (req) => {
 
     console.log('Fetching place details')
     const detailsResponse = await fetch(detailsUrl.toString())
+    if (!detailsResponse.ok) {
+      console.error('Place Details API error:', await detailsResponse.text())
+      throw new Error('Failed to fetch place details')
+    }
+
     const detailsData = await detailsResponse.json()
     console.log('Place Details response:', detailsData)
 
-    if (!detailsData.result) {
-      console.error('No details found:', detailsData)
-      throw new Error('Could not fetch place details')
+    if (detailsData.status !== 'OK') {
+      console.error('Place Details API error status:', detailsData.status)
+      throw new Error(`Places API error: ${detailsData.status}`)
     }
 
     return new Response(
