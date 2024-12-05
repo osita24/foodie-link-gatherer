@@ -7,15 +7,12 @@ export const fetchRestaurantDetails = async (inputUrl: string): Promise<Restaura
 
   try {
     // Parse the input URL
-    const parsedUrl = await parseGoogleMapsUrl(inputUrl);
-    console.log('Parsed URL result:', parsedUrl);
+    await parseGoogleMapsUrl(inputUrl);
+    console.log('Parsed URL, proceeding with Edge Function');
 
     // Get the place details from our Edge Function
     const { data, error } = await supabase.functions.invoke('google-maps-proxy', {
-      body: { 
-        action: 'expand_url',
-        url: inputUrl
-      }
+      body: { url: inputUrl }
     });
 
     if (error) {
@@ -24,7 +21,7 @@ export const fetchRestaurantDetails = async (inputUrl: string): Promise<Restaura
     }
 
     if (!data.result) {
-      console.error('No result found in API response');
+      console.error('No result found in API response:', data);
       throw new Error('No restaurant data found');
     }
 
@@ -62,7 +59,7 @@ export const fetchRestaurantDetails = async (inputUrl: string): Promise<Restaura
       googleReviews: data.result.reviews || []
     };
 
-    console.log('Transformed restaurant details:', restaurantDetails);
+    console.log('Successfully transformed restaurant details:', restaurantDetails);
     return restaurantDetails;
   } catch (error) {
     console.error('Error fetching restaurant details:', error);
