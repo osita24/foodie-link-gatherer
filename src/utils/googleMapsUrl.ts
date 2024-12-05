@@ -8,7 +8,25 @@ export const extractPlaceId = async (url: string): Promise<string | null> => {
     // Handle shortened g.co links
     if (url.includes('g.co/kgs/')) {
       console.log('Detected shortened g.co URL');
-      return null;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to resolve shortened URL');
+      }
+      const fullUrl = response.url;
+      console.log('Resolved shortened URL to:', fullUrl);
+      return extractPlaceId(fullUrl);
+    }
+
+    // Handle maps.app.goo.gl links
+    if (url.includes('maps.app.goo.gl')) {
+      console.log('Detected maps.app.goo.gl URL');
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to resolve maps app URL');
+      }
+      const fullUrl = response.url;
+      console.log('Resolved maps app URL to:', fullUrl);
+      return extractPlaceId(fullUrl);
     }
 
     const urlObj = new URL(url);

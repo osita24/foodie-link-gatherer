@@ -78,9 +78,14 @@ const Hero = () => {
               {isProcessing ? "Processing..." : "Find Match"}
             </Button>
           </div>
-          <p className="text-sm text-gray-500 mt-4 animate-fade-up" style={{ animationDelay: "600ms" }}>
-            For best results, use full Google Maps URLs (e.g., https://www.google.com/maps/place/...)
-          </p>
+          <div className="text-sm text-gray-500 mt-4 space-y-2 animate-fade-up" style={{ animationDelay: "600ms" }}>
+            <p>Supported URL formats:</p>
+            <ul className="space-y-1">
+              <li>• Full Google Maps URLs (maps.google.com)</li>
+              <li>• Mobile share links (maps.app.goo.gl)</li>
+              <li>• Shortened links (g.co/kgs)</li>
+            </ul>
+          </div>
         </div>
       </div>
     </section>
