@@ -32,10 +32,15 @@ const Hero = () => {
         throw new Error(error.message);
       }
 
-      // Navigate to restaurant details with the response data
-      navigate(`/restaurant/${data.result.place_id}`, { 
-        state: { restaurantData: data.result }
-      });
+      if (!data?.result) {
+        throw new Error("No restaurant data found in response");
+      }
+
+      // Store the restaurant data in sessionStorage
+      sessionStorage.setItem('currentRestaurant', JSON.stringify(data.result));
+      
+      // Navigate to restaurant details page
+      navigate('/restaurant/details');
       
       toast.success("Found restaurant!");
       

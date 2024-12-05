@@ -1,4 +1,5 @@
-import { useParams, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import RestaurantInfo from "@/components/restaurant/RestaurantInfo";
 import PopularItems from "@/components/restaurant/PopularItems";
@@ -9,16 +10,29 @@ import MatchScoreCard from "@/components/restaurant/MatchScoreCard";
 import ActionButtons from "@/components/restaurant/ActionButtons";
 import OrderSection from "@/components/restaurant/OrderSection";
 import MenuRecommendations from "@/components/restaurant/MenuRecommendations";
-import { useRestaurantData } from "@/hooks/useRestaurantData";
+import { RestaurantDetails as RestaurantDetailsType } from "@/types/restaurant";
 
 const RestaurantDetails = () => {
-  const { id = '' } = useParams();
-  const location = useLocation();
-  const initialData = location.state?.restaurantData;
-  
-  console.log("Initial restaurant data from navigation:", initialData);
-  
-  const { data: restaurant, isLoading, error } = useRestaurantData(id, initialData);
+  const [restaurant, setRestaurant] = useState<RestaurantDetailsType | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Get restaurant data from sessionStorage
+    const storedData = sessionStorage.getItem('currentRestaurant');
+    if (!storedData) {
+      navigate('/');
+      return;
+    }
+
+    try {
+      const parsedData = JSON.parse(storedData);
+      console.log("Loaded restaurant data:", parsedData);
+      setRestaurant(parsedData);
+    } catch (error) {
+      console.error("Error parsing restaurant data:", error);
+      navigate('/');
+    }
+  }, [navigate]);
 
   const matchCategories = [
     {
@@ -47,7 +61,7 @@ const RestaurantDetails = () => {
     }
   ];
 
-  if (isLoading) {
+  if (!restaurant) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -61,33 +75,9 @@ const RestaurantDetails = () => {
                   <div className="h-4 bg-gray-200 animate-pulse rounded w-1/2" />
                   <div className="h-4 bg-gray-200 animate-pulse rounded w-2/3" />
                 </div>
-                <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-                  <div className="h-6 bg-gray-200 animate-pulse rounded w-1/3" />
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="h-32 bg-gray-200 animate-pulse rounded" />
-                    <div className="h-32 bg-gray-200 animate-pulse rounded" />
-                  </div>
-                </div>
-              </div>
-              <div className="hidden lg:block space-y-6">
-                <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-                  <div className="h-6 bg-gray-200 animate-pulse rounded w-2/3" />
-                  <div className="h-24 bg-gray-200 animate-pulse rounded" />
-                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-        <div className="text-center max-w-md animate-fade-up">
-          <h2 className="text-xl font-semibold text-red-600 mb-4">Error loading restaurant details</h2>
-          <p className="text-gray-600 mb-4">{error instanceof Error ? error.message : 'Unknown error occurred'}</p>
         </div>
       </div>
     );
@@ -110,7 +100,7 @@ const RestaurantDetails = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white rounded-xl shadow-sm p-6">
-              {restaurant && <RestaurantInfo restaurant={restaurant} />}
+              <RestaurantInfo restaurant={restaurant} />
             </div>
             
             <div className="block lg:hidden space-y-6">
