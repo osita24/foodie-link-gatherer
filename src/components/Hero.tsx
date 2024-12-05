@@ -3,13 +3,12 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { toast } from "sonner";
 import { fetchRestaurantDetails } from "@/services/googlePlaces";
-import RestaurantPreviewCard from "./restaurant/RestaurantPreviewCard";
-import { RestaurantDetails } from "@/types/restaurant";
+import { useNavigate } from "react-router-dom";
 
 const Hero = () => {
   const [restaurantUrl, setRestaurantUrl] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [matchingRestaurants, setMatchingRestaurants] = useState<RestaurantDetails[]>([]);
+  const navigate = useNavigate();
 
   const handleImport = async () => {
     if (!restaurantUrl) {
@@ -28,11 +27,9 @@ const Hero = () => {
         throw new Error("Could not find restaurant details");
       }
       
-      // For now, we'll just show the single restaurant as a match
-      // In a real implementation, you'd fetch similar restaurants based on preferences
-      setMatchingRestaurants([restaurantDetails]);
-      setRestaurantUrl("");
-      toast.success("Found matching restaurants!");
+      // Navigate directly to restaurant details page
+      navigate(`/restaurant/${restaurantDetails.id}`);
+      toast.success("Found restaurant!");
     } catch (error) {
       console.error("Error processing URL:", error);
       toast.error(error instanceof Error ? error.message : "An error occurred while processing the URL");
@@ -80,24 +77,6 @@ const Hero = () => {
             Works with all Google Maps URLs including shortened links (goo.gl/maps) and share links
           </p>
         </div>
-
-        {matchingRestaurants.length > 0 && (
-          <div className="mt-16 animate-fade-up">
-            <h2 className="text-2xl font-semibold mb-8 text-center">Restaurants That Match Your Taste</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {matchingRestaurants.map((restaurant) => (
-                <RestaurantPreviewCard
-                  key={restaurant.id}
-                  id={restaurant.id}
-                  name={restaurant.name}
-                  rating={restaurant.rating}
-                  address={restaurant.address}
-                  imageUrl={restaurant.photos?.[0]}
-                />
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </section>
   );

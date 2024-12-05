@@ -27,16 +27,25 @@ async function getPlaceDetails(placeId: string) {
   const detailsUrl = new URL('https://maps.googleapis.com/maps/api/place/details/json');
   detailsUrl.searchParams.set('place_id', placeId);
   detailsUrl.searchParams.set('key', GOOGLE_API_KEY!);
-  detailsUrl.searchParams.set('fields', 'name,rating,formatted_address,formatted_phone_number,opening_hours,website,price_level,photos,reviews,types,user_ratings_total,utc_offset');
+  detailsUrl.searchParams.set('fields', 'name,rating,formatted_address,formatted_phone_number,opening_hours,website,price_level,photos,reviews,types,user_ratings_total,utc_offset,place_id');
 
-  const response = await fetch(detailsUrl.toString());
-  const data = await response.json();
-  
-  if (data.status !== 'OK') {
-    throw new Error(`Place Details API error: ${data.status}`);
+  try {
+    const response = await fetch(detailsUrl.toString());
+    if (!response.ok) {
+      throw new Error(`Place Details API error: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('Place details response:', data);
+    
+    if (data.status !== 'OK') {
+      throw new Error(`Place Details API error: ${data.status}`);
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error fetching place details:', error);
+    throw error;
   }
-  
-  return data;
 }
 
 async function searchPlace(query: string) {
@@ -46,14 +55,24 @@ async function searchPlace(query: string) {
   searchUrl.searchParams.set('query', query);
   searchUrl.searchParams.set('key', GOOGLE_API_KEY!);
 
-  const response = await fetch(searchUrl.toString());
-  const data = await response.json();
-  
-  if (data.status !== 'OK' || !data.results?.length) {
-    throw new Error('No places found matching the search criteria');
+  try {
+    const response = await fetch(searchUrl.toString());
+    if (!response.ok) {
+      throw new Error(`Place Search API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Place search response:', data);
+    
+    if (data.status !== 'OK' || !data.results?.length) {
+      throw new Error('No places found matching the search criteria');
+    }
+    
+    return await getPlaceDetails(data.results[0].place_id);
+  } catch (error) {
+    console.error('Error searching place:', error);
+    throw error;
   }
-  
-  return await getPlaceDetails(data.results[0].place_id);
 }
 
 serve(async (req) => {
@@ -81,26 +100,31 @@ serve(async (req) => {
       console.log('Expanded URL:', expandedUrl);
     }
 
-    // Try to extract place_id from URL
-    const urlObj = new URL(expandedUrl);
-    const searchParams = new URLSearchParams(urlObj.search);
-    const placeId = searchParams.get('place_id');
+    try {
+      // Try to extract place_id from URL
+      const urlObj = new URL(expandedUrl);
+      const searchParams = new URLSearchParams(urlObj.search);
+      const placeId = searchParams.get('place_id');
 
-    let result;
-    if (placeId) {
-      result = await getPlaceDetails(placeId);
-    } else {
-      // Extract search terms from the URL path
-      const pathSegments = urlObj.pathname.split('/').filter(segment => 
-        segment && !segment.includes('maps') && !segment.includes('http')
-      );
-      const searchQuery = pathSegments.join(' ');
-      result = await searchPlace(searchQuery);
+      let result;
+      if (placeId) {
+        result = await getPlaceDetails(placeId);
+      } else {
+        // Extract search terms from the URL path
+        const pathSegments = urlObj.pathname.split('/').filter(segment => 
+          segment && !segment.includes('maps') && !segment.includes('http')
+        );
+        const searchQuery = pathSegments.join(' ');
+        result = await searchPlace(searchQuery);
+      }
+
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (error) {
+      console.error('Error processing Google Maps URL:', error);
+      throw error;
     }
-
-    return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
 
   } catch (error) {
     console.error('Error processing request:', error);
