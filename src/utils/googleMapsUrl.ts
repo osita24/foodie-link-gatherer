@@ -29,23 +29,33 @@ async function resolveShortUrl(url: string): Promise<string> {
  */
 function convertFtidToPlaceId(ftid: string): string {
   // ftid format: 0x882b34d9289991d5:0x5f596deace8d8b6a
-  // We need the second part after the colon
-  const parts = ftid.split(':');
-  if (parts.length !== 2) return '';
+  console.log('Converting ftid:', ftid);
   
-  // Convert the hex string to a Place ID format
-  // Google uses base-16 numbers in ftid, which we need to convert to their Place ID format
+  const parts = ftid.split(':');
+  if (parts.length !== 2) {
+    console.log('Invalid ftid format - missing colon separator');
+    return '';
+  }
+  
   try {
+    // Extract the second part and remove '0x' prefix
     const placeIdHex = parts[1].replace('0x', '');
-    // Convert pairs of hex characters to decimal and then to corresponding ASCII
-    let placeId = 'ChIJ';
+    
+    // Convert hex string to bytes
+    const bytes = new Uint8Array(placeIdHex.length / 2);
     for (let i = 0; i < placeIdHex.length; i += 2) {
-      const hex = placeIdHex.substr(i, 2);
-      const decimal = parseInt(hex, 16);
-      placeId += String.fromCharCode(decimal);
+      bytes[i/2] = parseInt(placeIdHex.substr(i, 2), 16);
     }
-    console.log('Converted ftid to Place ID:', placeId);
-    return placeId;
+    
+    // Convert bytes to string using TextDecoder
+    const decoder = new TextDecoder('utf-8');
+    const decodedStr = decoder.decode(bytes);
+    
+    // Prepend 'ChIJ' and encode for URL
+    const placeId = 'ChIJ' + decodedStr;
+    console.log('Successfully converted ftid to Place ID:', placeId);
+    
+    return encodeURIComponent(placeId);
   } catch (error) {
     console.error('Error converting ftid to Place ID:', error);
     return '';
@@ -80,7 +90,7 @@ export const extractPlaceId = async (url: string): Promise<string | null> => {
     if (searchParams.has('place_id')) {
       const placeId = searchParams.get('place_id');
       console.log('Found direct place_id:', placeId);
-      return placeId;
+      return encodeURIComponent(placeId || '');
     }
 
     // Try to extract from ftid parameter (new format)
@@ -100,7 +110,7 @@ export const extractPlaceId = async (url: string): Promise<string | null> => {
       const placeId = pathMatch[1];
       if (placeId.startsWith('ChIJ')) {
         console.log('Extracted Place ID from path:', placeId);
-        return placeId;
+        return encodeURIComponent(placeId);
       }
     }
 
@@ -110,7 +120,7 @@ export const extractPlaceId = async (url: string): Promise<string | null> => {
       const placeIdMatch = dataParam.match(/!1s(ChIJ[^!]+)!/);
       if (placeIdMatch && placeIdMatch[1]) {
         console.log('Extracted Place ID from data parameter:', placeIdMatch[1]);
-        return placeIdMatch[1];
+        return encodeURIComponent(placeIdMatch[1]);
       }
     }
 
@@ -119,7 +129,7 @@ export const extractPlaceId = async (url: string): Promise<string | null> => {
     if (businessMatch && businessMatch[1].startsWith('0x')) {
       const placeId = decodeURIComponent(businessMatch[1]);
       console.log('Extracted Place ID from business listing:', placeId);
-      return placeId;
+      return encodeURIComponent(placeId);
     }
 
     console.log('No Place ID found in URL');

@@ -20,7 +20,7 @@ const extractPlaceId = (placeId: string): string => {
     const placeParam = urlParams.get('place_id');
     if (placeParam) {
       console.log('Found Place ID in URL parameters:', placeParam);
-      return placeParam;
+      return encodeURIComponent(placeParam);
     }
 
     // Second try: Look for the hex format ID in the URL
@@ -28,14 +28,14 @@ const extractPlaceId = (placeId: string): string => {
     const hexMatch = fullUrl.match(/!1s(0x[a-fA-F0-9]+:[a-fA-F0-9]+)/);
     if (hexMatch && hexMatch[1]) {
       console.log('Found hex format Place ID:', hexMatch[1]);
-      return hexMatch[1];
+      return encodeURIComponent(hexMatch[1]);
     }
 
     // Third try: Look for a ChIJ format ID
     const chijMatch = fullUrl.match(/!1s(ChIJ[^!]+)/);
     if (chijMatch && chijMatch[1]) {
       console.log('Found ChIJ format Place ID:', chijMatch[1]);
-      return chijMatch[1];
+      return encodeURIComponent(chijMatch[1]);
     }
 
     throw new Error('Could not extract Place ID from URL');
