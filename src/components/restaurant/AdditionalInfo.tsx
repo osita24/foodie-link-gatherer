@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Info, Clock, Utensils, Wine, Coffee, Wheelchair } from "lucide-react";
+import { Info, Clock, Utensils, Wine, Coffee, Accessibility } from "lucide-react";
 import { RestaurantDetails } from "@/types/restaurant";
 
 interface AdditionalInfoProps {
