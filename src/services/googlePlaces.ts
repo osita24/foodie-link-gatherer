@@ -94,7 +94,7 @@ export const fetchRestaurantDetails = async (inputUrl: string): Promise<Restaura
       throw new Error('No restaurant data found');
     }
 
-    // Create photo URLs
+    // Create photo URLs using the proxy
     const photoUrls = data.result.photos?.map((photo: any) => 
       `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${import.meta.env.VITE_GOOGLE_PLACES_API_KEY}`
     ) || [];

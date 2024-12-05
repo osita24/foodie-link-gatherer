@@ -23,17 +23,29 @@ interface ParsedMapUrl {
 }
 
 /**
- * Resolves a shortened URL to its full form
+ * Resolves a shortened URL to its full form using our Edge Function
  */
 const resolveShortUrl = async (url: string): Promise<string> => {
   console.log('Resolving shortened URL:', url);
   try {
-    const response = await fetch(url, {
-      method: 'HEAD',
-      redirect: 'follow',
+    const { data, error } = await supabase.functions.invoke('google-maps-proxy', {
+      body: { 
+        action: 'expand_url',
+        url: url 
+      }
     });
-    console.log('Resolved URL:', response.url);
-    return response.url;
+
+    if (error) {
+      console.error('Error expanding URL:', error);
+      throw new Error('Failed to expand shortened URL');
+    }
+
+    if (!data?.expandedUrl) {
+      throw new Error('No expanded URL returned');
+    }
+
+    console.log('Expanded URL:', data.expandedUrl);
+    return data.expandedUrl;
   } catch (error) {
     console.error('Error resolving shortened URL:', error);
     throw new Error('Failed to resolve shortened URL');
