@@ -93,7 +93,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               },
             }}
             providers={[]}
-            redirectTo={`${window.location.origin}/profile`}
+            redirectTo={window.location.origin}
           />
         </div>
       </DialogContent>
