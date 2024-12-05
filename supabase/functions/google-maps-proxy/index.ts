@@ -18,34 +18,84 @@ serve(async (req) => {
 
     // First, expand the shortened URL if needed
     let expandedUrl = url
-    if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
+    if (url.includes('maps.app.goo.gl')) {
       console.log('Expanding shortened URL')
-      const response = await fetch(url, {
-        method: 'HEAD',
-        redirect: 'follow',
+      const response = await fetch(url, { 
+        method: 'GET',
+        redirect: 'follow'
       })
+      
+      // Get the final URL after all redirects
       expandedUrl = response.url
       console.log('Expanded URL:', expandedUrl)
+
+      // For shortened URLs, we'll use the coordinates from the URL
+      const coords = expandedUrl.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
+      if (coords) {
+        console.log('Found coordinates:', coords[1], coords[2])
+        
+        // Use Places API Nearby Search with coordinates
+        const nearbyUrl = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json')
+        nearbyUrl.searchParams.set('location', `${coords[1]},${coords[2]}`)
+        nearbyUrl.searchParams.set('radius', '50') // Small radius since we know exact location
+        nearbyUrl.searchParams.set('key', GOOGLE_API_KEY)
+
+        console.log('Making Nearby Search request')
+        const nearbyResponse = await fetch(nearbyUrl.toString())
+        const nearbyData = await nearbyResponse.json()
+        console.log('Nearby Search response:', nearbyData)
+
+        if (nearbyData.results?.[0]?.place_id) {
+          // Get detailed place information
+          const placeId = nearbyData.results[0].place_id
+          console.log('Found place ID from coordinates:', placeId)
+
+          const detailsUrl = new URL('https://maps.googleapis.com/maps/api/place/details/json')
+          detailsUrl.searchParams.set('place_id', placeId)
+          detailsUrl.searchParams.set('key', GOOGLE_API_KEY)
+          detailsUrl.searchParams.set('fields', [
+            'name',
+            'rating',
+            'user_ratings_total',
+            'formatted_address',
+            'formatted_phone_number',
+            'opening_hours',
+            'website',
+            'price_level',
+            'photos',
+            'reviews',
+            'types',
+            'vicinity',
+            'utc_offset'
+          ].join(','))
+
+          console.log('Fetching place details')
+          const detailsResponse = await fetch(detailsUrl.toString())
+          const detailsData = await detailsResponse.json()
+          console.log('Place Details response:', detailsData)
+
+          return new Response(
+            JSON.stringify(detailsData),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+      }
+      
+      throw new Error('Could not find restaurant at coordinates')
     }
 
-    // Extract search query from URL
+    // For regular URLs, try to extract search query
     let searchQuery = ''
     try {
       const urlObj = new URL(expandedUrl)
       
-      // Try to get query from q parameter
       if (urlObj.searchParams.has('q')) {
         searchQuery = urlObj.searchParams.get('q') || ''
-      }
-      
-      // If no q parameter, try to extract from the path
-      if (!searchQuery) {
+      } else {
+        // Try to extract from the path
         const pathParts = urlObj.pathname.split('/').filter(Boolean)
-        if (pathParts.includes('place')) {
-          const placeIndex = pathParts.indexOf('place')
-          if (placeIndex + 1 < pathParts.length) {
-            searchQuery = decodeURIComponent(pathParts[placeIndex + 1]).replace(/\+/g, ' ')
-          }
+        if (pathParts.length > 0) {
+          searchQuery = decodeURIComponent(pathParts[pathParts.length - 1]).replace(/\+/g, ' ')
         }
       }
       
@@ -67,7 +117,7 @@ serve(async (req) => {
 
     const searchResponse = await fetch(searchUrl.toString())
     const searchData = await searchResponse.json()
-    console.log('Text Search response status:', searchResponse.status)
+    console.log('Text Search response:', searchData)
     
     if (!searchData.results?.[0]?.place_id) {
       console.error('No place found in search results:', searchData)
@@ -100,7 +150,7 @@ serve(async (req) => {
     console.log('Fetching place details')
     const detailsResponse = await fetch(detailsUrl.toString())
     const detailsData = await detailsResponse.json()
-    console.log('Place Details response status:', detailsResponse.status)
+    console.log('Place Details response:', detailsData)
 
     if (!detailsData.result) {
       console.error('No details found:', detailsData)
