@@ -10,19 +10,25 @@ const GOOGLE_API_KEY = Deno.env.get('GOOGLE_PLACES_API_KEY')
 async function resolveUrl(url: string): Promise<string> {
   console.log('Attempting to resolve URL:', url)
   
-  // Check if the input is already a Place ID
-  if (url.startsWith('ChIJ')) {
-    console.log('Input appears to be a Place ID, returning as is:', url)
-    return url
-  }
-
   try {
-    // Add protocol if missing
-    if (!url.startsWith('http')) {
-      url = 'https://' + url
+    // First try to decode the URL if it's encoded
+    const decodedUrl = decodeURIComponent(url)
+    console.log('Decoded URL:', decodedUrl)
+    
+    // Check if the decoded input is a Place ID
+    if (decodedUrl.startsWith('ChIJ')) {
+      console.log('Input appears to be a Place ID, returning as is:', decodedUrl)
+      return decodedUrl
     }
 
-    const response = await fetch(url, {
+    // Add protocol if missing
+    let finalUrl = decodedUrl
+    if (!finalUrl.startsWith('http')) {
+      finalUrl = 'https://' + finalUrl
+    }
+
+    console.log('Attempting to fetch URL:', finalUrl)
+    const response = await fetch(finalUrl, {
       redirect: 'follow',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -38,6 +44,10 @@ async function resolveUrl(url: string): Promise<string> {
     return response.url
   } catch (error) {
     console.error('Error resolving URL:', error)
+    if (error instanceof URIError) {
+      console.log('URI Error - returning original URL:', url)
+      return url
+    }
     throw error
   }
 }
@@ -88,18 +98,27 @@ serve(async (req) => {
       throw new Error('No URL provided')
     }
 
-    // If the input is already a Place ID, use it directly
-    if (url.startsWith('ChIJ')) {
-      console.log('Input is already a Place ID:', url)
-      return new Response(
-        JSON.stringify({ placeId: url }),
-        { 
-          headers: { 
-            ...corsHeaders,
-            'Content-Type': 'application/json'
-          } 
-        }
-      )
+    try {
+      // First try to decode the URL if it's encoded
+      const decodedUrl = decodeURIComponent(url)
+      console.log('Decoded URL:', decodedUrl)
+
+      // If the decoded input is a Place ID, use it directly
+      if (decodedUrl.startsWith('ChIJ')) {
+        console.log('Input is a Place ID:', decodedUrl)
+        return new Response(
+          JSON.stringify({ placeId: decodedUrl }),
+          { 
+            headers: { 
+              ...corsHeaders,
+              'Content-Type': 'application/json'
+            } 
+          }
+        )
+      }
+    } catch (error) {
+      console.error('Error decoding URL:', error)
+      // Continue with original URL if decoding fails
     }
 
     // First resolve the URL if it's shortened
