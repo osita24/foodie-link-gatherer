@@ -12,12 +12,12 @@ export const fetchRestaurantDetails = async (inputUrl: string): Promise<Restaura
 
     if (error) {
       console.error('Error from Edge Function:', error);
-      throw error;
+      throw new Error(error.message || 'Failed to fetch restaurant details');
     }
 
-    if (!data.result) {
+    if (!data || !data.result) {
       console.error('No result found in API response:', data);
-      throw new Error(data.error || 'No restaurant data found');
+      throw new Error('No restaurant data found');
     }
 
     console.log('Received data from Edge Function:', data);
