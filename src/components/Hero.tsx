@@ -17,18 +17,30 @@ const Hero = () => {
     }
     
     setIsProcessing(true);
-    console.log("Importing restaurant:", restaurantUrl);
+    console.log("Starting import process for URL:", restaurantUrl);
     
     try {
-      // Check if it's a shortened URL
-      if (restaurantUrl.includes('g.co/kgs/')) {
+      // Handle shortened URLs
+      if (restaurantUrl.includes('maps.app.goo.gl') || restaurantUrl.includes('g.co/kgs/')) {
+        console.log("Processing shortened URL:", restaurantUrl);
         toast.info("Processing shortened URL. This might take a moment...");
       }
       
+      // Extract ftid from URL if present
+      const ftidMatch = restaurantUrl.match(/ftid=([^&]+)/);
+      if (ftidMatch) {
+        console.log("Found ftid in URL:", ftidMatch[1]);
+        navigate(`/restaurant/${ftidMatch[1]}`);
+        setRestaurantUrl("");
+        toast.success("Processing your restaurant...");
+        return;
+      }
+      
       const placeId = await extractPlaceId(restaurantUrl);
+      console.log("Extracted Place ID:", placeId);
       
       if (!placeId) {
-        toast.error("Could not extract restaurant information from the URL. Please try using a full Google Maps URL instead of a shortened link.");
+        toast.error("Could not extract restaurant information. Please try using a full Google Maps URL.");
         return;
       }
 
@@ -37,7 +49,7 @@ const Hero = () => {
       navigate(`/restaurant/${placeId}`);
     } catch (error) {
       console.error("Error processing URL:", error);
-      toast.error("An error occurred while processing the URL. Please try using a full Google Maps URL.");
+      toast.error("An error occurred. Please try using a full Google Maps URL.");
     } finally {
       setIsProcessing(false);
     }
