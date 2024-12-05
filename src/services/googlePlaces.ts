@@ -1,61 +1,64 @@
 import { RestaurantDetails } from "@/types/restaurant";
+import { parseGoogleMapsUrl } from "@/utils/googleMapsUrlParser";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
 
-const extractPlaceId = (placeId: string): string => {
-  console.log('Attempting to extract Place ID from:', placeId);
+/**
+ * Fetches place details from coordinates using Google Places API
+ */
+const fetchPlaceFromCoordinates = async (lat: number, lng: number): Promise<string> => {
+  console.log('Fetching place from coordinates:', { lat, lng });
   
-  // If it's already a place ID starting with ChIJ or 0x, return it
-  if (placeId.startsWith('ChIJ') || placeId.startsWith('0x')) {
-    console.log('Using provided Place ID:', placeId);
-    return placeId;
+  const baseUrl = 'https://cors-anywhere.herokuapp.com/https://maps.googleapis.com/maps/api/place/nearbysearch/json';
+  const response = await fetch(
+    `${baseUrl}?location=${lat},${lng}&rankby=distance&key=${GOOGLE_API_KEY}`,
+    {
+      headers: {
+        'Origin': window.location.origin
+      }
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch place from coordinates');
   }
 
-  try {
-    const url = new URL(placeId);
-    const urlParams = new URLSearchParams(url.search);
-    
-    // First try: Check for place ID in the URL parameters
-    const placeParam = urlParams.get('place_id');
-    if (placeParam) {
-      console.log('Found Place ID in URL parameters:', placeParam);
-      return placeParam;
-    }
-
-    // Second try: Look for the hex format ID in the URL
-    const fullUrl = decodeURIComponent(url.toString());
-    const hexMatch = fullUrl.match(/!1s(0x[a-fA-F0-9]+:[a-fA-F0-9]+)/);
-    if (hexMatch && hexMatch[1]) {
-      console.log('Found hex format Place ID:', hexMatch[1]);
-      return hexMatch[1];
-    }
-
-    // Third try: Look for a ChIJ format ID
-    const chijMatch = fullUrl.match(/!1s(ChIJ[^!]+)/);
-    if (chijMatch && chijMatch[1]) {
-      console.log('Found ChIJ format Place ID:', chijMatch[1]);
-      return chijMatch[1];
-    }
-
-    throw new Error('Could not extract Place ID from URL');
-  } catch (error) {
-    console.error('Error extracting Place ID:', error);
-    throw new Error('Invalid Place ID or URL format');
+  const data = await response.json();
+  if (data.results && data.results[0]) {
+    return data.results[0].place_id;
   }
+
+  throw new Error('No places found at these coordinates');
 };
 
-export const fetchRestaurantDetails = async (inputId: string): Promise<RestaurantDetails> => {
-  console.log('Input ID/URL:', inputId);
-  console.log('Using API Key:', GOOGLE_API_KEY);
+export const fetchRestaurantDetails = async (inputUrl: string): Promise<RestaurantDetails> => {
+  console.log('Starting restaurant details fetch for:', inputUrl);
   
-  try {
-    const placeId = extractPlaceId(inputId);
-    console.log('Processed Place ID:', placeId);
+  if (!GOOGLE_API_KEY) {
+    console.error('Google Places API key not found');
+    throw new Error('Google Places API key not configured');
+  }
 
-    if (!GOOGLE_API_KEY) {
-      console.error('Google Places API key not found');
-      throw new Error('Google Places API key not configured');
+  try {
+    // Parse the input URL
+    const parsedUrl = await parseGoogleMapsUrl(inputUrl);
+    console.log('Parsed URL result:', parsedUrl);
+
+    // Get the place ID either directly or from coordinates
+    let placeId: string;
+    
+    if (parsedUrl.type === 'place_id' && parsedUrl.placeId) {
+      placeId = parsedUrl.placeId;
+    } else if (parsedUrl.type === 'coordinates' && parsedUrl.coordinates) {
+      placeId = await fetchPlaceFromCoordinates(
+        parsedUrl.coordinates.lat,
+        parsedUrl.coordinates.lng
+      );
+    } else {
+      throw new Error('Could not extract location information from URL');
     }
+
+    console.log('Using Place ID:', placeId);
 
     // Use CORS proxy for development
     const baseUrl = 'https://cors-anywhere.herokuapp.com/https://maps.googleapis.com/maps/api/place';
@@ -78,7 +81,6 @@ export const fetchRestaurantDetails = async (inputId: string): Promise<Restauran
     ].join(',');
 
     console.log('Making API request for fields:', fields);
-    console.log('Full request URL:', `${baseUrl}/details/json?place_id=${placeId}&fields=${fields}&key=${GOOGLE_API_KEY}`);
     
     const response = await fetch(
       `${baseUrl}/details/json?place_id=${placeId}&fields=${fields}&key=${GOOGLE_API_KEY}`,
@@ -121,9 +123,6 @@ export const fetchRestaurantDetails = async (inputId: string): Promise<Restauran
     const photoUrls = data.result.photos?.map((photo: any) => 
       `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${GOOGLE_API_KEY}`
     ) || [];
-
-    console.log('Generated photo URLs:', photoUrls);
-    console.log('Opening hours data:', data.result.opening_hours);
 
     // Enhanced hours handling
     let hoursText = 'Hours not available';

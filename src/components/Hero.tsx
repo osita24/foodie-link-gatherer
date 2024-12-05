@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { extractPlaceId } from "@/utils/googleMapsUrl";
+import { fetchRestaurantDetails } from "@/services/googlePlaces";
 
 const Hero = () => {
   const [restaurantUrl, setRestaurantUrl] = useState("");
@@ -20,36 +20,13 @@ const Hero = () => {
     console.log("Starting import process for URL:", restaurantUrl);
     
     try {
-      // Handle shortened URLs
-      if (restaurantUrl.includes('maps.app.goo.gl') || restaurantUrl.includes('g.co/kgs/')) {
-        console.log("Processing shortened URL:", restaurantUrl);
-        toast.info("Processing shortened URL. This might take a moment...");
-      }
-      
-      // Extract ftid from URL if present
-      const ftidMatch = restaurantUrl.match(/ftid=([^&]+)/);
-      if (ftidMatch) {
-        console.log("Found ftid in URL:", ftidMatch[1]);
-        navigate(`/restaurant/${ftidMatch[1]}`);
-        setRestaurantUrl("");
-        toast.success("Processing your restaurant...");
-        return;
-      }
-      
-      const placeId = await extractPlaceId(restaurantUrl);
-      console.log("Extracted Place ID:", placeId);
-      
-      if (!placeId) {
-        toast.error("Could not extract restaurant information. Please try using a full Google Maps URL.");
-        return;
-      }
-
+      const restaurantDetails = await fetchRestaurantDetails(restaurantUrl);
       setRestaurantUrl("");
       toast.success("Processing your restaurant...");
-      navigate(`/restaurant/${placeId}`);
+      navigate(`/restaurant/${restaurantDetails.id}`);
     } catch (error) {
       console.error("Error processing URL:", error);
-      toast.error("An error occurred. Please try using a full Google Maps URL.");
+      toast.error(error instanceof Error ? error.message : "An error occurred while processing the URL");
     } finally {
       setIsProcessing(false);
     }
@@ -91,7 +68,7 @@ const Hero = () => {
             </Button>
           </div>
           <p className="text-sm text-gray-500 mt-4 animate-fade-up" style={{ animationDelay: "600ms" }}>
-            For best results, use full Google Maps URLs (e.g., https://www.google.com/maps/place/...)
+            Works with all Google Maps URLs including shortened links (goo.gl/maps) and share links
           </p>
         </div>
       </div>
