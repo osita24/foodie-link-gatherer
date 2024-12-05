@@ -1,32 +1,25 @@
-import { PlacesSearchResponse, LocationData } from './types.ts';
+import { PlacesSearchResponse } from './types.ts';
 
 const GOOGLE_API_KEY = Deno.env.get('GOOGLE_PLACES_API_KEY');
 
-export async function searchRestaurant(name: string, location?: LocationData): Promise<any> {
-  console.log('🔍 Searching for restaurant:', { name, location });
+export async function searchRestaurant(url: string): Promise<any> {
+  console.log('🔍 Starting restaurant search from URL:', url);
   
   if (!GOOGLE_API_KEY) {
     throw new Error('Google Places API key is not configured');
   }
 
-  const searchUrl = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json');
-  searchUrl.searchParams.set('key', GOOGLE_API_KEY);
-  
-  // Build the search query
-  let query = name;
-  if (location?.address) {
-    query += ` ${location.address}`;
-  }
-  searchUrl.searchParams.set('query', query);
-  
-  // If we have coordinates, use them to bias the search
-  if (location?.lat && location?.lng) {
-    searchUrl.searchParams.set('location', `${location.lat},${location.lng}`);
-    searchUrl.searchParams.set('radius', '1000'); // Search within 1km of the coordinates
-  }
-
   try {
-    console.log('🌐 Fetching from Places API:', searchUrl.toString());
+    // Extract search text from URL
+    const searchText = extractSearchText(url);
+    console.log('📝 Search text extracted:', searchText);
+
+    // Search using Places API
+    const searchUrl = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json');
+    searchUrl.searchParams.set('key', GOOGLE_API_KEY);
+    searchUrl.searchParams.set('query', searchText);
+    
+    console.log('🌐 Fetching from Places API with search:', searchText);
     const response = await fetch(searchUrl.toString());
     const data: PlacesSearchResponse = await response.json();
     
@@ -39,11 +32,33 @@ export async function searchRestaurant(name: string, location?: LocationData): P
       throw new Error('No places found matching the search criteria');
     }
     
-    // Get details for the first result
+    // Get details for the first (best) result
     return await getPlaceDetails(data.results[0].place_id);
   } catch (error) {
     console.error('❌ Error in searchRestaurant:', error);
     throw error;
+  }
+}
+
+function extractSearchText(url: string): string {
+  console.log('📑 Extracting search text from URL');
+  
+  try {
+    const urlObj = new URL(url);
+    
+    // Try different possible parameters where the restaurant info might be
+    const searchParams = [
+      urlObj.searchParams.get('q'),
+      urlObj.searchParams.get('query'),
+      urlObj.pathname.split('/').filter(Boolean).join(' ')
+    ].filter(Boolean);
+
+    const searchText = searchParams[0] || url;
+    console.log('📝 Extracted search text:', searchText);
+    return searchText;
+  } catch (error) {
+    console.log('⚠️ Error parsing URL, using full URL as search text');
+    return url;
   }
 }
 
