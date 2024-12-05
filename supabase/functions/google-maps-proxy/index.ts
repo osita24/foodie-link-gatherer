@@ -8,19 +8,46 @@ const corsHeaders = {
 
 async function expandUrl(shortUrl: string): Promise<string> {
   console.log('Expanding URL:', shortUrl)
-  const response = await fetch(shortUrl, {
-    method: 'GET',
-    redirect: 'follow'
-  })
-  console.log('Expanded URL:', response.url)
-  return response.url
+  try {
+    const response = await fetch(shortUrl, {
+      method: 'HEAD',
+      redirect: 'follow'
+    })
+    console.log('Expanded URL:', response.url)
+    return response.url
+  } catch (error) {
+    console.error('Error expanding URL:', error)
+    throw new Error('Failed to expand shortened URL')
+  }
+}
+
+function extractCoordinates(url: string): { lat: string, lng: string } {
+  console.log('Attempting to extract coordinates from:', url)
+  
+  // Try different URL patterns
+  const patterns = [
+    /@(-?\d+\.\d+),(-?\d+\.\d+)/, // Standard format
+    /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/, // Alternate format
+    /ll=(-?\d+\.\d+),(-?\d+\.\d+)/, // Another format
+    /center=(-?\d+\.\d+),(-?\d+\.\d+)/ // Center parameter format
+  ]
+
+  for (const pattern of patterns) {
+    const match = url.match(pattern)
+    if (match) {
+      console.log('Found coordinates:', match[1], match[2])
+      return { lat: match[1], lng: match[2] }
+    }
+  }
+
+  throw new Error('Could not extract coordinates from URL')
 }
 
 async function findRestaurantFromCoordinates(lat: string, lng: string) {
   console.log('Searching for restaurant at coordinates:', lat, lng)
   
-  // First search for nearby restaurants
-  const nearbyUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=100&type=restaurant&key=${GOOGLE_API_KEY}`
+  // First search for nearby restaurants with increased radius
+  const nearbyUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=500&type=restaurant&key=${GOOGLE_API_KEY}`
   
   const nearbyResponse = await fetch(nearbyUrl)
   const nearbyData = await nearbyResponse.json()
@@ -54,20 +81,15 @@ serve(async (req) => {
     console.log('Processing URL:', url)
 
     // 1. Expand the shortened URL if needed
-    const expandedUrl = url.includes('goo.gl') ? await expandUrl(url) : url
-    console.log('Working with URL:', expandedUrl)
+    const expandedUrl = url.includes('goo.gl') || url.includes('maps.app') ? await expandUrl(url) : url
+    console.log('Working with expanded URL:', expandedUrl)
 
     // 2. Extract coordinates from the URL
-    const coordsMatch = expandedUrl.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
-    if (!coordsMatch) {
-      throw new Error('Could not extract coordinates from URL')
-    }
-
-    const [, lat, lng] = coordsMatch
-    console.log('Extracted coordinates:', lat, lng)
+    const coords = extractCoordinates(expandedUrl)
+    console.log('Successfully extracted coordinates:', coords)
 
     // 3. Find restaurant at these coordinates
-    const placeDetails = await findRestaurantFromCoordinates(lat, lng)
+    const placeDetails = await findRestaurantFromCoordinates(coords.lat, coords.lng)
     console.log('Successfully retrieved place details')
 
     return new Response(
