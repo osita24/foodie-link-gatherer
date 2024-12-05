@@ -96,8 +96,8 @@ const MatchScoreCard = ({ categories }: MatchScoreCardProps) => {
 
   return (
     <>
-      <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 relative z-[90]
-        bg-white border-accent/20">
+      <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 relative z-10
+        bg-white border-accent/20 mb-20 sm:mb-0">
         {session && (
           <CardHeader className="border-b border-accent/20 md:p-6 p-4 
             bg-gradient-to-r from-primary/5 to-accent/10">
