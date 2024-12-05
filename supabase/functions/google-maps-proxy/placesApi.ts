@@ -173,7 +173,22 @@ async function getPlaceDetails(placeId: string): Promise<any> {
     'user_ratings_total',
     'utc_offset',
     'place_id',
-    'vicinity'
+    'vicinity',
+    'business_status',
+    'curbside_pickup',
+    'delivery',
+    'dine_in',
+    'price_level',
+    'reservable',
+    'serves_beer',
+    'serves_breakfast',
+    'serves_brunch',
+    'serves_dinner',
+    'serves_lunch',
+    'serves_vegetarian_food',
+    'serves_wine',
+    'takeout',
+    'wheelchair_accessible_entrance'
   ].join(','));
   detailsUrl.searchParams.set('key', GOOGLE_API_KEY);
   

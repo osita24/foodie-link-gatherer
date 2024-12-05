@@ -11,6 +11,7 @@ import MatchScoreCard from "@/components/restaurant/MatchScoreCard";
 import ActionButtons from "@/components/restaurant/ActionButtons";
 import OrderSection from "@/components/restaurant/OrderSection";
 import MenuRecommendations from "@/components/restaurant/MenuRecommendations";
+import AdditionalInfo from "@/components/restaurant/AdditionalInfo";
 import { RestaurantDetails as RestaurantDetailsType } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -168,11 +169,13 @@ const RestaurantDetails = () => {
               <MenuRecommendations />
               <MenuSection menu={restaurant?.menu} />
               <PopularItems />
+              <AdditionalInfo restaurant={restaurant} />
               {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}
               {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
             </div>
 
             <div className="block lg:hidden space-y-6">
+              <AdditionalInfo restaurant={restaurant} />
               {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}
               {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
             </div>

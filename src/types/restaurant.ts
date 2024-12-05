@@ -45,4 +45,20 @@ export interface RestaurantDetails {
   userRatingsTotal?: number;
   utcOffset?: number;
   googleReviews?: Review[];
+  // New fields
+  businessStatus?: string;
+  curbsidePickup?: boolean;
+  delivery?: boolean;
+  dineIn?: boolean;
+  priceRange?: string;
+  reservable?: boolean;
+  servesBeer?: boolean;
+  servesBreakfast?: boolean;
+  servesBrunch?: boolean;
+  servesLunch?: boolean;
+  servesDinner?: boolean;
+  servesVegetarianFood?: boolean;
+  servesWine?: boolean;
+  takeout?: boolean;
+  wheelchairAccessible?: boolean;
 }
