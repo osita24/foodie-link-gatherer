@@ -15,7 +15,7 @@ async function expandUrl(shortUrl: string): Promise<string> {
       redirect: 'follow',
     })
     const expandedUrl = response.url
-    console.log('Successfully expanded URL to:', expandedUrl)
+    console.log('🔍 EXPANDED URL:', expandedUrl)  // Added this log
     return expandedUrl
   } catch (error) {
     console.error('Error expanding URL:', error)
