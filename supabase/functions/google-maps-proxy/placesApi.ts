@@ -28,10 +28,11 @@ export async function searchRestaurant(url: string): Promise<any> {
     searchUrl.searchParams.set('key', GOOGLE_API_KEY);
     searchUrl.searchParams.set('query', searchText);
     
-    console.log('🌐 Fetching from Places API with search:', searchText);
+    console.log('🌐 Making request to Places API with URL:', searchUrl.toString());
     const response = await fetch(searchUrl.toString());
     const data: PlacesSearchResponse = await response.json();
     
+    console.log('📊 Places API response:', data);
     console.log('📊 Places API response status:', data.status);
     console.log('📊 Number of results:', data.results?.length || 0);
     
@@ -45,8 +46,9 @@ export async function searchRestaurant(url: string): Promise<any> {
     }
     
     // Get details for the first (best) result
+    console.log('🔍 Getting details for place_id:', data.results[0].place_id);
     const details = await getPlaceDetails(data.results[0].place_id);
-    console.log('✅ Successfully retrieved place details');
+    console.log('✅ Successfully retrieved place details:', details);
     return details;
   } catch (error) {
     console.error('❌ Error in searchRestaurant:', error);
@@ -55,12 +57,12 @@ export async function searchRestaurant(url: string): Promise<any> {
 }
 
 function extractSearchText(url: string): string {
-  console.log('📑 Extracting search text from URL');
+  console.log('📑 Extracting search text from URL:', url);
   
   try {
     const urlObj = new URL(url);
     
-    // Try different possible parameters where the restaurant info might be
+    // Try different possible parameters where the search text might be
     const searchParams = [
       urlObj.searchParams.get('q'),
       urlObj.searchParams.get('query'),
@@ -79,7 +81,9 @@ function extractSearchText(url: string): string {
 async function getPlaceDetails(placeId: string): Promise<any> {
   console.log('🔍 Getting place details for ID:', placeId);
   
-  const fields = [
+  const detailsUrl = new URL('https://maps.googleapis.com/maps/api/place/details/json');
+  detailsUrl.searchParams.set('place_id', placeId);
+  detailsUrl.searchParams.set('fields', [
     'name',
     'rating',
     'formatted_address',
@@ -93,23 +97,20 @@ async function getPlaceDetails(placeId: string): Promise<any> {
     'user_ratings_total',
     'utc_offset',
     'place_id'
-  ].join(',');
-
-  const detailsUrl = new URL('https://maps.googleapis.com/maps/api/place/details/json');
-  detailsUrl.searchParams.set('place_id', placeId);
-  detailsUrl.searchParams.set('fields', fields);
+  ].join(','));
   detailsUrl.searchParams.set('key', GOOGLE_API_KEY);
   
   try {
+    console.log('🌐 Making request to Place Details API');
     const response = await fetch(detailsUrl.toString());
     const data = await response.json();
     
     if (data.status !== 'OK') {
       console.error('❌ Place Details API error:', data);
-      throw new Error(`Place Details API error: ${data.status}`);
+      throw new Error(data.error_message || `Place Details API error: ${data.status}`);
     }
     
-    console.log('✨ Successfully fetched place details');
+    console.log('✅ Successfully retrieved place details');
     return data;
   } catch (error) {
     console.error('❌ Error in getPlaceDetails:', error);
