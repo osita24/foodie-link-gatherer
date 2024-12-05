@@ -22,21 +22,43 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
     let finalUrl = url;
     if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
       console.log('📎 Expanding shortened URL:', url);
-      const response = await fetch(url, { 
-        redirect: 'follow',
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-      });
-      finalUrl = response.url;
-      console.log('📎 Expanded URL:', finalUrl);
+      try {
+        const response = await fetch(url, { 
+          redirect: 'follow',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          }
+        });
+        finalUrl = response.url;
+        console.log('📎 Expanded URL:', finalUrl);
+      } catch (error) {
+        console.error('Error expanding shortened URL:', error);
+        finalUrl = url;
+      }
     }
 
     // Try to extract place ID from URL first
     const urlObj = new URL(finalUrl);
     const searchParams = new URLSearchParams(urlObj.search);
-    const extractedPlaceId = searchParams.get('place_id') || 
-                            finalUrl.match(/place\/[^/]+\/([^/?]+)/)?.[1];
+    let extractedPlaceId = searchParams.get('place_id');
+
+    // Try different patterns to extract place ID
+    if (!extractedPlaceId) {
+      const placeMatch = finalUrl.match(/place\/[^/]+\/([^/?]+)/);
+      if (placeMatch && placeMatch[1]?.startsWith('ChIJ')) {
+        extractedPlaceId = placeMatch[1];
+      }
+    }
+
+    if (!extractedPlaceId) {
+      const dataParam = searchParams.get('data');
+      if (dataParam) {
+        const placeIdMatch = dataParam.match(/!1s(ChIJ[^!]+)!/);
+        if (placeIdMatch && placeIdMatch[1]) {
+          extractedPlaceId = placeIdMatch[1];
+        }
+      }
+    }
 
     if (extractedPlaceId?.startsWith('ChIJ')) {
       console.log('🎯 Found place ID in URL:', extractedPlaceId);
@@ -52,7 +74,7 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
     searchUrl.searchParams.set('query', searchText);
     searchUrl.searchParams.set('type', 'restaurant');
     
-    console.log('🌐 Making text search request to:', searchUrl.toString());
+    console.log('🌐 Making text search request');
     const response = await fetch(searchUrl.toString());
     if (!response.ok) {
       throw new Error(`Places API request failed with status ${response.status}`);
@@ -159,7 +181,10 @@ async function getPlaceDetails(placeId: string): Promise<any> {
   
   const detailsUrl = new URL('https://maps.googleapis.com/maps/api/place/details/json');
   detailsUrl.searchParams.set('place_id', placeId);
-  detailsUrl.searchParams.set('fields', [
+  detailsUrl.searchParams.set('key', GOOGLE_API_KEY);
+  
+  // Using only documented Google Places API fields
+  const fields = [
     'name',
     'rating',
     'formatted_address',
@@ -175,40 +200,32 @@ async function getPlaceDetails(placeId: string): Promise<any> {
     'place_id',
     'vicinity',
     'business_status',
-    'curbside_pickup',
     'delivery',
     'dine_in',
-    'price_level',
-    'reservable',
+    'takeout',
+    'wheelchair_accessible_entrance',
+    'reservations',
     'serves_beer',
     'serves_breakfast',
     'serves_brunch',
     'serves_dinner',
     'serves_lunch',
     'serves_vegetarian_food',
-    'serves_wine',
-    'takeout',
-    'wheelchair_accessible_entrance',
-    'outdoor_seating',
-    'serves_dessert',
-    'serves_coffee',
-    'serves_cocktails',
-    'happy_hour',
-    'live_music',
-    'parking',
-    'noise_level',
-    'smoking_allowed',
-    'wifi'
-  ].join(','));
-  detailsUrl.searchParams.set('key', GOOGLE_API_KEY);
+    'serves_wine'
+  ].join(',');
   
-  console.log('🌐 Making place details request');
+  detailsUrl.searchParams.set('fields', fields);
+  
+  console.log('🌐 Making place details request with URL:', detailsUrl.toString());
   const response = await fetch(detailsUrl.toString());
+  
   if (!response.ok) {
+    console.error('❌ Place Details API HTTP error:', response.status);
     throw new Error(`Place details request failed with status ${response.status}`);
   }
   
   const data = await response.json();
+  console.log('📊 Place Details API response:', data);
   
   if (data.status !== 'OK') {
     console.error('❌ Place Details API error:', data);
