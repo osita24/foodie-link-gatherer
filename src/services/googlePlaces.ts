@@ -27,12 +27,6 @@ export const fetchRestaurantDetails = async (inputUrl: string): Promise<Restaura
       `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${import.meta.env.VITE_GOOGLE_PLACES_API_KEY}`
     ) || [];
 
-    // Enhanced hours handling
-    let hoursText = 'Hours not available';
-    if (data.result.opening_hours?.weekday_text?.length > 0) {
-      hoursText = data.result.opening_hours.weekday_text.join(' | ');
-    }
-
     // Transform the API response into our RestaurantDetails format
     const restaurantDetails: RestaurantDetails = {
       id: data.result.place_id,
@@ -40,7 +34,7 @@ export const fetchRestaurantDetails = async (inputUrl: string): Promise<Restaura
       rating: data.result.rating || 0,
       reviews: data.result.user_ratings_total || 0,
       address: data.result.formatted_address || data.result.vicinity || 'Address Not Available',
-      hours: hoursText,
+      hours: data.result.opening_hours?.weekday_text?.join(' | ') || 'Hours not available',
       phone: data.result.formatted_phone_number || '',
       website: data.result.website || '',
       photos: photoUrls,
