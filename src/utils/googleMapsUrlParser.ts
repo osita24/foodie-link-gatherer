@@ -11,7 +11,6 @@ const URL_PATTERNS = {
   COORDINATES: /@(-?\d+\.\d+),(-?\d+\.\d+)/,
   CID: /!3m7!1s(\d+)!/,
   FTID: /ftid=([^&]+)/,
-  HEX_ID: /0x[a-fA-F0-9]+:0x[a-fA-F0-9]+/,
 };
 
 interface ParsedMapUrl {
@@ -69,39 +68,6 @@ const extractCoordinates = (url: string) => {
 };
 
 /**
- * Converts a hex format place ID to a ChIJ format
- * Example: 0x882b34d9289991d5:0x5f596deace8d8b6a -> ChIJ1ZGZKNk0K4gRaq2N7lZZX18
- */
-const convertHexToChIJ = (hexId: string): string => {
-  // Remove the '0x' prefix and split into two parts
-  const [part1, part2] = hexId.split(':').map(part => part.replace('0x', ''));
-  
-  // Convert hex strings to decimal
-  const num1 = BigInt('0x' + part1);
-  const num2 = BigInt('0x' + part2);
-  
-  // Convert to base32 string
-  const base32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  let result = 'ChIJ';
-  
-  // Convert first part
-  let n = num1;
-  while (n > 0n) {
-    result += base32Chars[Number(n & 31n)];
-    n >>= 5n;
-  }
-  
-  // Convert second part
-  n = num2;
-  while (n > 0n) {
-    result += base32Chars[Number(n & 31n)];
-    n >>= 5n;
-  }
-  
-  return result;
-};
-
-/**
  * Extracts and formats place ID from various URL formats
  */
 const extractPlaceId = (url: string): string | null => {
@@ -112,23 +78,15 @@ const extractPlaceId = (url: string): string | null => {
     return placeIdMatch[1];
   }
 
-  // Try to extract hex format ID
-  const hexMatch = url.match(URL_PATTERNS.HEX_ID);
-  if (hexMatch?.[0]) {
-    const chijId = convertHexToChIJ(hexMatch[0]);
-    console.log('Converted hex ID to ChIJ format:', chijId);
-    return chijId;
-  }
-
-  // Try to get FTID parameter
+  // Try to get FTID parameter and extract hex ID
   const ftidMatch = url.match(URL_PATTERNS.FTID);
   if (ftidMatch?.[1]) {
-    const chijId = convertHexToChIJ(ftidMatch[1]);
-    console.log('Converted FTID to ChIJ format:', chijId);
-    return chijId;
+    const hexId = ftidMatch[1];
+    console.log('Found FTID hex ID:', hexId);
+    return hexId;
   }
 
-  // Try to get ChIJ format
+  // Try to get ChIJ format directly
   const chijMatch = url.match(URL_PATTERNS.PLACE_ID);
   if (chijMatch?.[1]) {
     console.log('Found ChIJ format:', chijMatch[1]);

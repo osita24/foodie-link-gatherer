@@ -21,6 +21,12 @@ const Hero = () => {
     
     try {
       const restaurantDetails = await fetchRestaurantDetails(restaurantUrl);
+      console.log("Received restaurant details:", restaurantDetails);
+      
+      if (!restaurantDetails?.id) {
+        throw new Error("Could not find restaurant details");
+      }
+      
       setRestaurantUrl("");
       toast.success("Processing your restaurant...");
       navigate(`/restaurant/${restaurantDetails.id}`);
