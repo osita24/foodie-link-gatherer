@@ -7,115 +7,112 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface RequestBody {
-  url: string;
-}
-
 async function resolveShortUrl(url: string): Promise<string> {
-  console.log('Resolving short URL:', url);
+  console.log('Resolving shortened URL:', url);
   try {
-    const response = await fetch(url, { redirect: 'follow' });
-    console.log('Resolved URL:', response.url);
-    return response.url;
+    const response = await fetch(url, {
+      method: 'GET',
+      redirect: 'follow',
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to resolve URL: ${response.status}`);
+    }
+    
+    const finalUrl = response.url;
+    console.log('Resolved to:', finalUrl);
+    return finalUrl;
   } catch (error) {
-    console.error('Error resolving URL:', error);
-    throw new Error(`Failed to resolve URL: ${error.message}`);
-  }
-}
-
-function extractPlaceId(url: string): string | null {
-  console.log('Extracting Place ID from:', url);
-  try {
-    // Handle direct Place IDs
-    if (url.startsWith('ChIJ') || url.startsWith('0x')) {
-      return url;
-    }
-
-    const urlObj = new URL(url);
-    
-    // Check for place_id in query parameters
-    const placeId = urlObj.searchParams.get('place_id');
-    if (placeId) {
-      return placeId;
-    }
-
-    // Check for place ID in the path
-    const pathMatch = url.match(/place\/[^/]+\/([^/?]+)/);
-    if (pathMatch && pathMatch[1].startsWith('ChIJ')) {
-      return pathMatch[1];
-    }
-
-    // Check for place ID in the data parameter
-    const dataParam = urlObj.searchParams.get('data');
-    if (dataParam) {
-      const placeIdMatch = dataParam.match(/!1s(ChIJ[^!]+)!/);
-      if (placeIdMatch) {
-        return placeIdMatch[1];
-      }
-    }
-
-    return null;
-  } catch (error) {
-    console.error('Error extracting Place ID:', error);
-    return null;
-  }
-}
-
-async function searchPlace(query: string) {
-  console.log('Searching for place:', query);
-  try {
-    const response = await fetch(
-      `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(query)}&inputtype=textquery&fields=place_id,name,formatted_address&key=${GOOGLE_API_KEY}`
-    );
-    
-    const data = await response.json();
-    console.log('Place search response:', data);
-    
-    if (data.candidates && data.candidates.length > 0) {
-      return data.candidates[0];
-    }
-    
-    throw new Error('No places found');
-  } catch (error) {
-    console.error('Error searching place:', error);
+    console.error('Error resolving shortened URL:', error);
     throw error;
   }
 }
 
 async function getPlaceDetails(placeId: string) {
   console.log('Fetching place details for:', placeId);
-  try {
-    const fields = [
-      'name',
-      'rating',
-      'user_ratings_total',
-      'formatted_address',
-      'formatted_phone_number',
-      'opening_hours',
-      'website',
-      'price_level',
-      'photos',
-      'reviews',
-      'types',
-      'vicinity',
-      'utc_offset'
-    ].join(',');
+  const fields = [
+    'name',
+    'rating',
+    'formatted_address',
+    'formatted_phone_number',
+    'opening_hours',
+    'photos',
+    'price_level',
+    'reviews',
+    'types',
+    'user_ratings_total',
+    'vicinity',
+    'website',
+    'utc_offset'
+  ].join(',');
 
-    const response = await fetch(
-      `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${GOOGLE_API_KEY}`
-    );
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${GOOGLE_API_KEY}`;
+  
+  const response = await fetch(url);
+  const data = await response.json();
+  
+  if (data.status !== 'OK') {
+    throw new Error(`Place Details API error: ${data.status}`);
+  }
+  
+  return data.result;
+}
+
+async function findPlaceFromText(query: string) {
+  console.log('Searching for place:', query);
+  const url = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(query)}&inputtype=textquery&fields=place_id,name,formatted_address&key=${GOOGLE_API_KEY}`;
+  
+  const response = await fetch(url);
+  const data = await response.json();
+  
+  if (data.status !== 'OK') {
+    throw new Error(`Find Place API error: ${data.status}`);
+  }
+  
+  return data.candidates[0];
+}
+
+function extractPlaceId(url: string): string | null {
+  console.log('Attempting to extract Place ID from:', url);
+  try {
+    const urlObj = new URL(url);
     
-    const data = await response.json();
-    console.log('Place details response status:', data.status);
-    
-    if (data.status === 'OK') {
-      return data.result;
+    // Check for place_id in query parameters
+    const placeId = urlObj.searchParams.get('place_id');
+    if (placeId) {
+      console.log('Found place_id in query params:', placeId);
+      return placeId;
     }
     
-    throw new Error(`Failed to get place details: ${data.status}`);
+    // Check for place ID in the path
+    const pathMatch = url.match(/place\/[^/]+\/([^/?]+)/);
+    if (pathMatch && pathMatch[1].startsWith('ChIJ')) {
+      console.log('Found place_id in path:', pathMatch[1]);
+      return pathMatch[1];
+    }
+    
+    // Extract from the data parameter
+    const dataParam = urlObj.searchParams.get('data');
+    if (dataParam) {
+      const placeIdMatch = dataParam.match(/!1s(ChIJ[^!]+)!/);
+      if (placeIdMatch) {
+        console.log('Found place_id in data parameter:', placeIdMatch[1]);
+        return placeIdMatch[1];
+      }
+    }
+    
+    // Try to get location from URL
+    const coords = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (coords) {
+      console.log('Found coordinates:', coords[1], coords[2]);
+      return null; // We'll handle this case by searching nearby
+    }
+    
+    console.log('No Place ID found in URL');
+    return null;
   } catch (error) {
-    console.error('Error fetching place details:', error);
-    throw error;
+    console.error('Error parsing URL:', error);
+    return null;
   }
 }
 
@@ -130,36 +127,37 @@ serve(async (req) => {
       throw new Error('Google Places API key not configured');
     }
 
-    if (req.method !== 'POST') {
-      throw new Error('Method not allowed');
-    }
-
-    const { url } = await req.json() as RequestBody;
+    const { url } = await req.json();
     console.log('Processing URL:', url);
 
     if (!url) {
       throw new Error('URL is required');
     }
 
+    // Handle shortened URLs
     let resolvedUrl = url;
-    // Resolve short URLs if necessary
-    if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
+    if (url.includes('maps.app.goo.gl') || url.includes('goo.gl')) {
+      console.log('Detected shortened URL, resolving...');
       resolvedUrl = await resolveShortUrl(url);
+      console.log('Resolved URL:', resolvedUrl);
     }
 
     // Try to extract Place ID
     let placeId = extractPlaceId(resolvedUrl);
     
-    // If no Place ID found, try to search for the place
+    // If no Place ID found, try to search by location or query
     if (!placeId) {
-      console.log('No Place ID found, searching by URL components');
+      console.log('No Place ID found, attempting to search by URL components');
       try {
         const urlObj = new URL(resolvedUrl);
-        const query = urlObj.searchParams.get('q') || urlObj.pathname.split('/').pop();
-        if (query) {
-          const place = await searchPlace(query);
-          placeId = place.place_id;
-        }
+        const searchQuery = urlObj.searchParams.get('q') || 
+                          urlObj.pathname.split('/').pop() || 
+                          resolvedUrl;
+        
+        console.log('Searching for place with query:', searchQuery);
+        const place = await findPlaceFromText(searchQuery);
+        placeId = place.place_id;
+        console.log('Found Place ID through search:', placeId);
       } catch (error) {
         console.error('Error searching for place:', error);
         throw new Error('Could not find place ID');
@@ -171,7 +169,7 @@ serve(async (req) => {
     }
 
     const placeDetails = await getPlaceDetails(placeId);
-
+    
     return new Response(JSON.stringify(placeDetails), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
