@@ -23,7 +23,7 @@ const Hero = () => {
       const placeId = await extractPlaceId(restaurantUrl);
       
       if (!placeId) {
-        toast.error("Could not extract restaurant information. Please use a full Google Maps URL (maps.google.com)");
+        toast.error("Could not extract restaurant information. Please make sure you're using a valid Google Maps restaurant link");
         return;
       }
 
@@ -31,13 +31,15 @@ const Hero = () => {
       toast.success("Processing your restaurant...");
       navigate(`/restaurant/${placeId}`);
     } catch (error) {
-      if (error instanceof Error && error.message === 'SHORTENED_URL') {
-        toast.error(
-          "For mobile share links (g.co or maps.app.goo.gl), please open the link first and copy the full Google Maps URL",
-          { duration: 6000 }
-        );
-      } else {
-        toast.error("An error occurred. Please try using a full Google Maps URL.");
+      if (error instanceof Error) {
+        if (error.message === 'SHORTENED_URL_RESOLUTION_FAILED') {
+          toast.error(
+            "We couldn't process this shortened URL. Please try again in a moment.",
+            { duration: 6000 }
+          );
+        } else {
+          toast.error("An error occurred. Please try using a different Google Maps URL.");
+        }
       }
     } finally {
       setIsProcessing(false);
@@ -53,7 +55,7 @@ const Hero = () => {
           </h1>
           <p className="text-lg md:text-xl text-gray-600 mb-12 max-w-2xl mx-auto animate-fade-up" 
              style={{ animationDelay: "200ms" }}>
-            Discover restaurants that perfectly match your taste. Import from Google Maps and get personalized menu recommendations.
+            Discover restaurants that perfectly match your taste. Share directly from Google Maps on any device!
           </p>
           <div 
             className="max-w-xl mx-auto flex flex-col md:flex-row gap-4 animate-fade-up" 
@@ -61,7 +63,7 @@ const Hero = () => {
           >
             <Input
               type="url"
-              placeholder="Paste Google Maps restaurant URL..."
+              placeholder="Paste any Google Maps restaurant link..."
               value={restaurantUrl}
               onChange={(e) => setRestaurantUrl(e.target.value)}
               className="flex-grow text-lg p-6 bg-white border-2 border-gray-200 
@@ -80,11 +82,11 @@ const Hero = () => {
             </Button>
           </div>
           <div className="text-sm text-gray-500 mt-4 space-y-2 animate-fade-up" style={{ animationDelay: "600ms" }}>
-            <p>How to share restaurant links:</p>
+            <p>Share from anywhere:</p>
             <ul className="space-y-1">
-              <li>• Use full Google Maps URLs (maps.google.com)</li>
-              <li>• For mobile shares: Open the shared link first, then copy the full URL from your browser</li>
-              <li>• Tip: Look for URLs starting with "maps.google.com"</li>
+              <li>• Share directly from Google Maps mobile app</li>
+              <li>• Copy link from maps.google.com</li>
+              <li>• Use any Google Maps share link</li>
             </ul>
           </div>
         </div>
