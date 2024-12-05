@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import RestaurantInfo from "@/components/restaurant/RestaurantInfo";
 import PopularItems from "@/components/restaurant/PopularItems";
@@ -15,13 +16,18 @@ import { RestaurantDetails as RestaurantDetailsType } from "@/types/restaurant";
 const RestaurantDetails = () => {
   const [restaurant, setRestaurant] = useState<RestaurantDetailsType | null>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     // Try to load restaurant data from localStorage
     const storedData = localStorage.getItem('currentRestaurant');
     
     if (!storedData) {
-      toast.error("No restaurant data found");
+      toast({
+        title: "Error",
+        description: "No restaurant data found",
+        variant: "destructive",
+      });
       navigate('/');
       return;
     }
@@ -31,9 +37,14 @@ const RestaurantDetails = () => {
       setRestaurant(restaurantData);
     } catch (error) {
       console.error("Error loading restaurant data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load restaurant data",
+        variant: "destructive",
+      });
       navigate('/');
     }
-  }, [navigate]);
+  }, [navigate, toast]);
 
   // Show loading state while data is being loaded
   if (!restaurant) {
