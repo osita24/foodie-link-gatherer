@@ -188,7 +188,17 @@ async function getPlaceDetails(placeId: string): Promise<any> {
     'serves_vegetarian_food',
     'serves_wine',
     'takeout',
-    'wheelchair_accessible_entrance'
+    'wheelchair_accessible_entrance',
+    'outdoor_seating',
+    'serves_dessert',
+    'serves_coffee',
+    'serves_cocktails',
+    'happy_hour',
+    'live_music',
+    'parking',
+    'noise_level',
+    'smoking_allowed',
+    'wifi'
   ].join(','));
   detailsUrl.searchParams.set('key', GOOGLE_API_KEY);
   

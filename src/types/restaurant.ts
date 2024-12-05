@@ -45,20 +45,35 @@ export interface RestaurantDetails {
   userRatingsTotal?: number;
   utcOffset?: number;
   googleReviews?: Review[];
-  // New fields
+  // Business status
   businessStatus?: string;
+  // Delivery and dining options
   curbsidePickup?: boolean;
   delivery?: boolean;
   dineIn?: boolean;
   priceRange?: string;
   reservable?: boolean;
-  servesBeer?: boolean;
+  takeout?: boolean;
+  // Meal service
   servesBreakfast?: boolean;
   servesBrunch?: boolean;
   servesLunch?: boolean;
   servesDinner?: boolean;
-  servesVegetarianFood?: boolean;
+  // Drinks
+  servesBeer?: boolean;
   servesWine?: boolean;
-  takeout?: boolean;
+  servesCocktails?: boolean;
+  servesCoffee?: boolean;
+  // Food options
+  servesDessert?: boolean;
+  servesVegetarianFood?: boolean;
+  // Amenities
   wheelchairAccessible?: boolean;
+  outdoorSeating?: boolean;
+  hasHappyHour?: boolean;
+  hasLiveMusic?: boolean;
+  hasParking?: boolean;
+  hasWifi?: boolean;
+  smokingAllowed?: boolean;
+  noiseLevel?: string;
 }
