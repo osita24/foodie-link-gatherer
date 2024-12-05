@@ -1,31 +1,63 @@
-export async function searchRestaurant(url: string, apiKey: string): Promise<string> {
-  console.log("Processing URL:", url);
+import { LocationData, RestaurantSearchResult } from './types.ts';
+
+export function extractRestaurantInfo(url: string): RestaurantSearchResult {
+  console.log('🔍 Parsing Google Maps URL:', url);
   
   try {
-    // Extract place ID from URL if it contains it
-    const placeIdMatch = url.match(/place_id=([^&]+)/);
-    if (placeIdMatch) {
-      console.log("Found place ID in URL:", placeIdMatch[1]);
-      return placeIdMatch[1];
-    }
-
-    // If it's a shortened URL, try to expand it
-    if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
-      console.log("Expanding shortened URL");
-      const response = await fetch(url, { redirect: 'follow' });
-      const expandedUrl = response.url;
-      console.log("Expanded URL:", expandedUrl);
-      
-      const expandedPlaceIdMatch = expandedUrl.match(/place_id=([^&]+)/);
-      if (expandedPlaceIdMatch) {
-        console.log("Found place ID in expanded URL:", expandedPlaceIdMatch[1]);
-        return expandedPlaceIdMatch[1];
+    const urlObj = new URL(url);
+    const searchParams = new URLSearchParams(urlObj.search);
+    
+    // Try to get info from the 'q' parameter first (most common format)
+    let fullQuery = searchParams.get('q') || '';
+    
+    // If no 'q' parameter, try to get from the URL path
+    if (!fullQuery && url.includes('/place/')) {
+      const placeMatch = url.match(/place\/([^/@]+)/);
+      if (placeMatch) {
+        fullQuery = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
       }
     }
 
-    throw new Error("Could not extract place ID from URL");
+    // If still no query found, try other parameters
+    if (!fullQuery) {
+      fullQuery = searchParams.get('query') || 
+                 searchParams.get('destination') || 
+                 '';
+    }
+
+    if (!fullQuery) {
+      throw new Error('Could not extract restaurant information from URL');
+    }
+
+    // Clean up the query
+    fullQuery = decodeURIComponent(fullQuery.replace(/\+/g, ' '));
+    console.log('📝 Full query string:', fullQuery);
+
+    // Split into name and address
+    // Usually format is "Restaurant Name, Address"
+    const parts = fullQuery.split(',');
+    const name = parts[0].trim();
+    
+    // Join the rest as the address
+    const address = parts.slice(1).join(',').trim();
+
+    // Try to extract coordinates if available
+    const location: LocationData = {};
+    if (address) {
+      location.address = address;
+    }
+
+    // Try to extract coordinates from URL
+    const coordsMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (coordsMatch) {
+      location.lat = parseFloat(coordsMatch[1]);
+      location.lng = parseFloat(coordsMatch[2]);
+    }
+
+    console.log('✨ Extracted info:', { name, location });
+    return { name, location };
   } catch (error) {
-    console.error("Error processing URL:", error);
-    throw new Error(`Failed to process URL: ${error.message}`);
+    console.error('❌ Error parsing URL:', error);
+    throw new Error(`Failed to parse Google Maps URL: ${error.message}`);
   }
 }
