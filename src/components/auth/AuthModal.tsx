@@ -63,6 +63,15 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   },
                 },
               },
+              style: {
+                button: {
+                  borderRadius: '6px',
+                  height: '44px',
+                },
+                container: {
+                  gap: '16px',
+                },
+              },
             }}
             providers={['google']}
             onlyThirdPartyProviders
