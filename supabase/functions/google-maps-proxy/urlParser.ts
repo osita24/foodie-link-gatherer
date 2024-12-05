@@ -1,50 +1,60 @@
 import { LocationData, RestaurantSearchResult } from './types.ts';
 
-export function parseGoogleMapsUrl(url: string): RestaurantSearchResult {
+export function extractRestaurantInfo(url: string): RestaurantSearchResult {
   console.log('🔍 Parsing Google Maps URL:', url);
   
   try {
     const urlObj = new URL(url);
     const searchParams = new URLSearchParams(urlObj.search);
-    let name = '';
-    let location: LocationData = {};
-
-    // Try to extract coordinates
-    const coordsMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-    if (coordsMatch) {
-      location = {
-        lat: parseFloat(coordsMatch[1]),
-        lng: parseFloat(coordsMatch[2])
-      };
-      console.log('📍 Extracted coordinates:', location);
-    }
-
-    // Try to extract place name from different URL formats
-    if (url.includes('/place/')) {
+    
+    // Try to get info from the 'q' parameter first (most common format)
+    let fullQuery = searchParams.get('q') || '';
+    
+    // If no 'q' parameter, try to get from the URL path
+    if (!fullQuery && url.includes('/place/')) {
       const placeMatch = url.match(/place\/([^/@]+)/);
       if (placeMatch) {
-        name = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
-        name = name.split('/')[0]; // Remove any trailing parts
+        fullQuery = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
       }
-    } else if (searchParams.has('q')) {
-      name = searchParams.get('q') || '';
     }
 
-    // Clean up the name
-    name = name.replace(/\+/g, ' ').trim();
-    console.log('🏪 Extracted restaurant name:', name);
+    // If still no query found, try other parameters
+    if (!fullQuery) {
+      fullQuery = searchParams.get('query') || 
+                 searchParams.get('destination') || 
+                 '';
+    }
 
-    // Try to extract address from the URL path
-    const pathSegments = urlObj.pathname.split('/');
-    const addressSegment = pathSegments.find(segment => 
-      segment.includes('+') || (segment.includes(',') && !segment.includes('@'))
-    );
+    if (!fullQuery) {
+      throw new Error('Could not extract restaurant information from URL');
+    }
+
+    // Clean up the query
+    fullQuery = decodeURIComponent(fullQuery.replace(/\+/g, ' '));
+    console.log('📝 Full query string:', fullQuery);
+
+    // Split into name and address
+    // Usually format is "Restaurant Name, Address"
+    const parts = fullQuery.split(',');
+    const name = parts[0].trim();
     
-    if (addressSegment) {
-      location.address = decodeURIComponent(addressSegment.replace(/\+/g, ' '));
-      console.log('📍 Extracted address:', location.address);
+    // Join the rest as the address
+    const address = parts.slice(1).join(',').trim();
+
+    // Try to extract coordinates if available
+    const location: LocationData = {};
+    if (address) {
+      location.address = address;
     }
 
+    // Try to extract coordinates from URL
+    const coordsMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (coordsMatch) {
+      location.lat = parseFloat(coordsMatch[1]);
+      location.lng = parseFloat(coordsMatch[2]);
+    }
+
+    console.log('✨ Extracted info:', { name, location });
     return { name, location };
   } catch (error) {
     console.error('❌ Error parsing URL:', error);

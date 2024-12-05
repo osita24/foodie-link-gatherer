@@ -47,7 +47,7 @@ export async function searchRestaurant(name: string, location?: LocationData): P
   }
 }
 
-export async function getPlaceDetails(placeId: string): Promise<any> {
+async function getPlaceDetails(placeId: string): Promise<any> {
   console.log('🔍 Getting place details for ID:', placeId);
   
   const fields = [
@@ -62,7 +62,8 @@ export async function getPlaceDetails(placeId: string): Promise<any> {
     'reviews',
     'types',
     'user_ratings_total',
-    'utc_offset'
+    'utc_offset',
+    'place_id'
   ].join(',');
 
   const detailsUrl = new URL('https://maps.googleapis.com/maps/api/place/details/json');
