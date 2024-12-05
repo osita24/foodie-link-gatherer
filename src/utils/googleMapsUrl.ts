@@ -1,67 +1,3 @@
-import { supabase } from "@/integrations/supabase/client";
-
-/**
- * Resolves a shortened URL to its full form
- */
-async function resolveShortUrl(url: string): Promise<string> {
-  console.log('Attempting to resolve shortened URL:', url);
-  
-  const { data, error } = await supabase.functions.invoke('resolve-maps-url', {
-    body: { url }
-  });
-
-  if (error) {
-    console.error('Error resolving shortened URL:', error);
-    throw new Error('SHORTENED_URL_RESOLUTION_FAILED');
-  }
-
-  if (!data?.resolvedUrl) {
-    console.error('No resolved URL returned');
-    throw new Error('SHORTENED_URL_RESOLUTION_FAILED');
-  }
-
-  console.log('Successfully resolved URL to:', data.resolvedUrl);
-  return data.resolvedUrl;
-}
-
-/**
- * Converts an ftid to a Place ID format
- */
-function convertFtidToPlaceId(ftid: string): string {
-  // ftid format: 0x882b34d9289991d5:0x5f596deace8d8b6a
-  console.log('Converting ftid:', ftid);
-  
-  const parts = ftid.split(':');
-  if (parts.length !== 2) {
-    console.log('Invalid ftid format - missing colon separator');
-    return '';
-  }
-  
-  try {
-    // Extract the second part and remove '0x' prefix
-    const placeIdHex = parts[1].replace('0x', '');
-    
-    // Convert hex string to bytes
-    const bytes = new Uint8Array(placeIdHex.length / 2);
-    for (let i = 0; i < placeIdHex.length; i += 2) {
-      bytes[i/2] = parseInt(placeIdHex.substr(i, 2), 16);
-    }
-    
-    // Convert bytes to string using TextDecoder
-    const decoder = new TextDecoder('utf-8');
-    const decodedStr = decoder.decode(bytes);
-    
-    // Prepend 'ChIJ' and encode for URL
-    const placeId = 'ChIJ' + decodedStr;
-    console.log('Successfully converted ftid to Place ID:', placeId);
-    
-    return encodeURIComponent(placeId);
-  } catch (error) {
-    console.error('Error converting ftid to Place ID:', error);
-    return '';
-  }
-}
-
 /**
  * Extracts place ID from various Google Maps URL formats
  */
@@ -69,48 +5,29 @@ export const extractPlaceId = async (url: string): Promise<string | null> => {
   console.log('Attempting to extract Place ID from URL:', url);
 
   try {
-    let finalUrl = url;
-
-    // Handle shortened URLs by resolving them first
-    if (url.includes('g.co/kgs/') || url.includes('maps.app.goo.gl')) {
-      console.log('Detected shortened URL format, attempting to resolve...');
-      try {
-        finalUrl = await resolveShortUrl(url);
-        console.log('Successfully resolved shortened URL to:', finalUrl);
-      } catch (error) {
-        console.error('Failed to resolve shortened URL:', error);
-        throw new Error('SHORTENED_URL_RESOLUTION_FAILED');
-      }
+    // Handle shortened g.co links
+    if (url.includes('g.co/kgs/')) {
+      console.log('Detected shortened g.co URL');
+      return null;
     }
 
-    const urlObj = new URL(finalUrl);
+    const urlObj = new URL(url);
     const searchParams = new URLSearchParams(urlObj.search);
     
     // First try to get place_id from URL parameters
     if (searchParams.has('place_id')) {
       const placeId = searchParams.get('place_id');
       console.log('Found direct place_id:', placeId);
-      return encodeURIComponent(placeId || '');
-    }
-
-    // Try to extract from ftid parameter (new format)
-    const ftid = searchParams.get('ftid');
-    if (ftid) {
-      console.log('Found ftid:', ftid);
-      const placeId = convertFtidToPlaceId(ftid);
-      if (placeId && placeId.startsWith('ChIJ')) {
-        console.log('Successfully converted ftid to Place ID:', placeId);
-        return placeId;
-      }
+      return placeId;
     }
 
     // Try to extract from the URL path for newer format URLs
-    const pathMatch = finalUrl.match(/place\/[^/]+\/([^/]+)/);
+    const pathMatch = url.match(/place\/[^/]+\/([^/]+)/);
     if (pathMatch && pathMatch[1]) {
       const placeId = pathMatch[1];
       if (placeId.startsWith('ChIJ')) {
         console.log('Extracted Place ID from path:', placeId);
-        return encodeURIComponent(placeId);
+        return placeId;
       }
     }
 
@@ -120,25 +37,65 @@ export const extractPlaceId = async (url: string): Promise<string | null> => {
       const placeIdMatch = dataParam.match(/!1s(ChIJ[^!]+)!/);
       if (placeIdMatch && placeIdMatch[1]) {
         console.log('Extracted Place ID from data parameter:', placeIdMatch[1]);
-        return encodeURIComponent(placeIdMatch[1]);
+        return placeIdMatch[1];
+      }
+    }
+
+    // Extract coordinates from the URL path
+    const coords = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (coords) {
+      const lat = coords[1];
+      const lng = coords[2];
+      console.log('Extracted coordinates:', lat, lng);
+      
+      // Use these coordinates to get the place ID
+      const placeId = await findPlaceIdFromCoordinates(lat, lng);
+      if (placeId) {
+        return placeId;
       }
     }
 
     // Try to extract from the URL path for business listings
-    const businessMatch = finalUrl.match(/!1s([^!]+)!8m2/);
+    const businessMatch = url.match(/!1s([^!]+)!8m2/);
     if (businessMatch && businessMatch[1].startsWith('0x')) {
       const placeId = decodeURIComponent(businessMatch[1]);
       console.log('Extracted Place ID from business listing:', placeId);
-      return encodeURIComponent(placeId);
+      return placeId;
     }
 
     console.log('No Place ID found in URL');
     return null;
   } catch (error) {
     console.error('Error parsing Google Maps URL:', error);
-    if (error instanceof Error && error.message === 'SHORTENED_URL_RESOLUTION_FAILED') {
-      throw error;
-    }
     return null;
   }
 };
+
+async function findPlaceIdFromCoordinates(lat: string, lng: string): Promise<string | null> {
+  const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
+  const CORS_PROXY = 'https://cors-anywhere.herokuapp.com';
+  
+  try {
+    console.log('Searching for Place ID using coordinates:', lat, lng);
+    const response = await fetch(
+      `${CORS_PROXY}/https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_API_KEY}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Geocoding API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('Geocoding API response:', data);
+
+    if (data.results && data.results[0] && data.results[0].place_id) {
+      console.log('Found Place ID from coordinates:', data.results[0].place_id);
+      return data.results[0].place_id;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error finding Place ID from coordinates:', error);
+    return null;
+  }
+}
