@@ -13,11 +13,22 @@ serve(async (req) => {
   }
 
   try {
-    const { url, placeId } = await req.json();
-    console.log('🔍 Processing request:', { url, placeId });
+    console.log('🔍 Received request:', req.method);
+    
+    const body = await req.json().catch(() => ({}));
+    const { url, placeId } = body;
+    
+    console.log('📝 Request parameters:', { url, placeId });
 
     if (!url && !placeId) {
-      throw new Error('Either URL or placeId is required');
+      console.error('❌ Missing required parameters');
+      return new Response(
+        JSON.stringify({ error: 'Either URL or placeId is required' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     console.log('🔎 Fetching restaurant details...');
@@ -26,7 +37,10 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ result }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
     );
 
   } catch (error) {
@@ -39,8 +53,8 @@ serve(async (req) => {
         timestamp: new Date().toISOString()
       }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400 
+        status: error.status || 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }

@@ -22,14 +22,14 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
     let finalUrl = url;
     if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
       console.log('📎 Expanding shortened URL:', url);
-      try {
-        const response = await fetch(url, { redirect: 'follow' });
-        finalUrl = response.url;
-        console.log('📎 Expanded URL:', finalUrl);
-      } catch (error) {
-        console.error('❌ Error expanding URL:', error);
-        throw new Error('Failed to expand shortened URL');
-      }
+      const response = await fetch(url, { 
+        redirect: 'follow',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+      });
+      finalUrl = response.url;
+      console.log('📎 Expanded URL:', finalUrl);
     }
 
     // Try to extract place ID from URL first
@@ -52,9 +52,14 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
     searchUrl.searchParams.set('query', searchText);
     searchUrl.searchParams.set('type', 'restaurant');
     
-    console.log('🌐 Making text search request');
+    console.log('🌐 Making text search request to:', searchUrl.toString());
     const response = await fetch(searchUrl.toString());
+    if (!response.ok) {
+      throw new Error(`Places API request failed with status ${response.status}`);
+    }
+    
     const data = await response.json();
+    console.log('📊 Search response status:', data.status);
     
     if (data.status === 'ZERO_RESULTS') {
       console.log('⚠️ No results from text search, trying nearby search');
@@ -62,6 +67,7 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
       if (coords) {
         return await searchNearby(coords.lat, coords.lng);
       }
+      throw new Error('No results found and no coordinates available for nearby search');
     }
     
     if (data.status !== 'OK' || !data.results?.[0]) {
@@ -134,6 +140,10 @@ async function searchNearby(lat: number, lng: number): Promise<any> {
   nearbyUrl.searchParams.set('type', 'restaurant');
 
   const response = await fetch(nearbyUrl.toString());
+  if (!response.ok) {
+    throw new Error(`Nearby search failed with status ${response.status}`);
+  }
+  
   const data = await response.json();
 
   if (data.status !== 'OK' || !data.results?.[0]) {
@@ -167,7 +177,12 @@ async function getPlaceDetails(placeId: string): Promise<any> {
   ].join(','));
   detailsUrl.searchParams.set('key', GOOGLE_API_KEY);
   
+  console.log('🌐 Making place details request');
   const response = await fetch(detailsUrl.toString());
+  if (!response.ok) {
+    throw new Error(`Place details request failed with status ${response.status}`);
+  }
+  
   const data = await response.json();
   
   if (data.status !== 'OK') {
