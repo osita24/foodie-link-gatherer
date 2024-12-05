@@ -21,14 +21,43 @@ async function expandUrl(shortUrl: string): Promise<string> {
 }
 
 function extractAddressFromUrl(url: string): string | null {
-  console.log('Extracting address from URL:', url)
+  console.log('Attempting to extract address from URL:', url)
   try {
     const urlObj = new URL(url)
-    const address = urlObj.searchParams.get('q')
-    console.log('Extracted address:', address)
-    return address
+    
+    // Try different possible parameters where the address might be
+    const searchParams = urlObj.searchParams
+    
+    // Check 'q' parameter (most common)
+    const qParam = searchParams.get('q')
+    if (qParam) {
+      console.log('Found address in q parameter:', qParam)
+      return qParam
+    }
+
+    // Check 'query' parameter
+    const queryParam = searchParams.get('query')
+    if (queryParam) {
+      console.log('Found address in query parameter:', queryParam)
+      return queryParam
+    }
+
+    // Try to extract from the path for newer Google Maps URLs
+    const pathParts = urlObj.pathname.split('/')
+    if (pathParts.includes('place')) {
+      const placeIndex = pathParts.indexOf('place')
+      if (placeIndex >= 0 && pathParts[placeIndex + 1]) {
+        const address = decodeURIComponent(pathParts[placeIndex + 1])
+        console.log('Found address in path:', address)
+        return address
+      }
+    }
+
+    // If we get here, we couldn't find the address
+    console.log('No address found in URL parameters or path')
+    return null
   } catch (error) {
-    console.error('Error extracting address:', error)
+    console.error('Error parsing URL:', error)
     return null
   }
 }
@@ -82,16 +111,17 @@ serve(async (req) => {
 
   try {
     const { url } = await req.json()
-    console.log('Processing URL:', url)
+    console.log('Original URL received:', url)
 
     // Expand the URL if it's shortened
-    const expandedUrl = url.includes('goo.gl') ? await expandUrl(url) : url
+    const expandedUrl = url.includes('goo.gl') || url.includes('maps.app.goo.gl') ? 
+      await expandUrl(url) : url
     console.log('Working with URL:', expandedUrl)
 
     // Extract address from the URL
     const address = extractAddressFromUrl(expandedUrl)
     if (!address) {
-      throw new Error('Could not extract address from URL')
+      throw new Error('Could not extract address from URL. URL format not recognized.')
     }
 
     // Find the place using the address
