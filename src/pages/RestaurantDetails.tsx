@@ -83,7 +83,7 @@ const RestaurantDetails = () => {
     },
     {
       category: "Price Range",
-      score: restaurant.price_level ? (5 - restaurant.price_level) * 20 : 80,
+      score: restaurant.priceLevel ? (5 - restaurant.priceLevel) * 20 : 80,
       description: "Within your typical dining budget",
       icon: "💰"
     },
@@ -95,8 +95,8 @@ const RestaurantDetails = () => {
     },
     {
       category: "Service",
-      score: restaurant.user_ratings_total > 100 ? 88 : 80,
-      description: `Based on ${restaurant.user_ratings_total || 0} reviews`,
+      score: restaurant.userRatingsTotal > 100 ? 88 : 80,
+      description: `Based on ${restaurant.userRatingsTotal || 0} reviews`,
       icon: "👨‍🍳"
     }
   ];
@@ -134,12 +134,12 @@ const RestaurantDetails = () => {
               <MenuSection menu={restaurant?.menu} />
               <PopularItems />
               {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}
-              {restaurant?.reviews && <ReviewsSection reviews={restaurant.reviews} />}
+              {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
             </div>
 
             <div className="block lg:hidden space-y-6">
               {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}
-              {restaurant?.reviews && <ReviewsSection reviews={restaurant.reviews} />}
+              {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
             </div>
           </div>
 
