@@ -3,32 +3,44 @@ import { RestaurantDetails } from "@/types/restaurant";
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
 const CORS_PROXY = 'https://cors-anywhere.herokuapp.com';
 
-const cleanAndEncodeId = (placeId: string): string => {
+const sanitizePlaceId = (placeId: string): string => {
   try {
     // First decode any URL encoding to get the raw string
     const decodedId = decodeURIComponent(placeId);
     
-    // Remove any non-alphanumeric characters except underscore
-    const cleanedId = decodedId.replace(/[^\w\-]/g, '');
+    // Convert to base64 to preserve special characters while making it URL-safe
+    const base64Id = btoa(unescape(encodeURIComponent(decodedId)));
     
     console.log('Original ID:', placeId);
-    console.log('Cleaned ID:', cleanedId);
+    console.log('Sanitized ID:', base64Id);
     
-    return cleanedId;
+    return base64Id;
   } catch (error) {
-    console.error('Error cleaning place ID:', error);
+    console.error('Error sanitizing place ID:', error);
     return placeId;
+  }
+};
+
+const desanitizePlaceId = (sanitizedId: string): string => {
+  try {
+    // Convert back from base64
+    const originalId = decodeURIComponent(escape(atob(sanitizedId)));
+    console.log('Desanitized ID:', originalId);
+    return originalId;
+  } catch (error) {
+    console.error('Error desanitizing place ID:', error);
+    return sanitizedId;
   }
 };
 
 const extractPlaceId = (placeId: string): string => {
   console.log('Attempting to extract Place ID from:', placeId);
   
-  // If it's already a place ID starting with ChIJ or 0x, clean and return it
+  // If it's already a place ID starting with ChIJ or 0x, sanitize and return it
   if (placeId.startsWith('ChIJ') || placeId.startsWith('0x')) {
-    const cleanedId = cleanAndEncodeId(placeId);
-    console.log('Using cleaned Place ID:', cleanedId);
-    return cleanedId;
+    const sanitizedId = sanitizePlaceId(placeId);
+    console.log('Using sanitized Place ID:', sanitizedId);
+    return sanitizedId;
   }
 
   try {
@@ -38,26 +50,26 @@ const extractPlaceId = (placeId: string): string => {
     // First try: Check for place ID in the URL parameters
     const placeParam = urlParams.get('place_id');
     if (placeParam) {
-      const cleanedId = cleanAndEncodeId(placeParam);
-      console.log('Found Place ID in URL parameters:', cleanedId);
-      return cleanedId;
+      const sanitizedId = sanitizePlaceId(placeParam);
+      console.log('Found Place ID in URL parameters:', sanitizedId);
+      return sanitizedId;
     }
 
     // Second try: Look for the hex format ID in the URL
     const fullUrl = decodeURIComponent(url.toString());
     const hexMatch = fullUrl.match(/!1s(0x[a-fA-F0-9]+:[a-fA-F0-9]+)/);
     if (hexMatch && hexMatch[1]) {
-      const cleanedId = cleanAndEncodeId(hexMatch[1]);
-      console.log('Found hex format Place ID:', cleanedId);
-      return cleanedId;
+      const sanitizedId = sanitizePlaceId(hexMatch[1]);
+      console.log('Found hex format Place ID:', sanitizedId);
+      return sanitizedId;
     }
 
     // Third try: Look for a ChIJ format ID
     const chijMatch = fullUrl.match(/!1s(ChIJ[^!]+)/);
     if (chijMatch && chijMatch[1]) {
-      const cleanedId = cleanAndEncodeId(chijMatch[1]);
-      console.log('Found ChIJ format Place ID:', cleanedId);
-      return cleanedId;
+      const sanitizedId = sanitizePlaceId(chijMatch[1]);
+      console.log('Found ChIJ format Place ID:', sanitizedId);
+      return sanitizedId;
     }
 
     throw new Error('Could not extract Place ID from URL');
@@ -71,8 +83,9 @@ export const fetchRestaurantDetails = async (inputId: string): Promise<Restauran
   console.log('Input ID/URL:', inputId);
   
   try {
-    const placeId = extractPlaceId(inputId);
-    console.log('Processed Place ID:', placeId);
+    const sanitizedPlaceId = extractPlaceId(inputId);
+    const originalPlaceId = desanitizePlaceId(sanitizedPlaceId);
+    console.log('Final Place ID for API request:', originalPlaceId);
 
     if (!GOOGLE_API_KEY) {
       console.error('Google Places API key not found');
@@ -100,8 +113,8 @@ export const fetchRestaurantDetails = async (inputId: string): Promise<Restauran
 
     console.log('Making API request for fields:', fields);
     
-    // Ensure the place_id is properly encoded in the URL
-    const apiUrl = `${baseUrl}/details/json?place_id=${encodeURIComponent(placeId)}&fields=${fields}&key=${GOOGLE_API_KEY}`;
+    // Ensure the place_id is properly encoded for the URL
+    const apiUrl = `${baseUrl}/details/json?place_id=${encodeURIComponent(originalPlaceId)}&fields=${fields}&key=${GOOGLE_API_KEY}`;
     console.log('Final API URL:', apiUrl);
     
     const response = await fetch(apiUrl);
@@ -151,7 +164,7 @@ export const fetchRestaurantDetails = async (inputId: string): Promise<Restauran
 
     // Transform the API response into our RestaurantDetails format
     const restaurantDetails: RestaurantDetails = {
-      id: placeId,
+      id: originalPlaceId,
       name: data.result.name,
       rating: data.result.rating || 0,
       reviews: data.result.user_ratings_total || 0,
