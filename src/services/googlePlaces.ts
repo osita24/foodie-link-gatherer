@@ -47,6 +47,7 @@ const extractPlaceId = (placeId: string): string => {
 
 export const fetchRestaurantDetails = async (inputId: string): Promise<RestaurantDetails> => {
   console.log('Input ID/URL:', inputId);
+  console.log('Using API Key:', GOOGLE_API_KEY);
   
   try {
     const placeId = extractPlaceId(inputId);
@@ -57,7 +58,8 @@ export const fetchRestaurantDetails = async (inputId: string): Promise<Restauran
       throw new Error('Google Places API key not configured');
     }
 
-    const baseUrl = `${CORS_PROXY}/https://maps.googleapis.com/maps/api/place`;
+    // Remove CORS proxy temporarily for testing
+    const baseUrl = 'https://maps.googleapis.com/maps/api/place';
     
     // Request all necessary fields
     const fields = [
@@ -77,18 +79,11 @@ export const fetchRestaurantDetails = async (inputId: string): Promise<Restauran
     ].join(',');
 
     console.log('Making API request for fields:', fields);
+    console.log('Full request URL:', `${baseUrl}/details/json?place_id=${placeId}&fields=${fields}&key=${GOOGLE_API_KEY}`);
     
     const response = await fetch(
       `${baseUrl}/details/json?place_id=${placeId}&fields=${fields}&key=${GOOGLE_API_KEY}`
     );
-
-    if (response.status === 403) {
-      console.error('CORS Proxy access denied');
-      throw new Error(
-        'CORS Proxy access required. Please visit https://cors-anywhere.herokuapp.com/corsdemo ' +
-        'and click "Request temporary access to the demo server" first.'
-      );
-    }
 
     if (!response.ok) {
       console.error('API request failed:', response.status, response.statusText);
