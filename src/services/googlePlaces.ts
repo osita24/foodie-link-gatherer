@@ -2,41 +2,6 @@ import { RestaurantDetails } from "@/types/restaurant";
 import { parseGoogleMapsUrl } from "@/utils/googleMapsUrlParser";
 import { supabase } from "@/integrations/supabase/client";
 
-const makeProxyRequest = async (endpoint: string, params: Record<string, string>) => {
-  console.log('Making proxy request for endpoint:', endpoint, 'with params:', params);
-  
-  const { data, error } = await supabase.functions.invoke('google-maps-proxy', {
-    body: { endpoint, params }
-  });
-
-  if (error) {
-    console.error('Proxy request failed:', error);
-    throw new Error(`Proxy request failed: ${error.message}`);
-  }
-
-  console.log('Proxy response:', data);
-  return data;
-};
-
-/**
- * Fetches place details from coordinates using Google Places API
- */
-const fetchPlaceFromCoordinates = async (lat: number, lng: number): Promise<string> => {
-  console.log('Fetching place from coordinates:', { lat, lng });
-  
-  const data = await makeProxyRequest('nearbysearch/json', {
-    location: `${lat},${lng}`,
-    rankby: 'distance',
-    type: 'restaurant'
-  });
-
-  if (!data.results?.[0]?.place_id) {
-    throw new Error('No restaurants found at these coordinates');
-  }
-
-  return data.results[0].place_id;
-};
-
 export const fetchRestaurantDetails = async (inputUrl: string): Promise<RestaurantDetails> => {
   console.log('Starting restaurant details fetch for:', inputUrl);
 
@@ -45,45 +10,18 @@ export const fetchRestaurantDetails = async (inputUrl: string): Promise<Restaura
     const parsedUrl = await parseGoogleMapsUrl(inputUrl);
     console.log('Parsed URL result:', parsedUrl);
 
-    // Get the place ID either directly or from coordinates
-    let placeId: string;
-    
-    if (parsedUrl.type === 'place_id' && parsedUrl.placeId) {
-      placeId = parsedUrl.placeId;
-    } else if (parsedUrl.type === 'coordinates' && parsedUrl.coordinates) {
-      placeId = await fetchPlaceFromCoordinates(
-        parsedUrl.coordinates.lat,
-        parsedUrl.coordinates.lng
-      );
-    } else {
-      throw new Error('Could not extract location information from URL');
-    }
-
-    console.log('Using Place ID:', placeId);
-
-    // Request all necessary fields
-    const fields = [
-      'name',
-      'rating',
-      'user_ratings_total',
-      'formatted_address',
-      'formatted_phone_number',
-      'opening_hours',
-      'website',
-      'price_level',
-      'photos',
-      'reviews',
-      'types',
-      'vicinity',
-      'utc_offset'
-    ].join(',');
-
-    console.log('Making API request for fields:', fields);
-    
-    const data = await makeProxyRequest('details/json', {
-      place_id: placeId,
-      fields
+    // Get the place details from our Edge Function
+    const { data, error } = await supabase.functions.invoke('google-maps-proxy', {
+      body: { 
+        action: 'expand_url',
+        url: inputUrl
+      }
     });
+
+    if (error) {
+      console.error('Error from Edge Function:', error);
+      throw error;
+    }
 
     if (!data.result) {
       console.error('No result found in API response');
@@ -103,7 +41,7 @@ export const fetchRestaurantDetails = async (inputUrl: string): Promise<Restaura
 
     // Transform the API response into our RestaurantDetails format
     const restaurantDetails: RestaurantDetails = {
-      id: placeId,
+      id: data.result.place_id,
       name: data.result.name,
       rating: data.result.rating || 0,
       reviews: data.result.user_ratings_total || 0,
