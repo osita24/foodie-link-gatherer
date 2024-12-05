@@ -1,32 +1,5 @@
 const GOOGLE_API_KEY = Deno.env.get('GOOGLE_PLACES_API_KEY')
 
-export async function searchNearbyRestaurants(lat: string, lng: string): Promise<any> {
-  console.log('Searching for restaurants near:', lat, lng)
-  
-  const nearbyUrl = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json')
-  nearbyUrl.searchParams.set('location', `${lat},${lng}`)
-  nearbyUrl.searchParams.set('radius', '500') // Increased radius for better results
-  nearbyUrl.searchParams.set('type', 'restaurant')
-  nearbyUrl.searchParams.set('key', GOOGLE_API_KEY!)
-
-  console.log('Making Nearby Search request')
-  const response = await fetch(nearbyUrl.toString())
-  
-  if (!response.ok) {
-    console.error('Nearby Search API error:', await response.text())
-    throw new Error('Failed to fetch nearby places')
-  }
-
-  const data = await response.json()
-  console.log('Found nearby places:', data.results?.length || 0)
-  
-  if (data.status !== 'OK' || !data.results?.length) {
-    throw new Error('No restaurants found at this location')
-  }
-
-  return data.results[0]
-}
-
 export async function getPlaceDetails(placeId: string): Promise<any> {
   console.log('Fetching details for place:', placeId)
   

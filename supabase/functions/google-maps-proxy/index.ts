@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { getPlaceDetails } from "./placesApi.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,87 +21,35 @@ async function expandUrl(shortUrl: string): Promise<string> {
   }
 }
 
-function extractAddressFromUrl(url: string): string | null {
-  console.log('Attempting to extract address from URL:', url)
+function extractPlaceId(url: string): string | null {
+  console.log('Attempting to extract Place ID from URL:', url)
   try {
     const urlObj = new URL(url)
+    const searchParams = new URLSearchParams(urlObj.search)
     
-    // Try different possible parameters where the address might be
-    const searchParams = urlObj.searchParams
-    
-    // Check 'q' parameter (most common)
-    const qParam = searchParams.get('q')
-    if (qParam) {
-      console.log('Found address in q parameter:', qParam)
-      return qParam
+    // First try to get place_id from URL parameters
+    if (searchParams.has('place_id')) {
+      const placeId = searchParams.get('place_id')
+      console.log('Found direct place_id:', placeId)
+      return placeId
     }
 
-    // Check 'query' parameter
-    const queryParam = searchParams.get('query')
-    if (queryParam) {
-      console.log('Found address in query parameter:', queryParam)
-      return queryParam
-    }
-
-    // Try to extract from the path for newer Google Maps URLs
-    const pathParts = urlObj.pathname.split('/')
-    if (pathParts.includes('place')) {
-      const placeIndex = pathParts.indexOf('place')
-      if (placeIndex >= 0 && pathParts[placeIndex + 1]) {
-        const address = decodeURIComponent(pathParts[placeIndex + 1])
-        console.log('Found address in path:', address)
-        return address
+    // Try to extract from ftid parameter (common in expanded URLs)
+    if (searchParams.has('ftid')) {
+      const ftid = searchParams.get('ftid')
+      if (ftid) {
+        const placeId = ftid.split(':')[1]
+        console.log('Extracted Place ID from ftid:', placeId)
+        return placeId
       }
     }
 
-    // If we get here, we couldn't find the address
-    console.log('No address found in URL parameters or path')
+    console.log('No Place ID found in URL')
     return null
   } catch (error) {
     console.error('Error parsing URL:', error)
     return null
   }
-}
-
-async function findPlaceByAddress(address: string): Promise<any> {
-  const GOOGLE_API_KEY = Deno.env.get('GOOGLE_PLACES_API_KEY')
-  if (!GOOGLE_API_KEY) {
-    throw new Error('Google Places API key not configured')
-  }
-
-  console.log('Searching for place with address:', address)
-  
-  // First, use Places API to find the place
-  const searchUrl = new URL('https://maps.googleapis.com/maps/api/place/findplacefromtext/json')
-  searchUrl.searchParams.set('input', address)
-  searchUrl.searchParams.set('inputtype', 'textquery')
-  searchUrl.searchParams.set('fields', 'place_id,name,formatted_address')
-  searchUrl.searchParams.set('key', GOOGLE_API_KEY)
-
-  const response = await fetch(searchUrl.toString())
-  const data = await response.json()
-  console.log('Place search response:', data)
-
-  if (data.status !== 'OK' || !data.candidates?.length) {
-    throw new Error('No places found for this address')
-  }
-
-  // Get detailed place information
-  const placeId = data.candidates[0].place_id
-  const detailsUrl = new URL('https://maps.googleapis.com/maps/api/place/details/json')
-  detailsUrl.searchParams.set('place_id', placeId)
-  detailsUrl.searchParams.set('fields', 'place_id,name,rating,formatted_address,formatted_phone_number,opening_hours,website,price_level,reviews,photos,types,user_ratings_total')
-  detailsUrl.searchParams.set('key', GOOGLE_API_KEY)
-
-  const detailsResponse = await fetch(detailsUrl.toString())
-  const detailsData = await detailsResponse.json()
-  console.log('Place details response status:', detailsData.status)
-
-  if (detailsData.status !== 'OK') {
-    throw new Error('Failed to fetch place details')
-  }
-
-  return detailsData.result
 }
 
 serve(async (req) => {
@@ -118,16 +67,16 @@ serve(async (req) => {
       await expandUrl(url) : url
     console.log('Working with URL:', expandedUrl)
 
-    // Extract address from the URL
-    const address = extractAddressFromUrl(expandedUrl)
-    if (!address) {
-      throw new Error('Could not extract address from URL. URL format not recognized.')
+    // Try to extract place ID from the expanded URL
+    const placeId = extractPlaceId(expandedUrl)
+    if (!placeId) {
+      throw new Error('Could not extract place ID from URL')
     }
 
-    // Find the place using the address
-    const placeDetails = await findPlaceByAddress(address)
-    console.log('Successfully found place:', placeDetails.name)
-
+    // Get place details using the place ID
+    console.log('Fetching details for place ID:', placeId)
+    const placeDetails = await getPlaceDetails(placeId)
+    
     return new Response(
       JSON.stringify(placeDetails),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
