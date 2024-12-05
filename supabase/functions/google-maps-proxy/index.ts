@@ -8,7 +8,7 @@ const corsHeaders = {
 }
 
 async function expandUrl(shortUrl: string): Promise<string> {
-  console.log('🔍 Original URL:', shortUrl);
+  console.log('🔍 Starting URL expansion for:', shortUrl);
   try {
     const response = await fetch(shortUrl, {
       method: 'GET',
@@ -18,10 +18,14 @@ async function expandUrl(shortUrl: string): Promise<string> {
       }
     });
     
-    const expandedUrl = response.url;
-    console.log('✨ Expanded URL:', expandedUrl);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
     
-    // Verify the expanded URL is valid
+    const expandedUrl = response.url;
+    console.log('✨ Successfully expanded URL to:', expandedUrl);
+    
+    // Additional validation
     if (!expandedUrl || !expandedUrl.includes('google.com/maps')) {
       console.error('❌ Invalid expanded URL:', expandedUrl);
       throw new Error('Invalid expanded URL');
@@ -30,7 +34,7 @@ async function expandUrl(shortUrl: string): Promise<string> {
     return expandedUrl;
   } catch (error) {
     console.error('❌ Error expanding URL:', error);
-    throw new Error('Failed to expand shortened URL');
+    throw error;
   }
 }
 
