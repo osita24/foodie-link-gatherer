@@ -10,6 +10,9 @@ async function expandUrl(url: string): Promise<string> {
     const response = await fetch(url, {
       method: 'HEAD',
       redirect: 'follow',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+      }
     });
     
     if (!response.ok) {
