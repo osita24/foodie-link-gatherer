@@ -3,13 +3,32 @@ import { RestaurantDetails } from "@/types/restaurant";
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
 const CORS_PROXY = 'https://cors-anywhere.herokuapp.com';
 
+const cleanAndEncodeId = (placeId: string): string => {
+  try {
+    // First decode any URL encoding to get the raw string
+    const decodedId = decodeURIComponent(placeId);
+    
+    // Remove any non-alphanumeric characters except underscore
+    const cleanedId = decodedId.replace(/[^\w\-]/g, '');
+    
+    console.log('Original ID:', placeId);
+    console.log('Cleaned ID:', cleanedId);
+    
+    return cleanedId;
+  } catch (error) {
+    console.error('Error cleaning place ID:', error);
+    return placeId;
+  }
+};
+
 const extractPlaceId = (placeId: string): string => {
   console.log('Attempting to extract Place ID from:', placeId);
   
-  // If it's already a place ID starting with ChIJ or 0x, return it
+  // If it's already a place ID starting with ChIJ or 0x, clean and return it
   if (placeId.startsWith('ChIJ') || placeId.startsWith('0x')) {
-    console.log('Using provided Place ID:', placeId);
-    return placeId;
+    const cleanedId = cleanAndEncodeId(placeId);
+    console.log('Using cleaned Place ID:', cleanedId);
+    return cleanedId;
   }
 
   try {
@@ -19,23 +38,26 @@ const extractPlaceId = (placeId: string): string => {
     // First try: Check for place ID in the URL parameters
     const placeParam = urlParams.get('place_id');
     if (placeParam) {
-      console.log('Found Place ID in URL parameters:', placeParam);
-      return encodeURIComponent(placeParam);
+      const cleanedId = cleanAndEncodeId(placeParam);
+      console.log('Found Place ID in URL parameters:', cleanedId);
+      return cleanedId;
     }
 
     // Second try: Look for the hex format ID in the URL
     const fullUrl = decodeURIComponent(url.toString());
     const hexMatch = fullUrl.match(/!1s(0x[a-fA-F0-9]+:[a-fA-F0-9]+)/);
     if (hexMatch && hexMatch[1]) {
-      console.log('Found hex format Place ID:', hexMatch[1]);
-      return encodeURIComponent(hexMatch[1]);
+      const cleanedId = cleanAndEncodeId(hexMatch[1]);
+      console.log('Found hex format Place ID:', cleanedId);
+      return cleanedId;
     }
 
     // Third try: Look for a ChIJ format ID
     const chijMatch = fullUrl.match(/!1s(ChIJ[^!]+)/);
     if (chijMatch && chijMatch[1]) {
-      console.log('Found ChIJ format Place ID:', chijMatch[1]);
-      return encodeURIComponent(chijMatch[1]);
+      const cleanedId = cleanAndEncodeId(chijMatch[1]);
+      console.log('Found ChIJ format Place ID:', cleanedId);
+      return cleanedId;
     }
 
     throw new Error('Could not extract Place ID from URL');
@@ -78,9 +100,11 @@ export const fetchRestaurantDetails = async (inputId: string): Promise<Restauran
 
     console.log('Making API request for fields:', fields);
     
-    const response = await fetch(
-      `${baseUrl}/details/json?place_id=${placeId}&fields=${fields}&key=${GOOGLE_API_KEY}`
-    );
+    // Ensure the place_id is properly encoded in the URL
+    const apiUrl = `${baseUrl}/details/json?place_id=${encodeURIComponent(placeId)}&fields=${fields}&key=${GOOGLE_API_KEY}`;
+    console.log('Final API URL:', apiUrl);
+    
+    const response = await fetch(apiUrl);
 
     if (response.status === 403) {
       console.error('CORS Proxy access denied');
@@ -112,9 +136,6 @@ export const fetchRestaurantDetails = async (inputId: string): Promise<Restauran
     const photoUrls = data.result.photos?.map((photo: any) => 
       `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${GOOGLE_API_KEY}`
     ) || [];
-
-    console.log('Generated photo URLs:', photoUrls);
-    console.log('Opening hours data:', data.result.opening_hours);
 
     // Enhanced hours handling
     let hoursText = 'Hours not available';
