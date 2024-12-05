@@ -26,14 +26,15 @@ const fetchPlaceFromCoordinates = async (lat: number, lng: number): Promise<stri
   
   const data = await makeProxyRequest('nearbysearch/json', {
     location: `${lat},${lng}`,
-    rankby: 'distance'
+    rankby: 'distance',
+    type: 'restaurant'
   });
 
-  if (data.results && data.results[0]) {
-    return data.results[0].place_id;
+  if (!data.results?.[0]?.place_id) {
+    throw new Error('No restaurants found at these coordinates');
   }
 
-  throw new Error('No places found at these coordinates');
+  return data.results[0].place_id;
 };
 
 export const fetchRestaurantDetails = async (inputUrl: string): Promise<RestaurantDetails> => {
@@ -84,17 +85,12 @@ export const fetchRestaurantDetails = async (inputUrl: string): Promise<Restaura
       fields
     });
 
-    if (data.status === 'INVALID_REQUEST' || data.status === 'NOT_FOUND') {
-      console.error('Google Places API error:', data.status);
-      throw new Error(`Google Places API error: ${data.status}`);
-    }
-
     if (!data.result) {
       console.error('No result found in API response');
       throw new Error('No restaurant data found');
     }
 
-    // Create photo URLs using the proxy
+    // Create photo URLs
     const photoUrls = data.result.photos?.map((photo: any) => 
       `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${import.meta.env.VITE_GOOGLE_PLACES_API_KEY}`
     ) || [];
@@ -103,12 +99,6 @@ export const fetchRestaurantDetails = async (inputUrl: string): Promise<Restaura
     let hoursText = 'Hours not available';
     if (data.result.opening_hours?.weekday_text?.length > 0) {
       hoursText = data.result.opening_hours.weekday_text.join(' | ');
-    } else if (data.result.opening_hours?.periods) {
-      const periods = data.result.opening_hours.periods;
-      hoursText = periods.map((period: any) => {
-        const day = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][period.open.day];
-        return `${day}: ${period.open.time} - ${period.close?.time || 'Closed'}`;
-      }).join(' | ');
     }
 
     // Transform the API response into our RestaurantDetails format

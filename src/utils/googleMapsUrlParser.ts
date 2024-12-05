@@ -8,9 +8,9 @@ const URL_PATTERNS = {
   SHORTENED: /^https?:\/\/(goo\.gl\/maps|maps\.app\.goo\.gl|g\.co\/kgs)\/.+/i,
   PLACE_ID: /!1s(ChIJ[^!]+)/,
   PLACE_ID_PARAM: /place_id=([^&]+)/,
-  FTID: /ftid=([^&]+)/,
   COORDINATES: /@(-?\d+\.\d+),(-?\d+\.\d+)/,
-  HEX_ID: /!1s(0x[a-fA-F0-9]+:[a-fA-F0-9]+)/,
+  CID: /!3m7!1s([^!]+)!/,
+  FTID: /ftid=([^&]+)/,
 };
 
 interface ParsedMapUrl {
@@ -68,31 +68,30 @@ const extractCoordinates = (url: string) => {
 };
 
 /**
- * Extracts place ID from various URL formats
+ * Extracts and formats place ID from various URL formats
  */
 const extractPlaceId = (url: string): string | null => {
-  // Check for place_id parameter
+  // Try to get CID (newer format)
+  const cidMatch = url.match(URL_PATTERNS.CID);
+  if (cidMatch?.[1]) {
+    console.log('Found CID:', cidMatch[1]);
+    return cidMatch[1];
+  }
+
+  // Try to get place_id parameter
   const placeIdMatch = url.match(URL_PATTERNS.PLACE_ID_PARAM);
   if (placeIdMatch?.[1]) {
+    console.log('Found place_id parameter:', placeIdMatch[1]);
     return placeIdMatch[1];
   }
 
-  // Check for ChIJ format in URL
-  const chijMatch = url.match(URL_PATTERNS.PLACE_ID);
-  if (chijMatch?.[1]) {
-    return chijMatch[1];
-  }
-
-  // Check for hex format
-  const hexMatch = url.match(URL_PATTERNS.HEX_ID);
-  if (hexMatch?.[1]) {
-    return hexMatch[1];
-  }
-
-  // Check for ftid parameter
+  // Try to get FTID parameter
   const ftidMatch = url.match(URL_PATTERNS.FTID);
   if (ftidMatch?.[1]) {
-    return ftidMatch[1];
+    // Convert hex format to regular place ID format
+    const placeId = ftidMatch[1].replace(/^0x/, '').replace(':', '');
+    console.log('Found and converted FTID:', placeId);
+    return placeId;
   }
 
   return null;
