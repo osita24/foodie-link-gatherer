@@ -25,6 +25,34 @@ async function resolveShortUrl(url: string): Promise<string> {
 }
 
 /**
+ * Converts an ftid to a Place ID format
+ */
+function convertFtidToPlaceId(ftid: string): string {
+  // ftid format: 0x882b34d9289991d5:0x5f596deace8d8b6a
+  // We need the second part after the colon
+  const parts = ftid.split(':');
+  if (parts.length !== 2) return '';
+  
+  // Convert the hex string to a Place ID format
+  // Google uses base-16 numbers in ftid, which we need to convert to their Place ID format
+  try {
+    const placeIdHex = parts[1].replace('0x', '');
+    // Convert pairs of hex characters to decimal and then to corresponding ASCII
+    let placeId = 'ChIJ';
+    for (let i = 0; i < placeIdHex.length; i += 2) {
+      const hex = placeIdHex.substr(i, 2);
+      const decimal = parseInt(hex, 16);
+      placeId += String.fromCharCode(decimal);
+    }
+    console.log('Converted ftid to Place ID:', placeId);
+    return placeId;
+  } catch (error) {
+    console.error('Error converting ftid to Place ID:', error);
+    return '';
+  }
+}
+
+/**
  * Extracts place ID from various Google Maps URL formats
  */
 export const extractPlaceId = async (url: string): Promise<string | null> => {
@@ -53,6 +81,17 @@ export const extractPlaceId = async (url: string): Promise<string | null> => {
       const placeId = searchParams.get('place_id');
       console.log('Found direct place_id:', placeId);
       return placeId;
+    }
+
+    // Try to extract from ftid parameter (new format)
+    const ftid = searchParams.get('ftid');
+    if (ftid) {
+      console.log('Found ftid:', ftid);
+      const placeId = convertFtidToPlaceId(ftid);
+      if (placeId && placeId.startsWith('ChIJ')) {
+        console.log('Successfully converted ftid to Place ID:', placeId);
+        return placeId;
+      }
     }
 
     // Try to extract from the URL path for newer format URLs
