@@ -44,43 +44,8 @@ const RestaurantDetails = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="animate-fade-up space-y-4 p-4">
-          {/* Hero section skeleton */}
-          <div className="w-full h-[40vh] bg-gray-200 animate-pulse rounded-lg" />
-          
-          {/* Content skeleton */}
-          <div className="container mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-6">
-                {/* Restaurant info skeleton */}
-                <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-                  <div className="h-8 bg-gray-200 animate-pulse rounded w-3/4" />
-                  <div className="h-4 bg-gray-200 animate-pulse rounded w-1/2" />
-                  <div className="h-4 bg-gray-200 animate-pulse rounded w-2/3" />
-                </div>
-                
-                {/* Menu recommendations skeleton */}
-                <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-                  <div className="h-6 bg-gray-200 animate-pulse rounded w-1/3" />
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="h-32 bg-gray-200 animate-pulse rounded" />
-                    <div className="h-32 bg-gray-200 animate-pulse rounded" />
-                  </div>
-                </div>
-              </div>
-              
-              {/* Sidebar skeleton */}
-              <div className="hidden lg:block space-y-6">
-                <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-                  <div className="h-6 bg-gray-200 animate-pulse rounded w-2/3" />
-                  <div className="h-24 bg-gray-200 animate-pulse rounded" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -88,7 +53,7 @@ const RestaurantDetails = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-        <div className="text-center max-w-md animate-fade-up">
+        <div className="text-center max-w-md">
           <h2 className="text-xl font-semibold text-red-600 mb-4">Error loading restaurant details</h2>
           <p className="text-gray-600 mb-4">{error instanceof Error ? error.message : 'Unknown error occurred'}</p>
         </div>
@@ -97,7 +62,7 @@ const RestaurantDetails = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20 animate-fade-up">
+    <div className="min-h-screen bg-background pb-20">
       <Header />
       <div className="w-full h-[30vh] sm:h-[40vh] md:h-[50vh] relative">
         <img 
