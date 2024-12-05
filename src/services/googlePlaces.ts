@@ -1,89 +1,128 @@
 import { RestaurantDetails } from "@/types/restaurant";
+import { supabase } from "@/integrations/supabase/client";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
 const CORS_PROXY = 'https://cors-anywhere.herokuapp.com';
 
-const cleanPlaceId = (placeId: string): string => {
-  console.log('Cleaning Place ID:', placeId);
+/**
+ * Resolves a shortened Google Maps URL to its full form
+ */
+const resolveShortUrl = async (url: string): Promise<string> => {
+  console.log('Resolving shortened URL:', url);
+  
+  // First try using our Supabase Edge Function to resolve the URL
   try {
-    // First decode any URL encoding
-    const decoded = decodeURIComponent(placeId);
-    console.log('Decoded Place ID:', decoded);
-    
-    // Remove any non-alphanumeric characters except underscore
-    const cleaned = decoded.replace(/[^\w]/g, '');
-    console.log('Cleaned Place ID:', cleaned);
-    
-    return cleaned;
+    const { data, error } = await supabase.functions.invoke('resolve-maps-url', {
+      body: { url }
+    });
+
+    if (error) {
+      console.error('Error resolving URL via Edge Function:', error);
+      throw error;
+    }
+
+    if (data?.resolvedUrl) {
+      console.log('Successfully resolved URL to:', data.resolvedUrl);
+      return data.resolvedUrl;
+    }
   } catch (error) {
-    console.error('Error cleaning Place ID:', error);
-    return placeId;
+    console.error('Failed to resolve URL:', error);
+    throw new Error('URL_RESOLUTION_FAILED');
+  }
+
+  throw new Error('Could not resolve shortened URL');
+};
+
+/**
+ * Extracts search query from Google Maps URL
+ */
+const extractSearchQuery = (url: string): string | null => {
+  try {
+    const urlObj = new URL(url);
+    
+    // Try to get the place name from various URL parameters
+    const searchParams = new URLSearchParams(urlObj.search);
+    const query = searchParams.get('q') || 
+                 urlObj.pathname.split('/').filter(Boolean).pop() || 
+                 '';
+                 
+    if (query) {
+      console.log('Extracted search query:', query);
+      return decodeURIComponent(query).replace(/\+/g, ' ');
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error extracting search query:', error);
+    return null;
   }
 };
 
-const extractPlaceId = (input: string): string => {
-  console.log('Attempting to extract Place ID from:', input);
+/**
+ * Searches for a place using the Places API
+ */
+const searchPlace = async (query: string): Promise<string | null> => {
+  if (!GOOGLE_API_KEY) {
+    throw new Error('Google Places API key not configured');
+  }
+
+  const encodedQuery = encodeURIComponent(query);
+  const apiUrl = `${CORS_PROXY}/https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodedQuery}&inputtype=textquery&fields=place_id,name&key=${GOOGLE_API_KEY}`;
+  
+  console.log('Searching for place with query:', query);
+  
+  const response = await fetch(apiUrl);
+  const data = await response.json();
+  
+  if (data.status === 'OK' && data.candidates?.length > 0) {
+    const placeId = data.candidates[0].place_id;
+    console.log('Found place ID:', placeId);
+    return placeId;
+  }
+  
+  return null;
+};
+
+export const extractPlaceId = async (input: string): Promise<string | null> => {
+  console.log('Processing input:', input);
   
   try {
-    // If it's already a place ID, clean and return it
-    if (input.startsWith('ChIJ') || input.startsWith('0x')) {
-      console.log('Input is already a Place ID');
-      const cleaned = cleanPlaceId(input);
-      console.log('Cleaned existing Place ID:', cleaned);
-      return cleaned;
+    // If input is a shortened URL, resolve it first
+    if (input.includes('goo.gl/') || input.includes('maps.app.goo.gl')) {
+      console.log('Detected shortened URL, resolving...');
+      input = await resolveShortUrl(input);
     }
-
-    // Try to parse as URL
-    const url = new URL(input);
-    const urlParams = new URLSearchParams(url.search);
     
-    // Check for place_id in URL parameters
-    const placeParam = urlParams.get('place_id');
-    if (placeParam) {
-      const cleaned = cleanPlaceId(placeParam);
-      console.log('Found and cleaned Place ID from URL parameters:', cleaned);
-      return cleaned;
+    // Try to extract a search query from the URL
+    const searchQuery = extractSearchQuery(input);
+    if (searchQuery) {
+      console.log('Attempting to search for place using query:', searchQuery);
+      const placeId = await searchPlace(searchQuery);
+      if (placeId) {
+        return placeId;
+      }
     }
-
-    // Look for hex format ID
-    const fullUrl = decodeURIComponent(url.toString());
-    const hexMatch = fullUrl.match(/!1s(0x[a-fA-F0-9]+:[a-fA-F0-9]+)/);
-    if (hexMatch && hexMatch[1]) {
-      const cleaned = cleanPlaceId(hexMatch[1]);
-      console.log('Found and cleaned hex format Place ID:', cleaned);
-      return cleaned;
-    }
-
-    // Look for ChIJ format ID
-    const chijMatch = fullUrl.match(/!1s(ChIJ[^!]+)/);
-    if (chijMatch && chijMatch[1]) {
-      const cleaned = cleanPlaceId(chijMatch[1]);
-      console.log('Found and cleaned ChIJ format Place ID:', cleaned);
-      return cleaned;
-    }
-
-    throw new Error('Could not extract Place ID from URL');
+    
+    throw new Error('Could not extract place information');
   } catch (error) {
-    console.error('Error extracting Place ID:', error);
+    console.error('Error processing input:', error);
     throw error;
   }
 };
 
 export const fetchRestaurantDetails = async (inputId: string): Promise<RestaurantDetails> => {
-  console.log('Input ID/URL:', inputId);
+  console.log('Fetching details for:', inputId);
   
   try {
-    const placeId = extractPlaceId(inputId);
-    console.log('Final extracted and cleaned Place ID:', placeId);
+    const placeId = await extractPlaceId(inputId);
+    if (!placeId) {
+      throw new Error('Could not determine place ID');
+    }
 
     if (!GOOGLE_API_KEY) {
-      console.error('Google Places API key not found');
       throw new Error('Google Places API key not configured');
     }
 
-    const baseUrl = `${CORS_PROXY}/https://maps.googleapis.com/maps/api/place`;
-    
-    // Request all necessary fields
     const fields = [
       'name',
       'rating',
@@ -100,36 +139,17 @@ export const fetchRestaurantDetails = async (inputId: string): Promise<Restauran
       'utc_offset'
     ].join(',');
 
-    console.log('Making API request for fields:', fields);
-    
-    const apiUrl = `${baseUrl}/details/json?place_id=${placeId}&fields=${fields}&key=${GOOGLE_API_KEY}`;
-    console.log('Final API URL:', apiUrl);
+    const apiUrl = `${CORS_PROXY}/https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${GOOGLE_API_KEY}`;
     
     const response = await fetch(apiUrl);
-
-    if (response.status === 403) {
-      console.error('CORS Proxy access denied');
-      throw new Error(
-        'CORS Proxy access required. Please visit https://cors-anywhere.herokuapp.com/corsdemo ' +
-        'and click "Request temporary access to the demo server" first.'
-      );
-    }
-
     if (!response.ok) {
-      console.error('API request failed:', response.status, response.statusText);
       throw new Error(`Failed to fetch restaurant details: ${response.statusText}`);
     }
 
     const data = await response.json();
-    console.log('Raw API response:', data);
+    console.log('API Response:', data);
 
-    if (data.status === 'INVALID_REQUEST' || data.status === 'NOT_FOUND') {
-      console.error('Google Places API error:', data.status);
-      throw new Error(`Google Places API error: ${data.status}`);
-    }
-
-    if (!data.result) {
-      console.error('No result found in API response');
+    if (data.status !== 'OK' || !data.result) {
       throw new Error('No restaurant data found');
     }
 
@@ -138,20 +158,13 @@ export const fetchRestaurantDetails = async (inputId: string): Promise<Restauran
       `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${GOOGLE_API_KEY}`
     ) || [];
 
-    // Enhanced hours handling
+    // Process hours
     let hoursText = 'Hours not available';
     if (data.result.opening_hours?.weekday_text?.length > 0) {
       hoursText = data.result.opening_hours.weekday_text.join(' | ');
-    } else if (data.result.opening_hours?.periods) {
-      const periods = data.result.opening_hours.periods;
-      hoursText = periods.map((period: any) => {
-        const day = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][period.open.day];
-        return `${day}: ${period.open.time} - ${period.close?.time || 'Closed'}`;
-      }).join(' | ');
     }
 
-    // Transform the API response into our RestaurantDetails format
-    const restaurantDetails: RestaurantDetails = {
+    return {
       id: placeId,
       name: data.result.name,
       rating: data.result.rating || 0,
@@ -172,9 +185,6 @@ export const fetchRestaurantDetails = async (inputId: string): Promise<Restauran
       utcOffset: data.result.utc_offset,
       googleReviews: data.result.reviews || []
     };
-
-    console.log('Transformed restaurant details:', restaurantDetails);
-    return restaurantDetails;
   } catch (error) {
     console.error('Error fetching restaurant details:', error);
     throw error;
