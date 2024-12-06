@@ -19,30 +19,41 @@ const MenuSection = ({ menu, photos }: MenuSectionProps) => {
 
   useEffect(() => {
     if (menu) {
+      console.log("Using provided menu data:", menu);
       setProcessedMenu(menu);
     } else if (photos?.length) {
+      console.log("No menu provided, attempting to process photos:", photos);
       processMenuPhotos();
     }
   }, [menu, photos]);
 
   const processMenuPhotos = async () => {
-    if (!photos?.length) return;
+    if (!photos?.length) {
+      console.log("No photos available to process");
+      return;
+    }
 
     setIsProcessing(true);
     try {
-      console.log("Processing menu photos:", photos);
+      console.log("Starting menu photo processing for", photos.length, "photos");
       
       // Process each photo that might contain menu information
       const menuPromises = photos.map(async (photoUrl) => {
+        console.log("Processing photo:", photoUrl);
         const { data, error } = await supabase.functions.invoke('menu-processor', {
           body: { imageUrl: photoUrl }
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error processing photo:", error);
+          throw error;
+        }
+        console.log("Menu sections extracted from photo:", data.menuSections);
         return data.menuSections;
       });
 
       const results = await Promise.all(menuPromises);
+      console.log("All photo processing results:", results);
       
       // Combine all menu sections
       const combinedMenu = results.flat().map(section => ({
@@ -56,8 +67,14 @@ const MenuSection = ({ menu, photos }: MenuSectionProps) => {
         }))
       }));
 
-      console.log("Processed menu:", combinedMenu);
+      console.log("Final processed menu:", combinedMenu);
       setProcessedMenu(combinedMenu);
+      
+      if (combinedMenu.length === 0) {
+        toast.info("No menu items were found in the photos");
+      } else {
+        toast.success(`Successfully extracted ${combinedMenu.length} menu sections`);
+      }
       
     } catch (error) {
       console.error("Error processing menu photos:", error);
@@ -115,42 +132,54 @@ const MenuSection = ({ menu, photos }: MenuSectionProps) => {
             <List className="w-6 h-6" />
             Menu
           </CardTitle>
-          <Select
-            value={selectedCategory || processedMenu[0]?.name}
-            onValueChange={setSelectedCategory}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              {processedMenu.map((category) => (
-                <SelectItem key={category.name} value={category.name}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {processedMenu.length > 0 && (
+            <Select
+              value={selectedCategory || processedMenu[0]?.name}
+              onValueChange={setSelectedCategory}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {processedMenu.map((category) => (
+                  <SelectItem key={category.name} value={category.name}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Item</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead className="text-right">Price</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {currentCategory?.items.map((item) => (
-              <TableRow key={item.id} className="hover:bg-gray-50">
-                <TableCell className="font-medium">{item.name}</TableCell>
-                <TableCell>{item.description}</TableCell>
-                <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
+        {isProcessing ? (
+          <p className="text-muted-foreground text-center py-4">
+            Analyzing menu photos...
+          </p>
+        ) : processedMenu.length === 0 ? (
+          <p className="text-muted-foreground text-center py-4">
+            No menu information available at this time.
+          </p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Item</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead className="text-right">Price</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {currentCategory?.items.map((item) => (
+                <TableRow key={item.id} className="hover:bg-gray-50">
+                  <TableCell className="font-medium">{item.name}</TableCell>
+                  <TableCell>{item.description}</TableCell>
+                  <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </CardContent>
     </Card>
   );

@@ -15,10 +15,11 @@ serve(async (req) => {
     const { imageUrl } = await req.json();
     console.log('Processing image URL:', imageUrl);
 
-    // Initialize Google Cloud Vision API client using fetch
+    // Initialize Google Cloud Vision API request
     const visionApiEndpoint = 'https://vision.googleapis.com/v1/images:annotate';
     const credentials = JSON.parse(Deno.env.get('GOOGLE_CLOUD_CREDENTIALS') || '{}');
     
+    console.log('Sending request to Google Vision API');
     const requestBody = {
       requests: [{
         image: {
@@ -41,12 +42,13 @@ serve(async (req) => {
     });
 
     const result = await response.json();
+    console.log('Vision API response status:', response.status);
     
     if (!result.responses?.[0]?.textAnnotations?.[0]) {
       console.log('No text detected in image');
       return new Response(
-        JSON.stringify({ error: 'No text detected in image' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        JSON.stringify({ menuSections: [] }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -73,8 +75,10 @@ serve(async (req) => {
 });
 
 function processMenuText(text: string) {
+  console.log('Processing text into menu sections');
   // Split text into lines
   const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+  console.log('Split into lines:', lines);
   
   const sections = [];
   let currentSection = null;
@@ -89,6 +93,7 @@ function processMenuText(text: string) {
         name: line.replace(':', '').trim(),
         items: []
       };
+      console.log('Found new section:', currentSection.name);
       continue;
     }
 
@@ -107,13 +112,16 @@ function processMenuText(text: string) {
           price,
           description: description || undefined
         });
+        console.log('Added menu item:', { name, price, description });
       } else {
         // If no price found, treat as item name or description
         const lastItem = currentSection.items[currentSection.items.length - 1];
         if (lastItem && !lastItem.description) {
           lastItem.description = line;
+          console.log('Added description to last item:', line);
         } else {
           currentSection.items.push({ name: line });
+          console.log('Added item without price:', line);
         }
       }
     }
@@ -124,5 +132,6 @@ function processMenuText(text: string) {
     sections.push(currentSection);
   }
 
+  console.log('Final processed sections:', sections);
   return sections;
 }
