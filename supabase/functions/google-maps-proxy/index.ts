@@ -23,7 +23,10 @@ serve(async (req) => {
     if (!url && !placeId) {
       console.error('❌ Missing required parameters');
       return new Response(
-        JSON.stringify({ error: 'Either URL or placeId is required' }),
+        JSON.stringify({ 
+          error: 'Either URL or placeId is required',
+          timestamp: new Date().toISOString()
+        }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -46,12 +49,15 @@ serve(async (req) => {
   } catch (error) {
     console.error('❌ Error:', error);
     
+    // Create a more detailed error response
+    const errorResponse = {
+      error: error.message,
+      details: error.stack,
+      timestamp: new Date().toISOString()
+    };
+
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        details: error.stack,
-        timestamp: new Date().toISOString()
-      }),
+      JSON.stringify(errorResponse),
       { 
         status: error.status || 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

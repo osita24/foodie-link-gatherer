@@ -6,6 +6,7 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
   console.log('🔍 Starting restaurant search with:', { url, placeId });
   
   if (!GOOGLE_API_KEY) {
+    console.error('❌ Google Places API key is missing');
     throw new Error('Google Places API key is not configured');
   }
 
@@ -18,7 +19,7 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
 
     // Handle shortened URLs first
     let finalUrl = url;
-    if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
+    if (url?.includes('goo.gl') || url?.includes('maps.app.goo.gl')) {
       console.log('📎 Expanding shortened URL:', url);
       const response = await fetch(url, { 
         redirect: 'follow',
@@ -53,6 +54,7 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
     console.log('🌐 Making text search request to:', searchUrl.toString());
     const response = await fetch(searchUrl.toString());
     if (!response.ok) {
+      console.error('❌ Places API request failed:', response.status, await response.text());
       throw new Error(`Places API request failed with status ${response.status}`);
     }
     
@@ -108,11 +110,23 @@ async function getPlaceDetails(placeId: string): Promise<any> {
   
   console.log('🌐 Making place details request');
   const response = await fetch(detailsUrl.toString());
+  
+  // Log the raw response for debugging
+  const responseText = await response.text();
+  console.log('📝 Raw response:', responseText);
+  
   if (!response.ok) {
+    console.error('❌ Place details request failed:', response.status, responseText);
     throw new Error(`Place details request failed with status ${response.status}`);
   }
   
-  const data = await response.json();
+  let data;
+  try {
+    data = JSON.parse(responseText);
+  } catch (error) {
+    console.error('❌ Failed to parse response:', error);
+    throw new Error('Failed to parse place details response');
+  }
   
   if (data.status !== 'OK') {
     console.error('❌ Place Details API error:', data);
@@ -121,8 +135,14 @@ async function getPlaceDetails(placeId: string): Promise<any> {
 
   // If photos exist, identify potential menu photos
   if (data.result.photos) {
-    const menuPhotoRefs = await identifyMenuPhotos(data.result.photos);
-    data.result.menuPhotos = menuPhotoRefs;
+    try {
+      const menuPhotoRefs = await identifyMenuPhotos(data.result.photos);
+      data.result.menuPhotos = menuPhotoRefs;
+    } catch (error) {
+      console.error('⚠️ Error processing menu photos:', error);
+      // Don't fail the whole request if menu photo processing fails
+      data.result.menuPhotos = [];
+    }
   }
   
   console.log('✅ Successfully retrieved place details');
