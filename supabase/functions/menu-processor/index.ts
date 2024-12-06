@@ -5,20 +5,26 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const GOOGLE_PLACES_API_KEY = Deno.env.get('GOOGLE_PLACES_API_KEY');
-
 // Common words that indicate menu sections
 const MENU_SECTION_INDICATORS = [
   'APPETIZERS', 'STARTERS', 'ENTREES', 'MAIN DISHES', 'DESSERTS',
   'BEVERAGES', 'SIDES', 'SALADS', 'SOUPS', 'PASTA', 'PIZZA',
-  'BREAKFAST', 'LUNCH', 'DINNER', 'SPECIALS'
+  'BREAKFAST', 'LUNCH', 'DINNER', 'SPECIALS', 'PRIX FIXE'
 ];
 
 // Words that likely indicate non-menu content
 const NON_MENU_WORDS = [
   'HOURS', 'CONTACT', 'PHONE', 'ADDRESS', 'FOLLOW', 'WEBSITE',
   'OPEN', 'CLOSED', 'DELIVERY', 'PARKING', 'WIFI', 'EXCELLENCE',
-  'DAYS', 'WEEK', 'CALL', 'VISIT', 'LOCATION'
+  'DAYS', 'WEEK', 'CALL', 'VISIT', 'LOCATION', 'EXPANDING',
+  'EXCITED', 'STAY TUNED', 'FOR LEASE', 'BISTRO', 'TABLE'
+];
+
+// Words that likely indicate menu items
+const MENU_ITEM_INDICATORS = [
+  'CHICKEN', 'BEEF', 'FISH', 'SALAD', 'SOUP', 'PASTA',
+  'PIZZA', 'BURGER', 'SANDWICH', 'STEAK', 'SEAFOOD',
+  'APPETIZER', 'DESSERT', 'WINE', 'BEER', 'COCKTAIL'
 ];
 
 function isLikelyMenuSection(text: string): boolean {
@@ -32,12 +38,26 @@ function isLikelyMenuItem(text: string): boolean {
     return false;
   }
 
-  // Menu items typically have 2-10 words and don't start with numbers
+  // Check for menu item indicators
+  const hasMenuIndicator = MENU_ITEM_INDICATORS.some(indicator => 
+    text.toUpperCase().includes(indicator)
+  );
+
+  // Menu items typically:
+  // 1. Have 2-10 words
+  // 2. Don't start with numbers (except prices)
+  // 3. Aren't just promotional text
   const words = text.split(' ');
-  return words.length >= 2 && 
-         words.length <= 10 && 
-         !text.match(/^\d/) &&
-         !text.match(/^[^a-zA-Z]*$/);
+  const isReasonableLength = words.length >= 2 && words.length <= 10;
+  const hasPrice = text.includes('$');
+  const isntJustNumbers = !text.match(/^[\d\s.,$]+$/);
+
+  return (hasMenuIndicator || hasPrice) && isReasonableLength && isntJustNumbers;
+}
+
+function extractPrice(text: string): number {
+  const priceMatch = text.match(/\$(\d+(\.\d{2})?)/);
+  return priceMatch ? parseFloat(priceMatch[1]) : 0;
 }
 
 function processTextIntoMenuSections(text: string): any[] {
@@ -49,7 +69,7 @@ function processTextIntoMenuSections(text: string): any[] {
 
   let currentSection = 'Menu Items';
   const sections: any[] = [];
-  let currentItems: string[] = [];
+  let currentItems: any[] = [];
 
   lines.forEach(line => {
     if (isLikelyMenuSection(line)) {
@@ -57,18 +77,21 @@ function processTextIntoMenuSections(text: string): any[] {
       if (currentItems.length > 0) {
         sections.push({
           name: currentSection,
-          items: currentItems.map((item, index) => ({
-            id: `${currentSection}-${index}`,
-            name: item,
-            description: '',
-            price: 0
-          }))
+          items: currentItems
         });
       }
       currentSection = line.trim();
       currentItems = [];
     } else if (isLikelyMenuItem(line)) {
-      currentItems.push(line.trim());
+      const price = extractPrice(line);
+      const name = line.replace(/\$\d+(\.\d{2})?/, '').trim();
+      
+      currentItems.push({
+        id: `${currentSection}-${currentItems.length}`,
+        name: name,
+        description: '',
+        price: price || 0
+      });
     }
   });
 
@@ -76,12 +99,7 @@ function processTextIntoMenuSections(text: string): any[] {
   if (currentItems.length > 0) {
     sections.push({
       name: currentSection,
-      items: currentItems.map((item, index) => ({
-        id: `${currentSection}-${index}`,
-        name: item,
-        description: '',
-        price: 0
-      }))
+      items: currentItems
     });
   }
 
@@ -108,6 +126,7 @@ serve(async (req) => {
     }
 
     const menuSections: any[] = [];
+    const GOOGLE_PLACES_API_KEY = Deno.env.get('GOOGLE_PLACES_API_KEY');
     
     for (const photoUrl of photos) {
       console.log('🔍 Processing photo:', photoUrl);
@@ -149,7 +168,12 @@ serve(async (req) => {
           console.log('📝 Extracted text:', text);
 
           const sections = processTextIntoMenuSections(text);
-          menuSections.push(...sections);
+          // Only add sections that actually contain menu items
+          sections.forEach(section => {
+            if (section.items.length > 0) {
+              menuSections.push(section);
+            }
+          });
         }
       } catch (error) {
         console.error('❌ Error processing photo:', error);
@@ -168,10 +192,16 @@ serve(async (req) => {
       return acc;
     }, []);
 
-    console.log('✅ Processed all photos, found sections:', mergedSections.length);
+    // Only return sections that have actual menu items
+    const validSections = mergedSections.filter(section => 
+      section.items.length > 0 && 
+      section.items.some(item => item.price > 0 || item.name.length > 5)
+    );
+
+    console.log('✅ Processed all photos, found valid sections:', validSections.length);
 
     return new Response(
-      JSON.stringify({ menuSections: mergedSections }),
+      JSON.stringify({ menuSections: validSections }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
