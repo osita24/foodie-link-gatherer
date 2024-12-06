@@ -5,22 +5,92 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface VisionRequest {
-  requests: {
-    image: {
-      source: {
-        imageUri: string;
-      };
-    };
-    features: {
-      type: string;
-      maxResults: number;
-    }[];
-  }[];
+const GOOGLE_PLACES_API_KEY = Deno.env.get('GOOGLE_PLACES_API_KEY');
+
+// Common words that indicate menu sections
+const MENU_SECTION_INDICATORS = [
+  'APPETIZERS', 'STARTERS', 'ENTREES', 'MAIN DISHES', 'DESSERTS',
+  'BEVERAGES', 'SIDES', 'SALADS', 'SOUPS', 'PASTA', 'PIZZA',
+  'BREAKFAST', 'LUNCH', 'DINNER', 'SPECIALS'
+];
+
+// Words that likely indicate non-menu content
+const NON_MENU_WORDS = [
+  'HOURS', 'CONTACT', 'PHONE', 'ADDRESS', 'FOLLOW', 'WEBSITE',
+  'OPEN', 'CLOSED', 'DELIVERY', 'PARKING', 'WIFI', 'EXCELLENCE',
+  'DAYS', 'WEEK', 'CALL', 'VISIT', 'LOCATION'
+];
+
+function isLikelyMenuSection(text: string): boolean {
+  const upperText = text.toUpperCase();
+  return MENU_SECTION_INDICATORS.some(indicator => upperText.includes(indicator));
+}
+
+function isLikelyMenuItem(text: string): boolean {
+  // Remove common non-menu indicators
+  if (NON_MENU_WORDS.some(word => text.toUpperCase().includes(word))) {
+    return false;
+  }
+
+  // Menu items typically have 2-10 words and don't start with numbers
+  const words = text.split(' ');
+  return words.length >= 2 && 
+         words.length <= 10 && 
+         !text.match(/^\d/) &&
+         !text.match(/^[^a-zA-Z]*$/);
+}
+
+function processTextIntoMenuSections(text: string): any[] {
+  console.log('Processing text into menu sections:', text);
+  
+  const lines = text.split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
+
+  let currentSection = 'Menu Items';
+  const sections: any[] = [];
+  let currentItems: string[] = [];
+
+  lines.forEach(line => {
+    if (isLikelyMenuSection(line)) {
+      // If we have items in the current section, save them
+      if (currentItems.length > 0) {
+        sections.push({
+          name: currentSection,
+          items: currentItems.map((item, index) => ({
+            id: `${currentSection}-${index}`,
+            name: item,
+            description: '',
+            price: 0
+          }))
+        });
+      }
+      currentSection = line.trim();
+      currentItems = [];
+    } else if (isLikelyMenuItem(line)) {
+      currentItems.push(line.trim());
+    }
+  });
+
+  // Add the last section
+  if (currentItems.length > 0) {
+    sections.push({
+      name: currentSection,
+      items: currentItems.map((item, index) => ({
+        id: `${currentSection}-${index}`,
+        name: item,
+        description: '',
+        price: 0
+      }))
+    });
+  }
+
+  console.log('Processed sections:', sections);
+  return sections;
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -37,102 +107,49 @@ serve(async (req) => {
       );
     }
 
-    const GOOGLE_PLACES_API_KEY = Deno.env.get('GOOGLE_PLACES_API_KEY');
-    if (!GOOGLE_PLACES_API_KEY) {
-      console.error('❌ Missing Google Places API key');
-      throw new Error('Google Places API key not configured');
-    }
-
     const menuSections: any[] = [];
     
     for (const photoUrl of photos) {
       console.log('🔍 Processing photo:', photoUrl);
       
-      const visionRequest: VisionRequest = {
-        requests: [{
-          image: {
-            source: {
-              imageUri: photoUrl
-            }
-          },
-          features: [{
-            type: 'TEXT_DETECTION',
-            maxResults: 1
-          }]
-        }]
-      };
-
       try {
-        const response = await fetch(
+        const visionResponse = await fetch(
           `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_PLACES_API_KEY}`,
           {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify(visionRequest)
+            body: JSON.stringify({
+              requests: [{
+                image: {
+                  source: {
+                    imageUri: photoUrl
+                  }
+                },
+                features: [{
+                  type: 'TEXT_DETECTION',
+                  maxResults: 1
+                }]
+              }]
+            })
           }
         );
 
-        if (!response.ok) {
-          console.error('❌ Vision API error:', await response.text());
+        if (!visionResponse.ok) {
+          console.error('❌ Vision API error:', await visionResponse.text());
           continue;
         }
 
-        const data = await response.json();
+        const data = await visionResponse.json();
         console.log('✅ Received Vision API response');
 
         if (data.responses?.[0]?.textAnnotations?.[0]?.description) {
           const text = data.responses[0].textAnnotations[0].description;
           console.log('📝 Extracted text:', text);
 
-          // Basic text processing to identify menu items
-          const lines = text.split('\n');
-          let currentSection = '';
-          let items: any[] = [];
-
-          for (const line of lines) {
-            // Skip empty lines and common non-menu text
-            if (!line.trim() || /^(phone|address|hours|www|http|follow|like)/i.test(line)) {
-              continue;
-            }
-
-            // If line is in all caps and followed by menu items, treat as section
-            if (line === line.toUpperCase() && line.length > 3) {
-              if (currentSection && items.length) {
-                menuSections.push({
-                  name: currentSection,
-                  items: items.map((item, index) => ({
-                    id: `${currentSection}-${index}`,
-                    name: item,
-                    description: '',
-                    price: 0
-                  }))
-                });
-              }
-              currentSection = line;
-              items = [];
-            } else {
-              // Remove prices and common symbols
-              const cleanedItem = line.replace(/\$\d+(\.\d{2})?/g, '').replace(/[•★]/g, '').trim();
-              if (cleanedItem) {
-                items.push(cleanedItem);
-              }
-            }
-          }
-
-          // Add the last section
-          if (currentSection && items.length) {
-            menuSections.push({
-              name: currentSection,
-              items: items.map((item, index) => ({
-                id: `${currentSection}-${index}`,
-                name: item,
-                description: '',
-                price: 0
-              }))
-            });
-          }
+          const sections = processTextIntoMenuSections(text);
+          menuSections.push(...sections);
         }
       } catch (error) {
         console.error('❌ Error processing photo:', error);
@@ -140,18 +157,21 @@ serve(async (req) => {
       }
     }
 
-    console.log('✅ Processed all photos, found sections:', menuSections.length);
+    // Remove duplicate sections and merge their items
+    const mergedSections = menuSections.reduce((acc: any[], section: any) => {
+      const existingSection = acc.find(s => s.name === section.name);
+      if (existingSection) {
+        existingSection.items.push(...section.items);
+      } else {
+        acc.push(section);
+      }
+      return acc;
+    }, []);
 
-    // If no menu sections were found, create a default one
-    if (menuSections.length === 0) {
-      menuSections.push({
-        name: 'Menu Items',
-        items: []
-      });
-    }
+    console.log('✅ Processed all photos, found sections:', mergedSections.length);
 
     return new Response(
-      JSON.stringify({ menuSections }),
+      JSON.stringify({ menuSections: mergedSections }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
