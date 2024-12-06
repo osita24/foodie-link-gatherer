@@ -6,7 +6,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -19,7 +18,6 @@ serve(async (req) => {
     const visionApiEndpoint = 'https://vision.googleapis.com/v1/images:annotate';
     const credentials = JSON.parse(Deno.env.get('GOOGLE_CLOUD_CREDENTIALS') || '{}');
     
-    console.log('Sending request to Google Vision API');
     const requestBody = {
       requests: [{
         image: {
@@ -27,22 +25,27 @@ serve(async (req) => {
             imageUri: imageUrl
           }
         },
-        features: [{
-          type: 'TEXT_DETECTION'
-        }]
+        features: [
+          {
+            type: 'TEXT_DETECTION',
+            model: 'builtin/latest'
+          },
+          {
+            type: 'DOCUMENT_TEXT_DETECTION',
+            model: 'builtin/latest'
+          }
+        ]
       }]
     };
 
     const response = await fetch(`${visionApiEndpoint}?key=${credentials.api_key}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody)
     });
 
     const result = await response.json();
-    console.log('Vision API response status:', response.status);
+    console.log('Vision API response received');
     
     if (!result.responses?.[0]?.textAnnotations?.[0]) {
       console.log('No text detected in image');
@@ -54,11 +57,10 @@ serve(async (req) => {
 
     // Extract the full text
     const fullText = result.responses[0].textAnnotations[0].description;
-    console.log('Extracted text:', fullText);
+    console.log('Extracted text length:', fullText.length);
 
     // Process the text into menu sections
     const menuSections = processMenuText(fullText);
-    console.log('Processed menu sections:', menuSections);
 
     return new Response(
       JSON.stringify({ menuSections }),
@@ -75,63 +77,87 @@ serve(async (req) => {
 });
 
 function processMenuText(text: string) {
-  console.log('Processing text into menu sections');
-  // Split text into lines
-  const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
-  console.log('Split into lines:', lines);
+  // Split text into lines and clean them
+  const lines = text.split('\n')
+    .map(line => line.trim())
+    .filter(Boolean);
   
   const sections = [];
   let currentSection = null;
+  let currentItem = null;
+
+  // Common price patterns
+  const pricePattern = /[\$€£]\s*\d+\.?\d*/;
+  
+  // Common menu section headers
+  const sectionHeaders = [
+    'APPETIZERS', 'STARTERS', 'MAIN', 'ENTREES', 'DESSERTS', 
+    'DRINKS', 'BEVERAGES', 'SIDES', 'SALADS', 'SOUPS'
+  ];
 
   for (const line of lines) {
-    // Check if line looks like a section header (all caps, or ends with ':')
-    if (line === line.toUpperCase() || line.endsWith(':')) {
+    // Check if line is a section header
+    const isHeader = sectionHeaders.some(header => 
+      line.toUpperCase().includes(header)) || 
+      line === line.toUpperCase();
+
+    if (isHeader) {
       if (currentSection) {
         sections.push(currentSection);
       }
       currentSection = {
-        name: line.replace(':', '').trim(),
+        name: line.trim(),
         items: []
       };
-      console.log('Found new section:', currentSection.name);
+      currentItem = null;
       continue;
     }
 
-    // If we have a current section, try to parse menu items
-    if (currentSection) {
-      // Look for price patterns (e.g., $12.99)
-      const priceMatch = line.match(/\$?\d+\.?\d*/);
+    // If we don't have a section yet, create a default one
+    if (!currentSection) {
+      currentSection = {
+        name: 'Menu Items',
+        items: []
+      };
+    }
+
+    // Look for price in the line
+    const priceMatch = line.match(pricePattern);
+    
+    if (priceMatch) {
+      const price = priceMatch[0];
+      const name = line.substring(0, priceMatch.index).trim();
+      const description = line.substring(priceMatch.index + price.length).trim();
       
-      if (priceMatch) {
-        const price = priceMatch[0];
-        const name = line.substring(0, priceMatch.index).trim();
-        const description = line.substring(priceMatch.index + price.length).trim();
-        
-        currentSection.items.push({
-          name,
-          price,
-          description: description || undefined
-        });
-        console.log('Added menu item:', { name, price, description });
-      } else {
-        // If no price found, treat as item name or description
-        const lastItem = currentSection.items[currentSection.items.length - 1];
-        if (lastItem && !lastItem.description) {
-          lastItem.description = line;
-          console.log('Added description to last item:', line);
-        } else {
-          currentSection.items.push({ name: line });
-          console.log('Added item without price:', line);
-        }
-      }
+      currentItem = {
+        id: `${currentSection.name}-${currentSection.items.length}`,
+        name: name || 'Unnamed Item',
+        description: description,
+        price: parseFloat(price.replace(/[\$€£\s]/g, ''))
+      };
+      
+      currentSection.items.push(currentItem);
+    } else if (currentItem) {
+      // If no price found and we have a current item, treat as additional description
+      currentItem.description = currentItem.description 
+        ? `${currentItem.description} ${line}`
+        : line;
+    } else {
+      // If no price and no current item, might be a new item name
+      currentItem = {
+        id: `${currentSection.name}-${currentSection.items.length}`,
+        name: line,
+        description: '',
+        price: 0
+      };
+      currentSection.items.push(currentItem);
     }
   }
 
   // Don't forget to add the last section
-  if (currentSection) {
+  if (currentSection && currentSection.items.length > 0) {
     sections.push(currentSection);
   }
 
-  console.log('Final processed sections:', sections);
   return sections;
 }
