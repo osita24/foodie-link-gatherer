@@ -19,16 +19,22 @@ serve(async (req) => {
     console.log('📝 Processing reviews:', reviews.length);
 
     let menuItems: string[] = [];
+    let processedPhotos = 0;
     
     // Process all images
     for (const photoUrl of photos) {
       try {
-        const analysis = await analyzeImage(photoUrl);
-        console.log('Image analysis result:', analysis);
+        processedPhotos++;
+        console.log(`\n🖼️ Processing photo ${processedPhotos}/${photos.length}`);
         
-        // Clean up the text with AI
-        const cleanedItems = await cleanMenuText(analysis.text);
-        menuItems = [...menuItems, ...cleanedItems];
+        const analysis = await analyzeImage(photoUrl);
+        console.log(`📊 Image analysis result - Type: ${analysis.type}, Confidence: ${analysis.confidence}`);
+        
+        if (analysis.text) {
+          // Clean up the text with AI
+          const cleanedItems = await cleanMenuText(analysis.text);
+          menuItems = [...menuItems, ...cleanedItems];
+        }
       } catch (error) {
         console.error('❌ Error processing photo:', error);
         continue;
@@ -46,7 +52,7 @@ serve(async (req) => {
       menuItems = [...new Set([...menuItems, ...menuItemsFromReviews])];
     }
 
-    // Remove duplicates
+    // Remove duplicates and empty items
     const uniqueItems = [...new Set(menuItems)].filter(item => item.trim());
     
     // Format into a menu section
@@ -58,7 +64,7 @@ serve(async (req) => {
       }))
     };
 
-    console.log('✅ Final menu items:', menuSection.items);
+    console.log(`✅ Final menu items: ${menuSection.items.length}`);
 
     return new Response(
       JSON.stringify({ menuSections: [menuSection] }),

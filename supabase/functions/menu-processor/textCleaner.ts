@@ -1,5 +1,5 @@
 export async function cleanMenuText(text: string): Promise<string[]> {
-  console.log('Cleaning up menu text with AI:', text);
+  console.log('🧹 Cleaning up menu text with AI, text length:', text.length);
   
   try {
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -21,6 +21,7 @@ export async function cleanMenuText(text: string): Promise<string[]> {
             - Group similar items together
             - If text describes food (like from image labels), convert it into likely menu items
             - Ensure items are properly capitalized and formatted
+            - If the text is clearly not menu related, return an empty list
             Example output:
             Margherita Pizza
             Pepperoni Pizza
@@ -28,15 +29,19 @@ export async function cleanMenuText(text: string): Promise<string[]> {
           },
           { role: 'user', content: text }
         ],
+        temperature: 0.3, // Lower temperature for more consistent output
+        max_tokens: 1000
       }),
     });
 
     const data = await openAIResponse.json();
-    console.log('AI cleanup response:', data);
+    console.log('🤖 AI cleanup complete');
     const cleanedText = data.choices[0].message.content;
-    return cleanedText.split('\n').filter(item => item.trim().length > 0);
+    const menuItems = cleanedText.split('\n').filter(item => item.trim().length > 0);
+    console.log(`✨ Extracted ${menuItems.length} menu items`);
+    return menuItems;
   } catch (error) {
-    console.error('Error cleaning up menu text:', error);
+    console.error('❌ Error cleaning up menu text:', error);
     return [];
   }
 }

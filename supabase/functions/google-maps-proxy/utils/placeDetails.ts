@@ -21,6 +21,7 @@ export async function getPlaceDetails(placeId: string): Promise<any> {
     'place_id',
     'vicinity'
   ].join(','));
+  detailsUrl.searchParams.set('maxheight', '1600'); // Get higher quality photos
   detailsUrl.searchParams.set('key', Deno.env.get('GOOGLE_PLACES_API_KEY') || '');
   
   console.log('🌐 Making place details request');
@@ -36,10 +37,24 @@ export async function getPlaceDetails(placeId: string): Promise<any> {
     throw new Error(`Place Details API error: ${data.status}`);
   }
 
-  // If photos exist, identify potential menu photos
+  // If photos exist, get ALL photo URLs
   if (data.result.photos) {
-    const menuPhotoRefs = await identifyMenuPhotos(data.result.photos);
-    data.result.menuPhotos = menuPhotoRefs;
+    console.log(`📸 Found ${data.result.photos.length} photos to process`);
+    const photoUrls = await Promise.all(
+      data.result.photos.map(async (photo: any) => {
+        const photoUrl = new URL('https://maps.googleapis.com/maps/api/place/photo');
+        photoUrl.searchParams.set('maxwidth', '1600');
+        photoUrl.searchParams.set('photo_reference', photo.photo_reference);
+        photoUrl.searchParams.set('key', Deno.env.get('GOOGLE_PLACES_API_KEY') || '');
+        
+        // Get the actual photo URL by following redirects
+        const photoResponse = await fetch(photoUrl.toString());
+        return photoResponse.url;
+      })
+    );
+    
+    console.log(`✅ Successfully retrieved ${photoUrls.length} photo URLs`);
+    data.result.photos = photoUrls;
   }
   
   console.log('✅ Successfully retrieved place details');
