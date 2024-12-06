@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@google-cloud/vision@4.0.2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,37 +15,65 @@ serve(async (req) => {
     const { imageUrl } = await req.json();
     console.log('Processing image URL:', imageUrl);
 
-    // Initialize Google Cloud Vision client
+    // Get credentials from environment
     const credentials = JSON.parse(Deno.env.get('GOOGLE_CLOUD_CREDENTIALS') || '{}');
-    const vision = new createClient({
-      credentials,
-    });
-
+    
     // Fetch image data
-    const response = await fetch(imageUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch image: ${response.statusText}`);
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
     }
-    const imageData = await response.arrayBuffer();
+    const imageData = await imageResponse.arrayBuffer();
 
-    // Perform both text detection and document text detection
-    const [textResult] = await vision.textDetection({
-      image: { content: new Uint8Array(imageData) }
-    });
-    const [documentResult] = await vision.documentTextDetection({
-      image: { content: new Uint8Array(imageData) }
-    });
+    // Convert ArrayBuffer to base64
+    const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageData)));
 
-    const textAnnotations = textResult.textAnnotations || [];
-    const documentAnnotations = documentResult.fullTextAnnotation?.text || '';
+    // Prepare request to Google Cloud Vision API
+    const visionRequest = {
+      requests: [{
+        image: {
+          content: base64Image
+        },
+        features: [
+          {
+            type: 'TEXT_DETECTION',
+            maxResults: 1
+          },
+          {
+            type: 'DOCUMENT_TEXT_DETECTION',
+            maxResults: 1
+          }
+        ]
+      }]
+    };
 
-    console.log('Text detection results:', {
-      textAnnotations: textAnnotations.length > 0 ? 'Found' : 'None',
-      documentText: documentAnnotations ? 'Found' : 'None'
-    });
+    // Call Vision API directly
+    const visionResponse = await fetch(
+      `https://vision.googleapis.com/v1/images:annotate?key=${credentials.private_key}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(visionRequest)
+      }
+    );
 
-    // Combine and process text
-    const combinedText = documentAnnotations || (textAnnotations[0]?.description || '');
+    if (!visionResponse.ok) {
+      const error = await visionResponse.text();
+      console.error('Vision API error:', error);
+      throw new Error(`Vision API error: ${visionResponse.statusText}`);
+    }
+
+    const visionResult = await visionResponse.json();
+    console.log('Vision API response:', JSON.stringify(visionResult, null, 2));
+
+    // Get text from both detection types
+    const textDetection = visionResult.responses[0].textAnnotations?.[0]?.description || '';
+    const documentText = visionResult.responses[0].fullTextAnnotation?.text || '';
+
+    // Use document text if available, otherwise fall back to regular text detection
+    const combinedText = documentText || textDetection;
     
     // Check if this looks like a menu
     const isLikelyMenu = checkIfLikelyMenu(combinedText);
