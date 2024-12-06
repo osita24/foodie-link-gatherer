@@ -1,14 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Common menu-related keywords to help identify menu images
+// Keywords that suggest an image is likely a menu
 const MENU_IMAGE_KEYWORDS = [
-  'menu', 'food', 'dish', 'plate', 'meal', 'cuisine',
-  'appetizer', 'entree', 'dessert', 'drink', 'beverage'
+  'menu', 'price list', 'dishes', 'specials', 'cuisine',
+  'appetizers', 'entrees', 'mains', 'desserts', 'beverages',
+  'food list', 'daily specials', 'chef specials'
 ];
 
 async function cleanupMenuText(text: string): Promise<string[]> {
@@ -26,10 +28,18 @@ async function cleanupMenuText(text: string): Promise<string[]> {
         messages: [
           {
             role: 'system',
-            content: `You are a menu text processor. Extract only the food and drink items from the given text. 
-            Format each item on a new line. Remove prices, descriptions, and any non-menu content. 
-            If an item seems incomplete or unclear, try to make it more coherent.
-            Only return the list of items, nothing else.`
+            content: `You are a menu text processor. Extract ONLY the food and drink items from the given text.
+            Rules:
+            - Return ONLY dish names, one per line
+            - Remove all prices and descriptions
+            - Remove any non-menu content (hours, contact info, etc.)
+            - Make dish names clear and consistent
+            - If a dish seems incomplete or unclear, make it more coherent
+            - Focus on actual menu items, ignore promotional text
+            Example output:
+            Margherita Pizza
+            Chicken Alfredo
+            Caesar Salad`
           },
           { role: 'user', content: text }
         ],
@@ -37,6 +47,7 @@ async function cleanupMenuText(text: string): Promise<string[]> {
     });
 
     const data = await openAIResponse.json();
+    console.log('AI cleanup response:', data);
     const cleanedText = data.choices[0].message.content;
     return cleanedText.split('\n').filter(item => item.trim().length > 0);
   } catch (error) {
@@ -45,8 +56,9 @@ async function cleanupMenuText(text: string): Promise<string[]> {
   }
 }
 
-async function isLikelyMenuImage(imageUrl: string): Promise<boolean> {
+async function isMenuImage(imageUrl: string): Promise<boolean> {
   try {
+    console.log('Analyzing image:', imageUrl);
     const visionResponse = await fetch(
       `https://vision.googleapis.com/v1/images:annotate?key=${Deno.env.get('GOOGLE_PLACES_API_KEY')}`,
       {
@@ -57,7 +69,8 @@ async function isLikelyMenuImage(imageUrl: string): Promise<boolean> {
             image: { source: { imageUri: imageUrl } },
             features: [
               { type: 'LABEL_DETECTION', maxResults: 10 },
-              { type: 'TEXT_DETECTION', maxResults: 1 }
+              { type: 'TEXT_DETECTION', maxResults: 1 },
+              { type: 'DOCUMENT_TEXT_DETECTION', maxResults: 1 }
             ]
           }]
         })
@@ -65,8 +78,9 @@ async function isLikelyMenuImage(imageUrl: string): Promise<boolean> {
     );
 
     const data = await visionResponse.json();
+    console.log('Vision API response:', data);
     
-    // Check labels for menu-related keywords
+    // Check for menu-related labels
     const labels = data.responses[0]?.labelAnnotations || [];
     const hasMenuLabels = labels.some((label: any) => 
       MENU_IMAGE_KEYWORDS.some(keyword => 
@@ -74,12 +88,27 @@ async function isLikelyMenuImage(imageUrl: string): Promise<boolean> {
       )
     );
 
-    // Check if there's significant text content
-    const hasText = data.responses[0]?.textAnnotations?.length > 0;
-    
-    return hasMenuLabels || hasText;
+    // Check if there's significant text content that might indicate a menu
+    const textAnnotations = data.responses[0]?.textAnnotations || [];
+    const fullText = textAnnotations[0]?.description || '';
+    const hasMenuText = MENU_IMAGE_KEYWORDS.some(keyword => 
+      fullText.toLowerCase().includes(keyword)
+    );
+
+    // Check for structured text layout typical of menus
+    const hasStructuredText = fullText.includes('$') || 
+                             /\d+\.\d{2}/.test(fullText) ||
+                             fullText.toLowerCase().includes('price');
+
+    console.log('Image analysis results:', {
+      hasMenuLabels,
+      hasMenuText,
+      hasStructuredText
+    });
+
+    return hasMenuLabels || (hasMenuText && hasStructuredText);
   } catch (error) {
-    console.error('Error checking if image is menu:', error);
+    console.error('Error analyzing image:', error);
     return false;
   }
 }
@@ -90,28 +119,19 @@ serve(async (req) => {
   }
 
   try {
-    const { photos = [] } = await req.json();
+    const { photos = [], reviews = [] } = await req.json();
     console.log('📸 Processing photos:', photos.length);
+    console.log('📝 Processing reviews:', reviews.length);
 
-    if (!photos.length) {
-      console.log('⚠️ No photos provided');
-      return new Response(
-        JSON.stringify({ error: 'No photos provided' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
-    }
-
-    let allMenuItems: string[] = [];
+    let menuItems: string[] = [];
     
+    // First, try to find and process menu images
     for (const photoUrl of photos) {
-      console.log('🔍 Processing photo:', photoUrl);
-      
       try {
-        // Check if the image is likely to be a menu
-        const isMenuImage = await isLikelyMenuImage(photoUrl);
+        const isLikelyMenu = await isMenuImage(photoUrl);
         
-        if (isMenuImage) {
-          console.log('✅ Image appears to be menu-related');
+        if (isLikelyMenu) {
+          console.log('✅ Found likely menu image:', photoUrl);
           
           const visionResponse = await fetch(
             `https://vision.googleapis.com/v1/images:annotate?key=${Deno.env.get('GOOGLE_PLACES_API_KEY')}`,
@@ -121,7 +141,9 @@ serve(async (req) => {
               body: JSON.stringify({
                 requests: [{
                   image: { source: { imageUri: photoUrl } },
-                  features: [{ type: 'TEXT_DETECTION', maxResults: 1 }]
+                  features: [
+                    { type: 'DOCUMENT_TEXT_DETECTION', maxResults: 1 }
+                  ]
                 }]
               })
             }
@@ -129,16 +151,14 @@ serve(async (req) => {
 
           const data = await visionResponse.json();
           
-          if (data.responses?.[0]?.textAnnotations?.[0]?.description) {
-            const extractedText = data.responses[0].textAnnotations[0].description;
-            console.log('📝 Extracted text:', extractedText);
+          if (data.responses?.[0]?.fullTextAnnotation?.text) {
+            const extractedText = data.responses[0].fullTextAnnotation.text;
+            console.log('📝 Extracted text from menu image:', extractedText);
             
             // Clean up the extracted text using AI
             const cleanedItems = await cleanupMenuText(extractedText);
-            allMenuItems = [...allMenuItems, ...cleanedItems];
+            menuItems = [...menuItems, ...cleanedItems];
           }
-        } else {
-          console.log('⚠️ Image does not appear to be menu-related');
         }
       } catch (error) {
         console.error('❌ Error processing photo:', error);
@@ -146,19 +166,36 @@ serve(async (req) => {
       }
     }
 
+    // If we didn't find enough menu items from images, try extracting from reviews
+    if (menuItems.length < 5 && reviews.length > 0) {
+      console.log('🔍 Looking for menu items in reviews...');
+      const reviewTexts = reviews
+        .map((review: any) => review.text)
+        .join('\n');
+      
+      const menuItemsFromReviews = await cleanupMenuText(reviewTexts);
+      menuItems = [...new Set([...menuItems, ...menuItemsFromReviews])];
+    }
+
     // Remove duplicates and empty items
-    const uniqueItems = [...new Set(allMenuItems)].filter(item => item.trim());
+    const uniqueItems = [...new Set(menuItems)].filter(item => 
+      item.trim() && 
+      !item.includes('$') && 
+      !item.toLowerCase().includes('contact') &&
+      !item.toLowerCase().includes('hour') &&
+      !item.toLowerCase().includes('open')
+    );
     
-    // Format into a single menu section
+    // Format into a menu section
     const menuSection = {
       name: "Menu Items",
       items: uniqueItems.map((name, index) => ({
         id: `menu-item-${index}`,
-        name
+        name: name.trim()
       }))
     };
 
-    console.log('✅ Processed all photos, found items:', menuSection.items.length);
+    console.log('✅ Final menu items:', menuSection.items);
 
     return new Response(
       JSON.stringify({ menuSections: [menuSection] }),
