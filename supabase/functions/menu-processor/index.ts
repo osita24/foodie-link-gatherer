@@ -1,24 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { ImageAnnotatorClient } from "https://esm.sh/@google-cloud/vision@4.0.2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-// Initialize Google Cloud Vision client
-const vision = new ImageAnnotatorClient({
-  credentials: JSON.parse(Deno.env.get('GOOGLE_CLOUD_CREDENTIALS') || '{}'),
-});
-
-interface MenuSection {
-  name: string;
-  items: {
-    name: string;
-    price?: string;
-    description?: string;
-  }[];
-}
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -30,11 +15,34 @@ serve(async (req) => {
     const { imageUrl } = await req.json();
     console.log('Processing image URL:', imageUrl);
 
-    // Perform OCR on the image
-    const [result] = await vision.textDetection(imageUrl);
-    const detections = result.textAnnotations;
+    // Initialize Google Cloud Vision API client using fetch
+    const visionApiEndpoint = 'https://vision.googleapis.com/v1/images:annotate';
+    const credentials = JSON.parse(Deno.env.get('GOOGLE_CLOUD_CREDENTIALS') || '{}');
     
-    if (!detections || detections.length === 0) {
+    const requestBody = {
+      requests: [{
+        image: {
+          source: {
+            imageUri: imageUrl
+          }
+        },
+        features: [{
+          type: 'TEXT_DETECTION'
+        }]
+      }]
+    };
+
+    const response = await fetch(`${visionApiEndpoint}?key=${credentials.api_key}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    const result = await response.json();
+    
+    if (!result.responses?.[0]?.textAnnotations?.[0]) {
       console.log('No text detected in image');
       return new Response(
         JSON.stringify({ error: 'No text detected in image' }),
@@ -43,7 +51,7 @@ serve(async (req) => {
     }
 
     // Extract the full text
-    const fullText = detections[0].description;
+    const fullText = result.responses[0].textAnnotations[0].description;
     console.log('Extracted text:', fullText);
 
     // Process the text into menu sections
@@ -64,12 +72,12 @@ serve(async (req) => {
   }
 });
 
-function processMenuText(text: string): MenuSection[] {
+function processMenuText(text: string) {
   // Split text into lines
   const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
   
-  const sections: MenuSection[] = [];
-  let currentSection: MenuSection | null = null;
+  const sections = [];
+  let currentSection = null;
 
   for (const line of lines) {
     // Check if line looks like a section header (all caps, or ends with ':')
