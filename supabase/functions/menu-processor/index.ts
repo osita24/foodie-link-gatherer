@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { vision } from "https://esm.sh/@google-cloud/vision@4.0.2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,49 +12,71 @@ serve(async (req) => {
   }
 
   try {
-    const { photos, reviews } = await req.json();
-    console.log('Processing restaurant data:', { 
-      photoCount: photos?.length || 0, 
-      reviewCount: reviews?.length || 0 
-    });
+    const { photos } = await req.json();
+    console.log('Processing restaurant photos:', { photoCount: photos?.length || 0 });
 
-    // Prepare the prompt for GPT-4
-    const prompt = generatePrompt(photos, reviews);
-
-    // Call OpenAI API
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a helpful assistant that analyzes restaurant photos and reviews to identify menu items and categories.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`);
+    if (!photos || photos.length === 0) {
+      throw new Error('No photos provided for analysis');
     }
 
-    const result = await response.json();
-    const menuData = JSON.parse(result.choices[0].message.content);
+    // Initialize Vision client
+    const credentials = JSON.parse(Deno.env.get('GOOGLE_CLOUD_CREDENTIALS') || '{}');
+    const client = new vision.ImageAnnotatorClient({ credentials });
 
-    console.log('Generated menu data:', menuData);
+    // Process all photos
+    console.log('Starting photo analysis...');
+    const menuItems = new Set();
+    
+    for (const photoUrl of photos) {
+      try {
+        console.log('Analyzing photo:', photoUrl);
+        const [result] = await client.textDetection(photoUrl);
+        const detections = result.textAnnotations;
+        
+        if (detections && detections.length > 0) {
+          const fullText = detections[0].description;
+          console.log('Detected text:', fullText);
+          
+          // Split text into lines and process each line
+          const lines = fullText.split('\n');
+          for (const line of lines) {
+            // Basic filtering for likely menu items
+            // Avoid prices, single words, and common non-menu text
+            if (line.length > 5 && 
+                !line.match(/^\$?\d+(\.\d{2})?$/) && // Skip pure price lines
+                !line.match(/^(menu|specials|appetizers|entrees|desserts)$/i) && // Skip section headers
+                line.trim().split(' ').length > 1) { // Skip single words
+              menuItems.add(line.trim());
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error processing photo:', error);
+        // Continue with next photo
+      }
+    }
+
+    // Convert menu items to structured format
+    const menuItemsArray = Array.from(menuItems);
+    console.log('Extracted menu items:', menuItemsArray);
+
+    // Group items into basic categories
+    const menuSections = [
+      {
+        name: "Featured Items",
+        items: menuItemsArray.map((name, index) => ({
+          id: `item-${index}`,
+          name,
+          description: "",
+          price: 0
+        }))
+      }
+    ];
+
+    console.log('Generated menu sections:', menuSections);
 
     return new Response(
-      JSON.stringify({ menuSections: menuData }),
+      JSON.stringify({ menuSections }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
@@ -68,36 +91,3 @@ serve(async (req) => {
     );
   }
 });
-
-function generatePrompt(photos: string[], reviews: any[]): string {
-  // Combine all available information
-  const reviewTexts = reviews?.map(review => review.text).join('\n') || '';
-  
-  return `Based on the following restaurant information, create a structured menu with categories and items.
-  
-Number of photos: ${photos?.length || 0}
-Reviews: ${reviewTexts}
-
-Please analyze this information and create a menu structure with the following format:
-[
-  {
-    "name": "Category Name",
-    "items": [
-      {
-        "name": "Item Name",
-        "description": "Brief description based on reviews/context",
-        "price": "Estimated price if mentioned"
-      }
-    ]
-  }
-]
-
-Focus on:
-1. Popular dishes mentioned in reviews
-2. Categories that make sense for this type of restaurant
-3. Include descriptions that highlight what customers say
-4. If exact prices aren't available, provide reasonable estimates or ranges
-5. Group similar items together in logical categories
-
-Please provide the response in valid JSON format only.`;
-}
