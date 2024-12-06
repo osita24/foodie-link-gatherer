@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@google-cloud/vision@4.0.2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -6,6 +7,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -14,149 +16,146 @@ serve(async (req) => {
     const { imageUrl } = await req.json();
     console.log('Processing image URL:', imageUrl);
 
-    // Initialize Google Cloud Vision API request
-    const visionApiEndpoint = 'https://vision.googleapis.com/v1/images:annotate';
+    // Initialize Google Cloud Vision client
     const credentials = JSON.parse(Deno.env.get('GOOGLE_CLOUD_CREDENTIALS') || '{}');
-    
-    const requestBody = {
-      requests: [{
-        image: {
-          source: {
-            imageUri: imageUrl
-          }
-        },
-        features: [
-          {
-            type: 'TEXT_DETECTION',
-            model: 'builtin/latest'
-          },
-          {
-            type: 'DOCUMENT_TEXT_DETECTION',
-            model: 'builtin/latest'
-          }
-        ]
-      }]
-    };
-
-    const response = await fetch(`${visionApiEndpoint}?key=${credentials.api_key}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody)
+    const vision = new createClient({
+      credentials,
     });
 
-    const result = await response.json();
-    console.log('Vision API response received');
+    // Fetch image data
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image: ${response.statusText}`);
+    }
+    const imageData = await response.arrayBuffer();
+
+    // Perform both text detection and document text detection
+    const [textResult] = await vision.textDetection({
+      image: { content: new Uint8Array(imageData) }
+    });
+    const [documentResult] = await vision.documentTextDetection({
+      image: { content: new Uint8Array(imageData) }
+    });
+
+    const textAnnotations = textResult.textAnnotations || [];
+    const documentAnnotations = documentResult.fullTextAnnotation?.text || '';
+
+    console.log('Text detection results:', {
+      textAnnotations: textAnnotations.length > 0 ? 'Found' : 'None',
+      documentText: documentAnnotations ? 'Found' : 'None'
+    });
+
+    // Combine and process text
+    const combinedText = documentAnnotations || (textAnnotations[0]?.description || '');
     
-    if (!result.responses?.[0]?.textAnnotations?.[0]) {
-      console.log('No text detected in image');
-      return new Response(
-        JSON.stringify({ menuSections: [] }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Check if this looks like a menu
+    const isLikelyMenu = checkIfLikelyMenu(combinedText);
+    if (!isLikelyMenu) {
+      console.log('Image does not appear to be a menu');
+      return new Response(JSON.stringify({ 
+        menuSections: [],
+        isMenu: false 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
-    // Extract the full text
-    const fullText = result.responses[0].textAnnotations[0].description;
-    console.log('Extracted text length:', fullText.length);
+    // Parse menu sections
+    const menuSections = parseMenuText(combinedText);
+    console.log('Parsed menu sections:', menuSections);
 
-    // Process the text into menu sections
-    const menuSections = processMenuText(fullText);
-
-    return new Response(
-      JSON.stringify({ menuSections }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({
+      menuSections,
+      isMenu: true
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
 
   } catch (error) {
     console.error('Error processing menu:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-    );
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 });
 
-function processMenuText(text: string) {
-  // Split text into lines and clean them
-  const lines = text.split('\n')
-    .map(line => line.trim())
-    .filter(Boolean);
-  
-  const sections = [];
-  let currentSection = null;
-  let currentItem = null;
-
-  // Common price patterns
-  const pricePattern = /[\$€£]\s*\d+\.?\d*/;
-  
-  // Common menu section headers
-  const sectionHeaders = [
-    'APPETIZERS', 'STARTERS', 'MAIN', 'ENTREES', 'DESSERTS', 
-    'DRINKS', 'BEVERAGES', 'SIDES', 'SALADS', 'SOUPS'
+function checkIfLikelyMenu(text: string): boolean {
+  // Common menu indicators
+  const menuIndicators = [
+    /menu/i,
+    /price/i,
+    /\$\d+(\.\d{2})?/,
+    /appetizer/i,
+    /entr[ée]e/i,
+    /dessert/i,
+    /special/i,
+    /dinner/i,
+    /lunch/i,
+    /breakfast/i
   ];
 
-  for (const line of lines) {
-    // Check if line is a section header
-    const isHeader = sectionHeaders.some(header => 
-      line.toUpperCase().includes(header)) || 
-      line === line.toUpperCase();
+  // Count how many indicators are present
+  const indicatorCount = menuIndicators.reduce((count, indicator) => {
+    return count + (indicator.test(text) ? 1 : 0);
+  }, 0);
 
-    if (isHeader) {
-      if (currentSection) {
-        sections.push(currentSection);
+  // If we find at least 2 indicators, consider it a menu
+  return indicatorCount >= 2;
+}
+
+function parseMenuText(text: string): any[] {
+  console.log('Parsing menu text:', text.substring(0, 100) + '...');
+
+  // Split text into lines
+  const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+
+  const sections: any[] = [];
+  let currentSection: any = null;
+  let currentItems: any[] = [];
+
+  // Regular expressions for better pattern matching
+  const pricePattern = /\$\d+(\.\d{2})?/;
+  const sectionHeaderPattern = /^[A-Z\s&]+$/;
+
+  lines.forEach((line) => {
+    // Check if line might be a section header
+    if (sectionHeaderPattern.test(line) && line.length > 3) {
+      // Save previous section if it exists
+      if (currentSection && currentItems.length > 0) {
+        sections.push({
+          name: currentSection,
+          items: currentItems
+        });
       }
-      currentSection = {
-        name: line.trim(),
-        items: []
-      };
-      currentItem = null;
-      continue;
+      currentSection = line.trim();
+      currentItems = [];
+      return;
     }
 
-    // If we don't have a section yet, create a default one
-    if (!currentSection) {
-      currentSection = {
-        name: 'Menu Items',
-        items: []
-      };
-    }
-
-    // Look for price in the line
+    // Try to parse item with price
     const priceMatch = line.match(pricePattern);
-    
-    if (priceMatch) {
+    if (priceMatch && currentSection) {
       const price = priceMatch[0];
-      const name = line.substring(0, priceMatch.index).trim();
-      const description = line.substring(priceMatch.index + price.length).trim();
+      const name = line.replace(price, '').trim();
       
-      currentItem = {
-        id: `${currentSection.name}-${currentSection.items.length}`,
-        name: name || 'Unnamed Item',
-        description: description,
-        price: parseFloat(price.replace(/[\$€£\s]/g, ''))
-      };
-      
-      currentSection.items.push(currentItem);
-    } else if (currentItem) {
-      // If no price found and we have a current item, treat as additional description
-      currentItem.description = currentItem.description 
-        ? `${currentItem.description} ${line}`
-        : line;
-    } else {
-      // If no price and no current item, might be a new item name
-      currentItem = {
-        id: `${currentSection.name}-${currentSection.items.length}`,
-        name: line,
-        description: '',
-        price: 0
-      };
-      currentSection.items.push(currentItem);
+      if (name) {
+        currentItems.push({
+          name,
+          price: price,
+          description: '',
+          category: currentSection
+        });
+      }
     }
-  }
+  });
 
-  // Don't forget to add the last section
-  if (currentSection && currentSection.items.length > 0) {
-    sections.push(currentSection);
+  // Add the last section
+  if (currentSection && currentItems.length > 0) {
+    sections.push({
+      name: currentSection,
+      items: currentItems
+    });
   }
 
   return sections;

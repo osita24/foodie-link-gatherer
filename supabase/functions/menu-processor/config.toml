@@ -1,1 +1,6 @@
 project_id = "gnkgrlnirzpgqnzbgfcd"
+[api]
+enabled = true
+[api.cors]
+enabled = true
+allowed_origins = ["*"]
