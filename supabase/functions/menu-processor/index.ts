@@ -5,110 +5,86 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Common words that indicate menu sections
-const MENU_SECTION_INDICATORS = [
-  'APPETIZERS', 'STARTERS', 'ENTREES', 'MAIN DISHES', 'DESSERTS',
-  'BEVERAGES', 'SIDES', 'SALADS', 'SOUPS', 'PASTA', 'PIZZA',
-  'BREAKFAST', 'LUNCH', 'DINNER', 'SPECIALS', 'PRIX FIXE'
+// Common menu-related keywords to help identify menu images
+const MENU_IMAGE_KEYWORDS = [
+  'menu', 'food', 'dish', 'plate', 'meal', 'cuisine',
+  'appetizer', 'entree', 'dessert', 'drink', 'beverage'
 ];
 
-// Words that likely indicate non-menu content
-const NON_MENU_WORDS = [
-  'HOURS', 'CONTACT', 'PHONE', 'ADDRESS', 'FOLLOW', 'WEBSITE',
-  'OPEN', 'CLOSED', 'DELIVERY', 'PARKING', 'WIFI', 'EXCELLENCE',
-  'DAYS', 'WEEK', 'CALL', 'VISIT', 'LOCATION', 'EXPANDING',
-  'EXCITED', 'STAY TUNED', 'FOR LEASE', 'BISTRO', 'TABLE'
-];
+async function cleanupMenuText(text: string): Promise<string[]> {
+  console.log('Cleaning up menu text with AI:', text);
+  
+  try {
+    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a menu text processor. Extract only the food and drink items from the given text. 
+            Format each item on a new line. Remove prices, descriptions, and any non-menu content. 
+            If an item seems incomplete or unclear, try to make it more coherent.
+            Only return the list of items, nothing else.`
+          },
+          { role: 'user', content: text }
+        ],
+      }),
+    });
 
-// Words that likely indicate menu items
-const MENU_ITEM_INDICATORS = [
-  'CHICKEN', 'BEEF', 'FISH', 'SALAD', 'SOUP', 'PASTA',
-  'PIZZA', 'BURGER', 'SANDWICH', 'STEAK', 'SEAFOOD',
-  'APPETIZER', 'DESSERT', 'WINE', 'BEER', 'COCKTAIL'
-];
-
-function isLikelyMenuSection(text: string): boolean {
-  const upperText = text.toUpperCase();
-  return MENU_SECTION_INDICATORS.some(indicator => upperText.includes(indicator));
+    const data = await openAIResponse.json();
+    const cleanedText = data.choices[0].message.content;
+    return cleanedText.split('\n').filter(item => item.trim().length > 0);
+  } catch (error) {
+    console.error('Error cleaning up menu text:', error);
+    return [];
+  }
 }
 
-function isLikelyMenuItem(text: string): boolean {
-  // Remove common non-menu indicators
-  if (NON_MENU_WORDS.some(word => text.toUpperCase().includes(word))) {
+async function isLikelyMenuImage(imageUrl: string): Promise<boolean> {
+  try {
+    const visionResponse = await fetch(
+      `https://vision.googleapis.com/v1/images:annotate?key=${Deno.env.get('GOOGLE_PLACES_API_KEY')}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requests: [{
+            image: { source: { imageUri: imageUrl } },
+            features: [
+              { type: 'LABEL_DETECTION', maxResults: 10 },
+              { type: 'TEXT_DETECTION', maxResults: 1 }
+            ]
+          }]
+        })
+      }
+    );
+
+    const data = await visionResponse.json();
+    
+    // Check labels for menu-related keywords
+    const labels = data.responses[0]?.labelAnnotations || [];
+    const hasMenuLabels = labels.some((label: any) => 
+      MENU_IMAGE_KEYWORDS.some(keyword => 
+        label.description.toLowerCase().includes(keyword)
+      )
+    );
+
+    // Check if there's significant text content
+    const hasText = data.responses[0]?.textAnnotations?.length > 0;
+    
+    return hasMenuLabels || hasText;
+  } catch (error) {
+    console.error('Error checking if image is menu:', error);
     return false;
   }
-
-  // Check for menu item indicators
-  const hasMenuIndicator = MENU_ITEM_INDICATORS.some(indicator => 
-    text.toUpperCase().includes(indicator)
-  );
-
-  // Menu items typically:
-  // 1. Have 2-10 words
-  // 2. Don't start with numbers (except prices)
-  // 3. Aren't just promotional text
-  const words = text.split(' ');
-  const isReasonableLength = words.length >= 2 && words.length <= 10;
-  const hasPrice = text.includes('$');
-  const isntJustNumbers = !text.match(/^[\d\s.,$]+$/);
-
-  return (hasMenuIndicator || hasPrice) && isReasonableLength && isntJustNumbers;
-}
-
-function extractPrice(text: string): number {
-  const priceMatch = text.match(/\$(\d+(\.\d{2})?)/);
-  return priceMatch ? parseFloat(priceMatch[1]) : 0;
-}
-
-function processTextIntoMenuSections(text: string): any[] {
-  console.log('Processing text into menu sections:', text);
-  
-  const lines = text.split('\n')
-    .map(line => line.trim())
-    .filter(line => line.length > 0);
-
-  let currentSection = 'Menu Items';
-  const sections: any[] = [];
-  let currentItems: any[] = [];
-
-  lines.forEach(line => {
-    if (isLikelyMenuSection(line)) {
-      // If we have items in the current section, save them
-      if (currentItems.length > 0) {
-        sections.push({
-          name: currentSection,
-          items: currentItems
-        });
-      }
-      currentSection = line.trim();
-      currentItems = [];
-    } else if (isLikelyMenuItem(line)) {
-      const price = extractPrice(line);
-      const name = line.replace(/\$\d+(\.\d{2})?/, '').trim();
-      
-      currentItems.push({
-        id: `${currentSection}-${currentItems.length}`,
-        name: name,
-        description: '',
-        price: price || 0
-      });
-    }
-  });
-
-  // Add the last section
-  if (currentItems.length > 0) {
-    sections.push({
-      name: currentSection,
-      items: currentItems
-    });
-  }
-
-  console.log('Processed sections:', sections);
-  return sections;
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -125,55 +101,44 @@ serve(async (req) => {
       );
     }
 
-    const menuSections: any[] = [];
-    const GOOGLE_PLACES_API_KEY = Deno.env.get('GOOGLE_PLACES_API_KEY');
+    let allMenuItems: string[] = [];
     
     for (const photoUrl of photos) {
       console.log('🔍 Processing photo:', photoUrl);
       
       try {
-        const visionResponse = await fetch(
-          `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_PLACES_API_KEY}`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              requests: [{
-                image: {
-                  source: {
-                    imageUri: photoUrl
-                  }
-                },
-                features: [{
-                  type: 'TEXT_DETECTION',
-                  maxResults: 1
+        // Check if the image is likely to be a menu
+        const isMenuImage = await isLikelyMenuImage(photoUrl);
+        
+        if (isMenuImage) {
+          console.log('✅ Image appears to be menu-related');
+          
+          const visionResponse = await fetch(
+            `https://vision.googleapis.com/v1/images:annotate?key=${Deno.env.get('GOOGLE_PLACES_API_KEY')}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                requests: [{
+                  image: { source: { imageUri: photoUrl } },
+                  features: [{ type: 'TEXT_DETECTION', maxResults: 1 }]
                 }]
-              }]
-            })
-          }
-        );
-
-        if (!visionResponse.ok) {
-          console.error('❌ Vision API error:', await visionResponse.text());
-          continue;
-        }
-
-        const data = await visionResponse.json();
-        console.log('✅ Received Vision API response');
-
-        if (data.responses?.[0]?.textAnnotations?.[0]?.description) {
-          const text = data.responses[0].textAnnotations[0].description;
-          console.log('📝 Extracted text:', text);
-
-          const sections = processTextIntoMenuSections(text);
-          // Only add sections that actually contain menu items
-          sections.forEach(section => {
-            if (section.items.length > 0) {
-              menuSections.push(section);
+              })
             }
-          });
+          );
+
+          const data = await visionResponse.json();
+          
+          if (data.responses?.[0]?.textAnnotations?.[0]?.description) {
+            const extractedText = data.responses[0].textAnnotations[0].description;
+            console.log('📝 Extracted text:', extractedText);
+            
+            // Clean up the extracted text using AI
+            const cleanedItems = await cleanupMenuText(extractedText);
+            allMenuItems = [...allMenuItems, ...cleanedItems];
+          }
+        } else {
+          console.log('⚠️ Image does not appear to be menu-related');
         }
       } catch (error) {
         console.error('❌ Error processing photo:', error);
@@ -181,27 +146,22 @@ serve(async (req) => {
       }
     }
 
-    // Remove duplicate sections and merge their items
-    const mergedSections = menuSections.reduce((acc: any[], section: any) => {
-      const existingSection = acc.find(s => s.name === section.name);
-      if (existingSection) {
-        existingSection.items.push(...section.items);
-      } else {
-        acc.push(section);
-      }
-      return acc;
-    }, []);
+    // Remove duplicates and empty items
+    const uniqueItems = [...new Set(allMenuItems)].filter(item => item.trim());
+    
+    // Format into a single menu section
+    const menuSection = {
+      name: "Menu Items",
+      items: uniqueItems.map((name, index) => ({
+        id: `menu-item-${index}`,
+        name
+      }))
+    };
 
-    // Only return sections that have actual menu items
-    const validSections = mergedSections.filter(section => 
-      section.items.length > 0 && 
-      section.items.some(item => item.price > 0 || item.name.length > 5)
-    );
-
-    console.log('✅ Processed all photos, found valid sections:', validSections.length);
+    console.log('✅ Processed all photos, found items:', menuSection.items.length);
 
     return new Response(
-      JSON.stringify({ menuSections: validSections }),
+      JSON.stringify({ menuSections: [menuSection] }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
