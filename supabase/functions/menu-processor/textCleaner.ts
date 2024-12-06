@@ -8,6 +8,8 @@ export async function cleanMenuText(text: string): Promise<string[]> {
       throw new Error('OpenAI API key is not configured');
     }
 
+    console.log('🔑 Using OpenAI API key (first 4 chars):', openAIKey.substring(0, 4));
+
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -15,7 +17,7 @@ export async function cleanMenuText(text: string): Promise<string[]> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-3.5-turbo',
         messages: [
           {
             role: 'system',
@@ -56,7 +58,7 @@ export async function cleanMenuText(text: string): Promise<string[]> {
 
     const cleanedText = data.choices[0].message.content;
     const menuItems = cleanedText.split('\n').filter(item => item.trim().length > 0);
-    console.log(`✨ Extracted ${menuItems.length} menu items`);
+    console.log(`✨ Extracted ${menuItems.length} menu items:`, menuItems);
     return menuItems;
   } catch (error) {
     console.error('❌ Error cleaning up menu text:', error);
