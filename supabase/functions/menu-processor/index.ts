@@ -37,10 +37,10 @@ serve(async (req) => {
       );
     }
 
-    const GOOGLE_CLOUD_CREDENTIALS = JSON.parse(Deno.env.get('GOOGLE_CLOUD_CREDENTIALS') || '{}');
-    if (!GOOGLE_CLOUD_CREDENTIALS.client_email || !GOOGLE_CLOUD_CREDENTIALS.private_key) {
-      console.error('❌ Missing Google Cloud credentials');
-      throw new Error('Google Cloud credentials not configured');
+    const GOOGLE_PLACES_API_KEY = Deno.env.get('GOOGLE_PLACES_API_KEY');
+    if (!GOOGLE_PLACES_API_KEY) {
+      console.error('❌ Missing Google Places API key');
+      throw new Error('Google Places API key not configured');
     }
 
     const menuSections: any[] = [];
@@ -62,74 +62,81 @@ serve(async (req) => {
         }]
       };
 
-      const response = await fetch(
-        `https://vision.googleapis.com/v1/images:annotate?key=${Deno.env.get('GOOGLE_PLACES_API_KEY')}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(visionRequest)
-        }
-      );
+      try {
+        const response = await fetch(
+          `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_PLACES_API_KEY}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(visionRequest)
+          }
+        );
 
-      if (!response.ok) {
-        console.error('❌ Vision API error:', await response.text());
+        if (!response.ok) {
+          console.error('❌ Vision API error:', await response.text());
+          continue;
+        }
+
+        const data = await response.json();
+        console.log('✅ Received Vision API response');
+
+        if (data.responses?.[0]?.textAnnotations?.[0]?.description) {
+          const text = data.responses[0].textAnnotations[0].description;
+          console.log('📝 Extracted text:', text);
+
+          // Basic text processing to identify menu items
+          const lines = text.split('\n');
+          let currentSection = '';
+          let items: any[] = [];
+
+          for (const line of lines) {
+            // Skip empty lines and common non-menu text
+            if (!line.trim() || /^(phone|address|hours|www|http|follow|like)/i.test(line)) {
+              continue;
+            }
+
+            // If line is in all caps and followed by menu items, treat as section
+            if (line === line.toUpperCase() && line.length > 3) {
+              if (currentSection && items.length) {
+                menuSections.push({
+                  name: currentSection,
+                  items: items.map((item, index) => ({
+                    id: `${currentSection}-${index}`,
+                    name: item,
+                    description: '',
+                    price: 0
+                  }))
+                });
+              }
+              currentSection = line;
+              items = [];
+            } else {
+              // Remove prices and common symbols
+              const cleanedItem = line.replace(/\$\d+(\.\d{2})?/g, '').replace(/[•★]/g, '').trim();
+              if (cleanedItem) {
+                items.push(cleanedItem);
+              }
+            }
+          }
+
+          // Add the last section
+          if (currentSection && items.length) {
+            menuSections.push({
+              name: currentSection,
+              items: items.map((item, index) => ({
+                id: `${currentSection}-${index}`,
+                name: item,
+                description: '',
+                price: 0
+              }))
+            });
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error processing photo:', error);
         continue;
-      }
-
-      const data = await response.json();
-      console.log('✅ Received Vision API response');
-
-      if (data.responses?.[0]?.textAnnotations?.[0]?.description) {
-        const text = data.responses[0].textAnnotations[0].description;
-        console.log('📝 Extracted text:', text);
-
-        // Basic text processing to identify menu items
-        const lines = text.split('\n');
-        let currentSection = '';
-        let items: any[] = [];
-
-        for (const line of lines) {
-          // Skip empty lines and common non-menu text
-          if (!line.trim() || /^(phone|address|hours|www|http|follow|like)/i.test(line)) {
-            continue;
-          }
-
-          // If line is in all caps and followed by menu items, treat as section
-          if (line === line.toUpperCase() && line.length > 3) {
-            if (currentSection && items.length) {
-              menuSections.push({
-                name: currentSection,
-                items: items.map((item, index) => ({
-                  id: `${currentSection}-${index}`,
-                  name: item,
-                  description: '',
-                }))
-              });
-            }
-            currentSection = line;
-            items = [];
-          } else {
-            // Remove prices and common symbols
-            const cleanedItem = line.replace(/\$\d+(\.\d{2})?/g, '').replace(/[•★]/g, '').trim();
-            if (cleanedItem) {
-              items.push(cleanedItem);
-            }
-          }
-        }
-
-        // Add the last section
-        if (currentSection && items.length) {
-          menuSections.push({
-            name: currentSection,
-            items: items.map((item, index) => ({
-              id: `${currentSection}-${index}`,
-              name: item,
-              description: '',
-            }))
-          });
-        }
       }
     }
 
