@@ -2,10 +2,16 @@ export async function cleanMenuText(text: string): Promise<string[]> {
   console.log('🧹 Cleaning up menu text with AI, text length:', text.length);
   
   try {
+    const openAIKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAIKey) {
+      console.error('❌ OpenAI API key is not configured');
+      throw new Error('OpenAI API key is not configured');
+    }
+
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${openAIKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -29,7 +35,7 @@ export async function cleanMenuText(text: string): Promise<string[]> {
           },
           { role: 'user', content: text }
         ],
-        temperature: 0.3, // Lower temperature for more consistent output
+        temperature: 0.3,
         max_tokens: 1000
       }),
     });
@@ -54,6 +60,6 @@ export async function cleanMenuText(text: string): Promise<string[]> {
     return menuItems;
   } catch (error) {
     console.error('❌ Error cleaning up menu text:', error);
-    return [];
+    throw error;
   }
 }
