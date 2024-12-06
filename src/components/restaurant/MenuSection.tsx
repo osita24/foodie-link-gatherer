@@ -10,9 +10,10 @@ import { toast } from "sonner";
 interface MenuSectionProps {
   menu?: MenuCategory[];
   photos?: string[];
+  reviews?: any[];
 }
 
-const MenuSection = ({ menu, photos }: MenuSectionProps) => {
+const MenuSection = ({ menu, photos, reviews }: MenuSectionProps) => {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [processedMenu, setProcessedMenu] = useState<MenuCategory[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -21,73 +22,49 @@ const MenuSection = ({ menu, photos }: MenuSectionProps) => {
     if (menu) {
       console.log("Using provided menu data:", menu);
       setProcessedMenu(menu);
-    } else if (photos?.length) {
-      console.log("No menu provided, attempting to process photos:", photos);
-      processMenuPhotos();
+    } else if (photos?.length || reviews?.length) {
+      console.log("No menu provided, processing available data:", {
+        photos: photos?.length || 0,
+        reviews: reviews?.length || 0
+      });
+      processRestaurantData();
     } else {
-      console.log("No menu data or photos available");
+      console.log("No data available to process");
     }
-  }, [menu, photos]);
+  }, [menu, photos, reviews]);
 
-  const processMenuPhotos = async () => {
-    if (!photos?.length) {
-      console.log("No photos available to process");
-      return;
-    }
-
+  const processRestaurantData = async () => {
     setIsProcessing(true);
     try {
-      console.log("Starting menu photo processing for", photos.length, "photos");
+      console.log("Starting restaurant data processing");
       
-      // Process each photo that might contain menu information
-      const menuPromises = photos.map(async (photoUrl) => {
-        console.log("Sending photo for processing:", photoUrl);
-        const { data, error } = await supabase.functions.invoke('menu-processor', {
-          body: { imageUrl: photoUrl }
-        });
-
-        if (error) {
-          console.error("Error processing photo:", error);
-          throw error;
+      const { data, error } = await supabase.functions.invoke('menu-processor', {
+        body: { 
+          photos,
+          reviews
         }
-
-        console.log("Response from menu processor:", data);
-        if (!data?.menuSections?.length) {
-          console.log("No menu sections found in this photo");
-          return [];
-        }
-
-        console.log("Menu sections extracted from photo:", data.menuSections);
-        return data.menuSections;
       });
 
-      const results = await Promise.all(menuPromises);
-      console.log("All photo processing results:", results);
-      
-      // Combine all menu sections
-      const combinedMenu = results.flat().map(section => ({
-        name: section.name,
-        items: section.items.map((item, index) => ({
-          id: `${section.name}-${index}`,
-          name: item.name,
-          description: item.description || "",
-          price: parseFloat(item.price?.replace('$', '') || '0'),
-          category: section.name
-        }))
-      }));
-
-      console.log("Final processed menu:", combinedMenu);
-      setProcessedMenu(combinedMenu);
-      
-      if (combinedMenu.length === 0) {
-        toast.info("No menu items were found in the photos");
-      } else {
-        toast.success(`Successfully extracted ${combinedMenu.length} menu sections`);
+      if (error) {
+        console.error("Error processing data:", error);
+        throw error;
       }
+
+      console.log("Response from menu processor:", data);
+      
+      if (!data?.menuSections?.length) {
+        console.log("No menu sections generated");
+        toast.info("Could not generate menu information");
+        return;
+      }
+
+      console.log("Menu sections generated:", data.menuSections);
+      setProcessedMenu(data.menuSections);
+      toast.success(`Generated ${data.menuSections.length} menu sections`);
       
     } catch (error) {
-      console.error("Error processing menu photos:", error);
-      toast.error("Failed to process menu photos");
+      console.error("Error processing restaurant data:", error);
+      toast.error("Failed to generate menu information");
     } finally {
       setIsProcessing(false);
     }
@@ -199,5 +176,3 @@ const MenuSection = ({ menu, photos }: MenuSectionProps) => {
     </Card>
   );
 };
-
-export default MenuSection;

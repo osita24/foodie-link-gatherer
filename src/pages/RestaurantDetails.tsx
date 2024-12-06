@@ -175,14 +175,21 @@ const RestaurantDetails = () => {
             <div className="block lg:hidden space-y-6">
               <MatchScoreCard categories={matchCategories} />
               <MenuRecommendations />
-              <MenuSection menu={restaurant?.menu} />
-              <PopularItems />
+              <MenuSection 
+                menu={restaurant?.menu} 
+                photos={restaurant?.photos}
+                reviews={restaurant?.googleReviews}
+              />
               <OrderSection />
             </div>
 
             <div className="hidden lg:block space-y-6">
               <MenuRecommendations />
-              <MenuSection menu={restaurant?.menu} />
+              <MenuSection 
+                menu={restaurant?.menu} 
+                photos={restaurant?.photos}
+                reviews={restaurant?.googleReviews}
+              />
               <PopularItems />
               <AdditionalInfo restaurant={restaurant} />
               {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}
