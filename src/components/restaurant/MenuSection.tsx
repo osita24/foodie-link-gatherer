@@ -176,3 +176,5 @@ const MenuSection = ({ menu, photos, reviews }: MenuSectionProps) => {
     </Card>
   );
 };
+
+export default MenuSection;
