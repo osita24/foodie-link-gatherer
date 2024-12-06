@@ -1,6 +1,7 @@
 import { Phone, MapPin, Clock, Globe } from "lucide-react";
 import { RestaurantDetails } from "@/types/restaurant";
 import { formatPhoneNumber } from "@/utils/formatPhoneNumber";
+import ServiceOptions from "./ServiceOptions";
 
 interface RestaurantInfoProps {
   restaurant: RestaurantDetails;
@@ -48,19 +49,24 @@ const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
     }
   };
 
-  // Add console logs to help debug the data
   console.log("Restaurant data in RestaurantInfo:", restaurant);
 
   return (
     <div className="space-y-6 text-left">
       <div>
         <h1 className="text-4xl font-bold mb-4 text-left">{restaurant?.name ?? 'Restaurant Name Not Available'}</h1>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 mb-4">
           <RatingStars rating={restaurant?.rating} />
           <span className="text-muted-foreground">
             {formatReviewCount(restaurant?.reviews)} reviews
           </span>
         </div>
+        <ServiceOptions 
+          delivery={restaurant?.delivery}
+          takeout={restaurant?.takeout}
+          dineIn={restaurant?.dineIn}
+          reservable={restaurant?.reservable}
+        />
       </div>
 
       <div className="space-y-3">
