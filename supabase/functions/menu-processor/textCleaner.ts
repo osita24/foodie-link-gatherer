@@ -2,12 +2,14 @@ export async function cleanMenuText(text: string): Promise<string[]> {
   console.log('🧹 Cleaning up menu text with AI, text length:', text.length);
   
   try {
-    const openAIKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIKey) {
+    const rawKey = Deno.env.get('OPENAI_API_KEY');
+    if (!rawKey) {
       console.error('❌ OpenAI API key is not configured');
       throw new Error('OpenAI API key is not configured');
     }
 
+    // Clean up the key by removing any "Api key:" prefix if present
+    const openAIKey = rawKey.replace(/^Api key:/, '').trim();
     console.log('🔑 Using OpenAI API key (first 4 chars):', openAIKey.substring(0, 4));
 
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
