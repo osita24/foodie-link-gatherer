@@ -14,10 +14,6 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
       return await getPlaceDetails(placeId);
     }
 
-    if (!url) {
-      throw new Error('Either URL or placeId must be provided');
-    }
-
     // Handle shortened URLs first
     let finalUrl = url;
     if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
@@ -83,6 +79,52 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
     console.error('❌ Error in searchRestaurant:', error);
     throw error;
   }
+}
+
+async function getPlaceDetails(placeId: string): Promise<any> {
+  console.log('🔍 Getting place details for ID:', placeId);
+  
+  const detailsUrl = new URL('https://maps.googleapis.com/maps/api/place/details/json');
+  detailsUrl.searchParams.set('place_id', placeId);
+  detailsUrl.searchParams.set('fields', [
+    'name',
+    'rating',
+    'formatted_address',
+    'formatted_phone_number',
+    'opening_hours',
+    'website',
+    'price_level',
+    'photos',
+    'reviews',
+    'types',
+    'user_ratings_total',
+    'utc_offset',
+    'place_id',
+    'vicinity'
+  ].join(','));
+  detailsUrl.searchParams.set('key', GOOGLE_API_KEY);
+  
+  console.log('🌐 Making place details request');
+  const response = await fetch(detailsUrl.toString());
+  if (!response.ok) {
+    throw new Error(`Place details request failed with status ${response.status}`);
+  }
+  
+  const data = await response.json();
+  
+  if (data.status !== 'OK') {
+    console.error('❌ Place Details API error:', data);
+    throw new Error(`Place Details API error: ${data.status}`);
+  }
+
+  // If photos exist, identify potential menu photos
+  if (data.result.photos) {
+    const menuPhotoRefs = await identifyMenuPhotos(data.result.photos);
+    data.result.menuPhotos = menuPhotoRefs;
+  }
+  
+  console.log('✅ Successfully retrieved place details');
+  return data;
 }
 
 function extractSearchText(url: string): string {
@@ -152,59 +194,4 @@ async function searchNearby(lat: number, lng: number): Promise<any> {
 
   console.log('✅ Found restaurant via nearby search');
   return await getPlaceDetails(data.results[0].place_id);
-}
-
-async function getPlaceDetails(placeId: string): Promise<any> {
-  console.log('🔍 Getting place details for ID:', placeId);
-  
-  const detailsUrl = new URL('https://maps.googleapis.com/maps/api/place/details/json');
-  detailsUrl.searchParams.set('place_id', placeId);
-  detailsUrl.searchParams.set('fields', [
-    'name',
-    'rating',
-    'formatted_address',
-    'formatted_phone_number',
-    'opening_hours',
-    'website',
-    'price_level',
-    'photos',
-    'reviews',
-    'types',
-    'user_ratings_total',
-    'utc_offset',
-    'place_id',
-    'vicinity',
-    'business_status',
-    'curbside_pickup',
-    'delivery',
-    'dine_in',
-    'price_level',
-    'reservable',
-    'serves_beer',
-    'serves_breakfast',
-    'serves_brunch',
-    'serves_dinner',
-    'serves_lunch',
-    'serves_vegetarian_food',
-    'serves_wine',
-    'takeout',
-    'wheelchair_accessible_entrance'
-  ].join(','));
-  detailsUrl.searchParams.set('key', GOOGLE_API_KEY);
-  
-  console.log('🌐 Making place details request');
-  const response = await fetch(detailsUrl.toString());
-  if (!response.ok) {
-    throw new Error(`Place details request failed with status ${response.status}`);
-  }
-  
-  const data = await response.json();
-  
-  if (data.status !== 'OK') {
-    console.error('❌ Place Details API error:', data);
-    throw new Error(`Place Details API error: ${data.status}`);
-  }
-  
-  console.log('✅ Successfully retrieved place details');
-  return data;
 }
