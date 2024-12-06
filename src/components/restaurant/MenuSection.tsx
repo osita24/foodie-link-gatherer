@@ -24,6 +24,8 @@ const MenuSection = ({ menu, photos }: MenuSectionProps) => {
     } else if (photos?.length) {
       console.log("No menu provided, attempting to process photos:", photos);
       processMenuPhotos();
+    } else {
+      console.log("No menu data or photos available");
     }
   }, [menu, photos]);
 
@@ -39,7 +41,7 @@ const MenuSection = ({ menu, photos }: MenuSectionProps) => {
       
       // Process each photo that might contain menu information
       const menuPromises = photos.map(async (photoUrl) => {
-        console.log("Processing photo:", photoUrl);
+        console.log("Sending photo for processing:", photoUrl);
         const { data, error } = await supabase.functions.invoke('menu-processor', {
           body: { imageUrl: photoUrl }
         });
@@ -48,6 +50,13 @@ const MenuSection = ({ menu, photos }: MenuSectionProps) => {
           console.error("Error processing photo:", error);
           throw error;
         }
+
+        console.log("Response from menu processor:", data);
+        if (!data?.menuSections?.length) {
+          console.log("No menu sections found in this photo");
+          return [];
+        }
+
         console.log("Menu sections extracted from photo:", data.menuSections);
         return data.menuSections;
       });
@@ -83,6 +92,16 @@ const MenuSection = ({ menu, photos }: MenuSectionProps) => {
       setIsProcessing(false);
     }
   };
+
+  // Log current state for debugging
+  console.log("Current component state:", {
+    selectedCategory,
+    processedMenu,
+    isProcessing,
+    currentCategory: selectedCategory 
+      ? processedMenu.find(cat => cat.name === selectedCategory) 
+      : processedMenu[0]
+  });
 
   if (isProcessing) {
     return (
@@ -152,15 +171,7 @@ const MenuSection = ({ menu, photos }: MenuSectionProps) => {
         </div>
       </CardHeader>
       <CardContent>
-        {isProcessing ? (
-          <p className="text-muted-foreground text-center py-4">
-            Analyzing menu photos...
-          </p>
-        ) : processedMenu.length === 0 ? (
-          <p className="text-muted-foreground text-center py-4">
-            No menu information available at this time.
-          </p>
-        ) : (
+        {currentCategory?.items?.length ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -170,7 +181,7 @@ const MenuSection = ({ menu, photos }: MenuSectionProps) => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {currentCategory?.items.map((item) => (
+              {currentCategory.items.map((item) => (
                 <TableRow key={item.id} className="hover:bg-gray-50">
                   <TableCell className="font-medium">{item.name}</TableCell>
                   <TableCell>{item.description}</TableCell>
@@ -179,6 +190,10 @@ const MenuSection = ({ menu, photos }: MenuSectionProps) => {
               ))}
             </TableBody>
           </Table>
+        ) : (
+          <p className="text-muted-foreground text-center py-4">
+            No items available in this category.
+          </p>
         )}
       </CardContent>
     </Card>
