@@ -34,8 +34,20 @@ export async function cleanMenuText(text: string): Promise<string[]> {
       }),
     });
 
+    if (!openAIResponse.ok) {
+      const errorData = await openAIResponse.json();
+      console.error('❌ OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
     const data = await openAIResponse.json();
     console.log('🤖 AI cleanup complete');
+
+    if (!data.choices?.[0]?.message?.content) {
+      console.error('❌ Unexpected API response format:', data);
+      return [];
+    }
+
     const cleanedText = data.choices[0].message.content;
     const menuItems = cleanedText.split('\n').filter(item => item.trim().length > 0);
     console.log(`✨ Extracted ${menuItems.length} menu items`);
