@@ -1,79 +1,147 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { vision } from "https://esm.sh/@google-cloud/vision@4.0.2";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
+
+interface VisionRequest {
+  requests: {
+    image: {
+      source: {
+        imageUri: string;
+      };
+    };
+    features: {
+      type: string;
+      maxResults: number;
+    }[];
+  }[];
+}
 
 serve(async (req) => {
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { photos } = await req.json();
-    console.log('Processing restaurant photos:', { photoCount: photos?.length || 0 });
+    const { photos = [] } = await req.json();
+    console.log('📸 Processing photos:', photos.length);
 
-    if (!photos || photos.length === 0) {
-      throw new Error('No photos provided for analysis');
+    if (!photos.length) {
+      console.log('⚠️ No photos provided');
+      return new Response(
+        JSON.stringify({ error: 'No photos provided' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
 
-    // Initialize Vision client
-    const credentials = JSON.parse(Deno.env.get('GOOGLE_CLOUD_CREDENTIALS') || '{}');
-    const client = new vision.ImageAnnotatorClient({ credentials });
+    const GOOGLE_CLOUD_CREDENTIALS = JSON.parse(Deno.env.get('GOOGLE_CLOUD_CREDENTIALS') || '{}');
+    if (!GOOGLE_CLOUD_CREDENTIALS.client_email || !GOOGLE_CLOUD_CREDENTIALS.private_key) {
+      console.error('❌ Missing Google Cloud credentials');
+      throw new Error('Google Cloud credentials not configured');
+    }
 
-    // Process all photos
-    console.log('Starting photo analysis...');
-    const menuItems = new Set();
+    const menuSections: any[] = [];
     
     for (const photoUrl of photos) {
-      try {
-        console.log('Analyzing photo:', photoUrl);
-        const [result] = await client.textDetection(photoUrl);
-        const detections = result.textAnnotations;
-        
-        if (detections && detections.length > 0) {
-          const fullText = detections[0].description;
-          console.log('Detected text:', fullText);
-          
-          // Split text into lines and process each line
-          const lines = fullText.split('\n');
-          for (const line of lines) {
-            // Basic filtering for likely menu items
-            // Avoid prices, single words, and common non-menu text
-            if (line.length > 5 && 
-                !line.match(/^\$?\d+(\.\d{2})?$/) && // Skip pure price lines
-                !line.match(/^(menu|specials|appetizers|entrees|desserts)$/i) && // Skip section headers
-                line.trim().split(' ').length > 1) { // Skip single words
-              menuItems.add(line.trim());
+      console.log('🔍 Processing photo:', photoUrl);
+      
+      const visionRequest: VisionRequest = {
+        requests: [{
+          image: {
+            source: {
+              imageUri: photoUrl
+            }
+          },
+          features: [{
+            type: 'TEXT_DETECTION',
+            maxResults: 1
+          }]
+        }]
+      };
+
+      const response = await fetch(
+        `https://vision.googleapis.com/v1/images:annotate?key=${Deno.env.get('GOOGLE_PLACES_API_KEY')}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(visionRequest)
+        }
+      );
+
+      if (!response.ok) {
+        console.error('❌ Vision API error:', await response.text());
+        continue;
+      }
+
+      const data = await response.json();
+      console.log('✅ Received Vision API response');
+
+      if (data.responses?.[0]?.textAnnotations?.[0]?.description) {
+        const text = data.responses[0].textAnnotations[0].description;
+        console.log('📝 Extracted text:', text);
+
+        // Basic text processing to identify menu items
+        const lines = text.split('\n');
+        let currentSection = '';
+        let items: any[] = [];
+
+        for (const line of lines) {
+          // Skip empty lines and common non-menu text
+          if (!line.trim() || /^(phone|address|hours|www|http|follow|like)/i.test(line)) {
+            continue;
+          }
+
+          // If line is in all caps and followed by menu items, treat as section
+          if (line === line.toUpperCase() && line.length > 3) {
+            if (currentSection && items.length) {
+              menuSections.push({
+                name: currentSection,
+                items: items.map((item, index) => ({
+                  id: `${currentSection}-${index}`,
+                  name: item,
+                  description: '',
+                }))
+              });
+            }
+            currentSection = line;
+            items = [];
+          } else {
+            // Remove prices and common symbols
+            const cleanedItem = line.replace(/\$\d+(\.\d{2})?/g, '').replace(/[•★]/g, '').trim();
+            if (cleanedItem) {
+              items.push(cleanedItem);
             }
           }
         }
-      } catch (error) {
-        console.error('Error processing photo:', error);
-        // Continue with next photo
+
+        // Add the last section
+        if (currentSection && items.length) {
+          menuSections.push({
+            name: currentSection,
+            items: items.map((item, index) => ({
+              id: `${currentSection}-${index}`,
+              name: item,
+              description: '',
+            }))
+          });
+        }
       }
     }
 
-    // Convert menu items to structured format
-    const menuItemsArray = Array.from(menuItems);
-    console.log('Extracted menu items:', menuItemsArray);
+    console.log('✅ Processed all photos, found sections:', menuSections.length);
 
-    // Group items into basic categories
-    const menuSections = [
-      {
-        name: "Featured Items",
-        items: menuItemsArray.map((name, index) => ({
-          id: `item-${index}`,
-          name,
-          description: "",
-          price: 0
-        }))
-      }
-    ];
-
-    console.log('Generated menu sections:', menuSections);
+    // If no menu sections were found, create a default one
+    if (menuSections.length === 0) {
+      menuSections.push({
+        name: 'Menu Items',
+        items: []
+      });
+    }
 
     return new Response(
       JSON.stringify({ menuSections }),
@@ -81,12 +149,15 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error processing restaurant data:', error);
+    console.error('❌ Error processing menu:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        timestamp: new Date().toISOString()
+      }),
       { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500
       }
     );
   }
