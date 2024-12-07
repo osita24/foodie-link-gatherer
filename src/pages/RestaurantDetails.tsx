@@ -176,6 +176,7 @@ const RestaurantDetails = () => {
                 menu={restaurant?.menu} 
                 photos={restaurant?.photos}
                 reviews={restaurant?.googleReviews}
+                menuUrl={restaurant?.website}  // Pass the website URL which might contain menu
               />
               <OrderSection />
             </div>
@@ -185,6 +186,7 @@ const RestaurantDetails = () => {
                 menu={restaurant?.menu} 
                 photos={restaurant?.photos}
                 reviews={restaurant?.googleReviews}
+                menuUrl={restaurant?.website}  // Pass the website URL which might contain menu
               />
               <AdditionalInfo restaurant={restaurant} />
               {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}

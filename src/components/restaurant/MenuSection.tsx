@@ -11,9 +11,10 @@ interface MenuSectionProps {
   menu?: MenuCategory[];
   photos?: string[];
   reviews?: any[];
+  menuUrl?: string;
 }
 
-const MenuSection = ({ menu, photos, reviews }: MenuSectionProps) => {
+const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
   const [processedMenu, setProcessedMenu] = useState<MenuCategory[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -27,6 +28,9 @@ const MenuSection = ({ menu, photos, reviews }: MenuSectionProps) => {
     if (menu) {
       console.log("Using provided menu data:", menu);
       setProcessedMenu(menu);
+    } else if (menuUrl) {
+      console.log("Menu URL available, attempting to scrape:", menuUrl);
+      processMenuUrl();
     } else if (photos?.length || reviews?.length) {
       console.log("No menu provided, processing available data:", {
         photos: photos?.length || 0,
@@ -36,7 +40,44 @@ const MenuSection = ({ menu, photos, reviews }: MenuSectionProps) => {
     } else {
       console.log("No data available to process");
     }
-  }, [menu, photos, reviews]);
+  }, [menu, photos, reviews, menuUrl]);
+
+  const processMenuUrl = async () => {
+    setIsProcessing(true);
+    try {
+      console.log("Starting menu URL processing");
+      
+      const { data, error } = await supabase.functions.invoke('menu-scraper', {
+        body: { menuUrl }
+      });
+
+      if (error) {
+        console.error("Error processing menu URL:", error);
+        throw error;
+      }
+
+      console.log("Response from menu scraper:", data);
+      
+      if (!data?.menuSections?.length) {
+        console.log("No menu sections generated from URL");
+        throw new Error("Could not extract menu information");
+      }
+
+      console.log("Menu sections generated:", data.menuSections);
+      setProcessedMenu(data.menuSections);
+      toast.success(`Found ${data.menuSections[0].items.length} menu items`);
+      
+    } catch (error) {
+      console.error("Error processing menu URL:", error);
+      toast.error("Failed to extract menu information");
+      // Fallback to photo/review processing
+      if (photos?.length || reviews?.length) {
+        processRestaurantData();
+      }
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const processRestaurantData = async () => {
     setIsProcessing(true);
