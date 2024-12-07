@@ -36,7 +36,9 @@ const Header = () => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      console.log('Auth state changed:', _event, session?.user?.id);
       setSession(session);
+      
       if (session?.user) {
         // Check if user has preferences
         const { data: preferences } = await supabase
@@ -58,12 +60,22 @@ const Header = () => {
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut();
+      console.log('Signing out...');
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      console.log('Successfully signed out');
       setShowSignOutDialog(false);
       setSession(null);
       navigate('/');
+      
+      // Add a small delay before showing the success message
+      setTimeout(() => {
+        toast.success('Successfully signed out');
+      }, 100);
     } catch (error) {
       console.error('Error signing out:', error);
+      toast.error('Failed to sign out. Please try again.');
     }
   };
 

@@ -34,8 +34,17 @@ serve(async (req) => {
       );
     }
 
+    // Set a timeout for the restaurant search
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timed out')), 25000);
+    });
+
     console.log('🔎 Fetching restaurant details...');
-    const result = await searchRestaurant(url, placeId);
+    const result = await Promise.race([
+      searchRestaurant(url, placeId),
+      timeoutPromise
+    ]);
+
     console.log('✅ Found restaurant details');
 
     return new Response(
