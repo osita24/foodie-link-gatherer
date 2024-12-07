@@ -20,7 +20,6 @@ serve(async (req) => {
 
     let menuItems: string[] = [];
     let processedPhotos = 0;
-    let hasError = false;
     
     // Process all images
     for (const photoUrl of photos) {
@@ -32,13 +31,12 @@ serve(async (req) => {
         console.log(`📊 Image analysis result - Type: ${analysis.type}, Confidence: ${analysis.confidence}`);
         
         if (analysis.text) {
-          // Clean up the text with AI or fallback
+          // Clean up the text with AI
           const cleanedItems = await cleanMenuText(analysis.text);
           menuItems = [...menuItems, ...cleanedItems];
         }
       } catch (error) {
         console.error('❌ Error processing photo:', error);
-        hasError = true;
         continue;
       }
     }
@@ -68,16 +66,8 @@ serve(async (req) => {
 
     console.log(`✅ Final menu items: ${menuSection.items.length}`);
 
-    // If we have no menu items but encountered errors, return an error
-    if (uniqueItems.length === 0 && hasError) {
-      throw new Error('Could not process menu information');
-    }
-
     return new Response(
-      JSON.stringify({ 
-        menuSections: [menuSection],
-        status: hasError ? 'partial' : 'success'
-      }),
+      JSON.stringify({ menuSections: [menuSection] }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

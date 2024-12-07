@@ -2,14 +2,12 @@ export async function cleanMenuText(text: string): Promise<string[]> {
   console.log('🧹 Cleaning up menu text with AI, text length:', text.length);
   
   try {
-    const rawKey = Deno.env.get('OPENAI_API_KEY');
-    if (!rawKey) {
+    const openAIKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAIKey) {
       console.error('❌ OpenAI API key is not configured');
-      return fallbackTextProcessing(text);
+      throw new Error('OpenAI API key is not configured');
     }
 
-    // Clean up the key by removing any "Api key:" prefix if present
-    const openAIKey = rawKey.replace(/^Api key:/, '').trim();
     console.log('🔑 Using OpenAI API key (first 4 chars):', openAIKey.substring(0, 4));
 
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -19,7 +17,7 @@ export async function cleanMenuText(text: string): Promise<string[]> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-3.5-turbo',
         messages: [
           {
             role: 'system',
@@ -47,7 +45,7 @@ export async function cleanMenuText(text: string): Promise<string[]> {
     if (!openAIResponse.ok) {
       const errorData = await openAIResponse.json();
       console.error('❌ OpenAI API error:', errorData);
-      return fallbackTextProcessing(text);
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
     }
 
     const data = await openAIResponse.json();
@@ -55,7 +53,7 @@ export async function cleanMenuText(text: string): Promise<string[]> {
 
     if (!data.choices?.[0]?.message?.content) {
       console.error('❌ Unexpected API response format:', data);
-      return fallbackTextProcessing(text);
+      return [];
     }
 
     const cleanedText = data.choices[0].message.content;
@@ -64,43 +62,6 @@ export async function cleanMenuText(text: string): Promise<string[]> {
     return menuItems;
   } catch (error) {
     console.error('❌ Error cleaning up menu text:', error);
-    return fallbackTextProcessing(text);
+    throw error;
   }
-}
-
-// Simple fallback text processing when OpenAI is unavailable
-function fallbackTextProcessing(text: string): string[] {
-  console.log('⚠️ Using fallback text processing');
-  
-  // Split text into lines
-  const lines = text.split(/[\n\r]+/);
-  
-  // Basic processing rules
-  const menuItems = lines
-    .map(line => line.trim())
-    .filter(line => {
-      // Remove empty lines and very short text
-      if (line.length < 3) return false;
-      
-      // Remove lines that are likely prices or just numbers
-      if (/^\$?\d+(\.\d{2})?$/.test(line)) return false;
-      
-      // Remove common non-menu text
-      const nonMenuWords = ['hours', 'open', 'close', 'phone', 'address', 'website'];
-      if (nonMenuWords.some(word => line.toLowerCase().includes(word))) return false;
-      
-      return true;
-    })
-    .map(line => {
-      // Capitalize first letter of each word
-      return line.split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-    });
-
-  // Remove duplicates
-  const uniqueItems = [...new Set(menuItems)];
-  
-  console.log('⚠️ Fallback processing found items:', uniqueItems.length);
-  return uniqueItems;
 }
