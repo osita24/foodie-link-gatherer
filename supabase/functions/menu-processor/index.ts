@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { analyzeImage } from "./imageAnalyzer.ts";
 import { cleanMenuText } from "./textCleaner.ts";
 
 const corsHeaders = {
@@ -14,57 +13,51 @@ serve(async (req) => {
   }
 
   try {
-    const { photos = [], reviews = [] } = await req.json();
-    console.log('📸 Processing photos:', photos.length);
-    console.log('📝 Processing reviews:', reviews.length);
+    const { photos = [], reviews = [], menuUrl = null } = await req.json();
+    console.log('🔍 Processing request:', { 
+      photosCount: photos.length, 
+      reviewsCount: reviews.length,
+      menuUrl 
+    });
 
-    let menuItems: string[] = [];
-    let processedPhotos = 0;
-    
-    // Process all images
-    for (const photoUrl of photos) {
+    let menuText = '';
+
+    // If menu URL is provided, try to fetch its content first
+    if (menuUrl) {
       try {
-        processedPhotos++;
-        console.log(`\n🖼️ Processing photo ${processedPhotos}/${photos.length}`);
-        
-        const analysis = await analyzeImage(photoUrl);
-        console.log(`📊 Image analysis result - Type: ${analysis.type}, Confidence: ${analysis.confidence}`);
-        
-        if (analysis.text) {
-          // Clean up the text with AI
-          const cleanedItems = await cleanMenuText(analysis.text);
-          menuItems = [...menuItems, ...cleanedItems];
-        }
+        console.log('📄 Fetching menu from URL:', menuUrl);
+        const response = await fetch(menuUrl);
+        if (!response.ok) throw new Error(`Failed to fetch menu: ${response.status}`);
+        menuText = await response.text();
+        console.log('📝 Menu text fetched, length:', menuText.length);
       } catch (error) {
-        console.error('❌ Error processing photo:', error);
-        continue;
+        console.error('❌ Error fetching menu:', error);
       }
     }
 
-    // If we didn't find enough menu items from images, try extracting from reviews
-    if (menuItems.length < 5 && reviews.length > 0) {
+    // If no menu text from URL, try extracting from reviews
+    if (!menuText && reviews.length > 0) {
       console.log('🔍 Looking for menu items in reviews...');
       const reviewTexts = reviews
         .map((review: any) => review.text)
         .join('\n');
-      
-      const menuItemsFromReviews = await cleanMenuText(reviewTexts);
-      menuItems = [...new Set([...menuItems, ...menuItemsFromReviews])];
+      menuText = reviewTexts;
     }
 
-    // Remove duplicates and empty items
-    const uniqueItems = [...new Set(menuItems)].filter(item => item.trim());
-    
+    // Clean and format the menu text
+    const cleanedItems = await cleanMenuText(menuText);
+    console.log(`✨ Extracted ${cleanedItems.length} menu items`);
+
     // Format into a menu section
     const menuSection = {
       name: "Menu Items",
-      items: uniqueItems.map((name, index) => ({
+      items: cleanedItems.map((name, index) => ({
         id: `menu-item-${index}`,
-        name: name.trim()
+        name: name.trim(),
+        description: "", // Can be enhanced later with AI
+        price: 0 // Can be enhanced later with price extraction
       }))
     };
-
-    console.log(`✅ Final menu items: ${menuSection.items.length}`);
 
     return new Response(
       JSON.stringify({ menuSections: [menuSection] }),

@@ -9,9 +9,10 @@ interface MenuSectionProps {
   menu?: MenuCategory[];
   photos?: string[];
   reviews?: any[];
+  menuUrl?: string;
 }
 
-const MenuSection = ({ menu, photos, reviews }: MenuSectionProps) => {
+const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
   const [processedMenu, setProcessedMenu] = useState<MenuCategory[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -19,8 +20,9 @@ const MenuSection = ({ menu, photos, reviews }: MenuSectionProps) => {
     if (menu) {
       console.log("Using provided menu data:", menu);
       setProcessedMenu(menu);
-    } else if (photos?.length || reviews?.length) {
-      console.log("No menu provided, processing available data:", {
+    } else if (menuUrl || photos?.length || reviews?.length) {
+      console.log("Processing available data:", {
+        menuUrl: menuUrl || 'none',
         photos: photos?.length || 0,
         reviews: reviews?.length || 0
       });
@@ -28,15 +30,16 @@ const MenuSection = ({ menu, photos, reviews }: MenuSectionProps) => {
     } else {
       console.log("No data available to process");
     }
-  }, [menu, photos, reviews]);
+  }, [menu, photos, reviews, menuUrl]);
 
   const processRestaurantData = async () => {
     setIsProcessing(true);
     try {
-      console.log("Starting restaurant data processing");
+      console.log("Starting menu processing");
       
       const { data, error } = await supabase.functions.invoke('menu-processor', {
         body: { 
+          menuUrl,
           photos,
           reviews
         }
@@ -76,7 +79,7 @@ const MenuSection = ({ menu, photos, reviews }: MenuSectionProps) => {
             Processing Menu...
           </p>
           <p className="text-muted-foreground text-sm mt-2">
-            Analyzing photos to create your digital menu
+            Analyzing available information to create your digital menu
           </p>
         </CardContent>
       </Card>
@@ -130,7 +133,7 @@ const MenuSection = ({ menu, photos, reviews }: MenuSectionProps) => {
                         </p>
                       )}
                     </div>
-                    {item.price && (
+                    {item.price > 0 && (
                       <span className="text-lg font-medium text-primary whitespace-nowrap">
                         ${item.price.toFixed(2)}
                       </span>

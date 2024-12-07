@@ -1,5 +1,5 @@
 export async function cleanMenuText(text: string): Promise<string[]> {
-  console.log('🧹 Cleaning up menu text with AI, text length:', text.length);
+  console.log('🧹 Cleaning up menu text, length:', text.length);
   
   try {
     const openAIKey = Deno.env.get('OPENAI_API_KEY');
@@ -7,8 +7,6 @@ export async function cleanMenuText(text: string): Promise<string[]> {
       console.error('❌ OpenAI API key is not configured');
       throw new Error('OpenAI API key is not configured');
     }
-
-    console.log('🔑 Using OpenAI API key (first 4 chars):', openAIKey.substring(0, 4));
 
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
