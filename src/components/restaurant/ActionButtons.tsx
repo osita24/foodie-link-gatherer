@@ -5,12 +5,13 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "../auth/AuthModal";
 
-const ActionButtons = () => {
+export const ActionButtons = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [session, setSession] = useState(null);
 
   useEffect(() => {
+    console.log("ActionButtons: Initializing");
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log("Initial session:", session);
