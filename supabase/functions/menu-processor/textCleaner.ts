@@ -1,5 +1,5 @@
 export async function cleanMenuText(text: string): Promise<string[]> {
-  console.log('🧹 Cleaning up menu text, length:', text.length);
+  console.log('🧹 Starting text cleanup, original length:', text.length);
   
   try {
     const openAIKey = Deno.env.get('OPENAI_API_KEY');
@@ -8,6 +8,11 @@ export async function cleanMenuText(text: string): Promise<string[]> {
       throw new Error('OpenAI API key is not configured');
     }
 
+    // Limit text length to avoid token limit issues (approximately 4000 words)
+    const maxLength = 16000;
+    const truncatedText = text.slice(0, maxLength);
+    console.log('📝 Truncated text length:', truncatedText.length);
+
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -15,7 +20,7 @@ export async function cleanMenuText(text: string): Promise<string[]> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
@@ -33,7 +38,7 @@ export async function cleanMenuText(text: string): Promise<string[]> {
             Pepperoni Pizza
             Caesar Salad`
           },
-          { role: 'user', content: text }
+          { role: 'user', content: truncatedText }
         ],
         temperature: 0.3,
         max_tokens: 1000

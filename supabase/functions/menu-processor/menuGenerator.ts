@@ -8,8 +8,12 @@ export async function generateMenuItems(existingItems: string[], reviews: any[])
       return [];
     }
 
-    // Extract cuisine types and context from reviews
-    const reviewText = reviews.map(review => review.text).join('\n');
+    // Limit the number of existing items to avoid token limits
+    const limitedItems = existingItems.slice(0, 20);
+    
+    // Extract cuisine types and context from reviews (limit to first 5 reviews)
+    const limitedReviews = reviews.slice(0, 5);
+    const reviewText = limitedReviews.map(review => review.text).join('\n');
 
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -35,7 +39,7 @@ export async function generateMenuItems(existingItems: string[], reviews: any[])
           },
           {
             role: 'user',
-            content: `Existing menu items:\n${existingItems.join('\n')}\n\nReviews:\n${reviewText}`
+            content: `Existing menu items:\n${limitedItems.join('\n')}\n\nReviews:\n${reviewText}`
           }
         ],
         temperature: 0.3,

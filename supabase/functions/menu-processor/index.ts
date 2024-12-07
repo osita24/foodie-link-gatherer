@@ -31,7 +31,9 @@ serve(async (req) => {
         console.log('📄 Fetching menu from URL:', menuUrl);
         const response = await fetch(menuUrl);
         if (!response.ok) throw new Error(`Failed to fetch menu: ${response.status}`);
-        menuText = await response.text();
+        const fullText = await response.text();
+        // Take only first 16000 characters to avoid token limits
+        menuText = fullText.slice(0, 16000);
         console.log('📝 Menu text fetched, length:', menuText.length);
 
         // Scan for additional menu URLs
@@ -39,14 +41,15 @@ serve(async (req) => {
         additionalMenuUrls = await scanForMenuUrls(menuText, baseUrl);
         console.log('🔍 Found additional menu URLs:', additionalMenuUrls);
 
-        // Fetch content from additional URLs
-        for (const url of additionalMenuUrls) {
+        // Fetch content from additional URLs (limit to first 2 URLs)
+        for (const url of additionalMenuUrls.slice(0, 2)) {
           try {
             console.log('📄 Fetching additional menu from:', url);
             const additionalResponse = await fetch(url);
             if (additionalResponse.ok) {
               const additionalText = await additionalResponse.text();
-              menuText += '\n' + additionalText;
+              // Add only first 8000 characters from each additional URL
+              menuText += '\n' + additionalText.slice(0, 8000);
             }
           } catch (error) {
             console.error('⚠️ Error fetching additional menu:', error);
@@ -57,10 +60,11 @@ serve(async (req) => {
       }
     }
 
-    // Extract menu items from reviews
+    // Extract menu items from reviews (limit to first 5 reviews)
     if (reviews.length > 0) {
       console.log('🔍 Looking for menu items in reviews...');
-      const reviewTexts = reviews
+      const limitedReviews = reviews.slice(0, 5);
+      const reviewTexts = limitedReviews
         .map((review: any) => review.text)
         .join('\n');
       menuText += '\n' + reviewTexts;
