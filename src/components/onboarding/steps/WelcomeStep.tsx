@@ -15,8 +15,8 @@ const WelcomeStep = ({ name, onChange }: WelcomeStepProps) => {
       className="space-y-6"
     >
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-transparent bg-clip-text">
-          Welcome to Your Food Journey! 🎉
+        <h1 className="text-2xl md:text-3xl font-bold text-primary">
+          Welcome to Your Food Journey 🎉
         </h1>
         <p className="text-gray-500">Let's start by getting to know you</p>
       </div>
@@ -30,9 +30,6 @@ const WelcomeStep = ({ name, onChange }: WelcomeStepProps) => {
           placeholder="Enter your name"
           className="text-lg h-12"
         />
-        <p className="text-sm text-gray-500 text-center animate-pulse">
-          We'll use this to personalize your experience
-        </p>
       </div>
     </motion.div>
   );
