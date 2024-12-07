@@ -1,41 +1,33 @@
+import { ExternalLink, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 import AuthModal from "@/components/auth/AuthModal";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MenuHeaderProps {
   menuUrl?: string;
 }
 
 const MenuHeader = ({ menuUrl }: MenuHeaderProps) => {
-  const [session, setSession] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [session, setSession] = useState(null);
 
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("Initial session:", session);
-      setSession(session);
-    });
+  // Listen for auth state changes
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    setSession(session);
+  });
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log("Auth state changed:", _event, session);
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  supabase.auth.onAuthStateChange((_event, session) => {
+    setSession(session);
+  });
 
   return (
-    <div className="relative w-full bg-background rounded-lg p-6 mb-6">
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center space-y-4">
-          <div className="flex items-center justify-center gap-2">
-            <h2 className="text-xl font-semibold">Menu Match</h2>
+    <div className="relative overflow-hidden">
+      <div className="bg-background p-6 md:p-8">
+        <div className="flex flex-col items-center gap-4">
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl md:text-3xl font-serif text-secondary">Menu</h2>
             <Badge 
               variant="secondary" 
               className="text-xs bg-accent/50 text-secondary/70"
@@ -45,22 +37,31 @@ const MenuHeader = ({ menuUrl }: MenuHeaderProps) => {
           </div>
           
           {!session && (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Sign up to see how well this menu matches your preferences
-              </p>
-              <Button 
-                variant="default" 
-                className="w-full sm:w-auto"
+            <div className="max-w-md mx-auto text-center animate-fade-up">
+              <Button
                 onClick={() => setShowAuthModal(true)}
+                className="bg-primary/90 hover:bg-primary text-white px-6 py-2 rounded-lg
+                  transition-all duration-300 hover:scale-105"
               >
-                Sign up to see match score
+                <Lock className="w-4 h-4 mr-2" />
+                Sign in to See Menu Match Score
               </Button>
             </div>
           )}
 
-          <div className="text-xs text-muted-foreground mt-2 text-center">
+          <div className="text-xs text-muted-foreground mt-2 text-center space-y-2">
             <p>Menu information is automatically processed and continuously improving</p>
+            {menuUrl && (
+              <a
+                href={menuUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-primary/70 hover:text-primary transition-colors"
+              >
+                <span>View full menu</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
           </div>
         </div>
       </div>

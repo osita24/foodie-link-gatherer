@@ -148,7 +148,7 @@ const RestaurantDetails = () => {
                 reviews={restaurant?.googleReviews}
                 menuUrl={restaurant?.website}
               />
-              <OrderSection website={restaurant?.website} />
+              <OrderSection />
             </div>
 
             <div className="hidden lg:block space-y-6">
@@ -170,8 +170,8 @@ const RestaurantDetails = () => {
             </div>
           </div>
 
-          <div className="hidden lg:block space-y-6 lg:sticky lg:top-24 self-start z-10">
-            <OrderSection website={restaurant?.website} />
+          <div className="hidden lg:block space-y-6 lg:sticky lg:top-24 self-start">
+            <OrderSection />
           </div>
         </div>
       </div>
