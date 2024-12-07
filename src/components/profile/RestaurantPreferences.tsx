@@ -23,18 +23,19 @@ import {
   Settings2
 } from "lucide-react";
 
+const defaultPreferences: UserPreferences = {
+  cuisinePreferences: [],
+  dietaryRestrictions: [],
+  favoriteIngredients: [],
+  spiceLevel: 3,
+  priceRange: 'moderate',
+  atmospherePreferences: [],
+  specialConsiderations: "",
+};
+
 const RestaurantPreferences = () => {
   const { toast } = useToast();
-  const [preferences, setPreferences] = useState<UserPreferences>({
-    cuisinePreferences: [],
-    dietaryRestrictions: [],
-    favoriteIngredients: [],
-    spiceLevel: 3,
-    priceRange: 'moderate',
-    atmospherePreferences: [],
-    specialConsiderations: "",
-  });
-
+  const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
   const [completionPercentage, setCompletionPercentage] = useState(0);
 
   const atmosphereTypes = [
@@ -70,30 +71,54 @@ const RestaurantPreferences = () => {
 
   useEffect(() => {
     const loadPreferences = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data, error } = await supabase
-          .from('user_preferences')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          console.log("Loading preferences for user:", user.id);
+          const { data, error } = await supabase
+            .from('user_preferences')
+            .select('*')
+            .eq('user_id', user.id)
+            .maybeSingle(); // Use maybeSingle instead of single
 
-        if (data) {
-          setPreferences({
-            cuisinePreferences: data.cuisine_preferences || [],
-            dietaryRestrictions: data.dietary_restrictions || [],
-            favoriteIngredients: data.favorite_ingredients || [],
-            spiceLevel: data.spice_level || 3,
-            priceRange: data.price_range || 'moderate',
-            atmospherePreferences: data.atmosphere_preferences || [],
-            specialConsiderations: data.special_considerations || "",
-          });
+          if (error) {
+            console.error("Error loading preferences:", error);
+            toast({
+              title: "Error",
+              description: "Failed to load preferences. Please try again.",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          if (data) {
+            console.log("Loaded preferences:", data);
+            setPreferences({
+              cuisinePreferences: data.cuisine_preferences || [],
+              dietaryRestrictions: data.dietary_restrictions || [],
+              favoriteIngredients: data.favorite_ingredients || [],
+              spiceLevel: data.spice_level || 3,
+              priceRange: data.price_range || 'moderate',
+              atmospherePreferences: data.atmosphere_preferences || [],
+              specialConsiderations: data.special_considerations || "",
+            });
+          } else {
+            console.log("No preferences found, using defaults");
+            setPreferences(defaultPreferences);
+          }
         }
+      } catch (error) {
+        console.error("Error in loadPreferences:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load preferences. Please try again.",
+          variant: "destructive",
+        });
       }
     };
 
     loadPreferences();
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     // Calculate completion percentage

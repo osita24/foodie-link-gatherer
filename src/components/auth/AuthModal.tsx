@@ -121,7 +121,15 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
             }}
             providers={['google']}
             redirectTo={window.location.origin}
-            onError={(error) => {
+            localization={{
+              variables: {
+                sign_in: {
+                  email_label: 'Email',
+                  password_label: 'Password',
+                },
+              },
+            }}
+            onAuthError={(error) => {
               console.error("Auth error:", error);
               setAuthError(error.message);
               if (error.message.includes('User already registered')) {
