@@ -92,8 +92,9 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 },
               },
             }}
-            providers={[]}
+            providers={['google']}
             redirectTo={`${window.location.origin}/`}
+            view="sign_in"
           />
         </div>
       </DialogContent>
