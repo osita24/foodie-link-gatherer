@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
@@ -16,51 +16,6 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    console.log("🔐 Setting up auth state change listener");
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("🔄 Auth state changed:", event, session?.user?.id);
-      
-      if (event === 'SIGNED_IN') {
-        console.log("✅ User signed in successfully");
-        try {
-          const { data: preferences, error } = await supabase
-            .from('user_preferences')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-
-          if (error) {
-            console.error("❌ Error fetching preferences:", error);
-            throw error;
-          }
-
-          console.log("📋 User preferences:", preferences);
-          onOpenChange(false);
-          
-          if (!preferences) {
-            console.log("⚠️ No preferences found, redirecting to onboarding");
-            // Store current path before redirecting
-            localStorage.setItem('redirectAfterOnboarding', location.pathname);
-            window.location.href = '/onboarding';
-          }
-        } catch (error: any) {
-          console.error("❌ Error in auth flow:", error);
-          toast({
-            title: "Error",
-            description: "There was a problem with authentication. Please try again.",
-            variant: "destructive",
-          });
-        }
-      }
-    });
-
-    return () => {
-      console.log("🧹 Cleaning up auth state change listener");
-      subscription.unsubscribe();
-    };
-  }, [onOpenChange, location]);
-
   const handleSubmit = async (email: string, password: string) => {
     setIsLoading(true);
     console.log("🔑 Attempting authentication...");
@@ -73,36 +28,31 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
           email,
           password,
           options: {
-            emailRedirectTo: window.location.href
+            emailRedirectTo: window.location.origin
           }
         });
-        
-        if (result.error) {
-          if (result.error.message.includes('already registered')) {
-            toast({
-              title: "Account exists",
-              description: "This email is already registered. Please sign in instead.",
-              variant: "destructive",
-            });
-            setIsSignUp(false);
-          } else {
-            throw result.error;
-          }
-        } else {
-          toast({
-            title: "Success!",
-            description: "Please check your email to verify your account.",
-          });
-        }
       } else {
         result = await supabase.auth.signInWithPassword({
           email,
           password,
         });
-        
-        if (result.error) {
-          throw result.error;
-        }
+      }
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      if (isSignUp) {
+        toast({
+          title: "Success!",
+          description: "Please check your email to verify your account.",
+        });
+      } else {
+        toast({
+          title: "Success!",
+          description: "Successfully signed in.",
+        });
+        onOpenChange(false);
       }
     } catch (error: any) {
       console.error("❌ Auth error:", error);
@@ -119,6 +69,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[400px] p-0 bg-background">
+        <DialogTitle className="sr-only">Authentication</DialogTitle>
         <div className="p-6 space-y-6">
           <AuthHeader isSignUp={isSignUp} />
           <AuthForm 

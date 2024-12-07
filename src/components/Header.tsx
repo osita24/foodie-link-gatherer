@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSession, useSupabaseClient } from "@supabase/auth-helpers-react";
 import AuthModal from "./auth/AuthModal";
@@ -27,67 +27,22 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    console.log("🔐 Current session state:", session?.user?.id);
-  }, [session]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const checkUserPreferences = async () => {
-      if (!session?.user) return;
-
-      try {
-        console.log("👤 User authenticated, checking preferences");
-        const { data: preferences, error } = await supabase
-          .from('user_preferences')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-
-        if (error) {
-          console.error("❌ Error fetching preferences:", error);
-          return;
-        }
-
-        if (!preferences && location.pathname !== '/onboarding') {
-          console.log("⚠️ No preferences found, redirecting to onboarding");
-          localStorage.setItem('redirectAfterOnboarding', location.pathname);
-          navigate('/onboarding');
-        }
-      } catch (error) {
-        console.error("❌ Error in checkUserPreferences:", error);
-      }
-    };
-
-    if (mounted) {
-      checkUserPreferences();
-    }
-
-    return () => {
-      mounted = false;
-    };
-  }, [session, navigate, location.pathname, supabase]);
+  console.log("🔐 Current session state:", session?.user?.id);
 
   const handleSignOut = async () => {
     try {
       console.log('🔄 Signing out...');
       const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error("❌ Sign out error:", error);
-        throw error;
-      }
+      if (error) throw error;
       
       console.log('✅ Successfully signed out');
       setShowSignOutDialog(false);
       navigate('/');
       
-      setTimeout(() => {
-        toast({
-          title: "Success",
-          description: "Successfully signed out",
-        });
-      }, 100);
+      toast({
+        title: "Success",
+        description: "Successfully signed out",
+      });
     } catch (error: any) {
       console.error('❌ Error signing out:', error);
       toast({
