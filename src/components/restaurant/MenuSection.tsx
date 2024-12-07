@@ -72,7 +72,9 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
     }
   };
 
+  // Placeholder function for recommendation score (to be implemented with real user preferences later)
   const getRecommendationScore = (item: any) => {
+    // Placeholder logic - returns a random score between 70 and 100
     return Math.floor(Math.random() * 31) + 70;
   };
 
@@ -113,8 +115,8 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
       <CardContent className="p-0">
         <div className="relative">
           <MenuHeader menuUrl={menuUrl} />
-          <div className="p-4 md:p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="p-4 md:p-6 space-y-4">
+            <div className="grid gap-3">
               {processedMenu[0].items.map((item) => (
                 <MenuItem
                   key={item.id}
