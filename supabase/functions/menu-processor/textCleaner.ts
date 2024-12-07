@@ -8,7 +8,7 @@ export async function cleanMenuText(text: string): Promise<string[]> {
       throw new Error('OpenAI API key is not configured');
     }
 
-    // Limit text length to avoid token limit issues (approximately 4000 words)
+    // Limit text length to avoid token limit issues
     const maxLength = 16000;
     const truncatedText = text.slice(0, maxLength);
     console.log('📝 Truncated text length:', truncatedText.length);
@@ -24,19 +24,22 @@ export async function cleanMenuText(text: string): Promise<string[]> {
         messages: [
           {
             role: 'system',
-            content: `You are a menu text processor. Extract and format food and drink items from the given text.
+            content: `You are a menu item extractor. Extract menu items from the provided text and format them consistently.
             Rules:
-            - Return ONLY dish names, one per line
-            - Remove all prices, descriptions, and promotional text
-            - Make dish names clear and consistent
-            - Group similar items together
-            - If text describes food (like from image labels), convert it into likely menu items
-            - Ensure items are properly capitalized and formatted
-            - If the text is clearly not menu related, return an empty list
+            - Each item should be on a new line
+            - Include the full item name and any key ingredients or description
+            - Remove prices and other non-essential information
+            - Ensure items are complete and make sense
+            - Format should be consistent: "Item Name - Brief Description"
+            - If an item doesn't have a description, skip it
+            - Remove any duplicate items
+            - Remove any items that don't seem to be actual menu items
+            - Minimum 5 words per item including description
+            
             Example output:
-            Margherita Pizza
-            Pepperoni Pizza
-            Caesar Salad`
+            Margherita Pizza - Fresh mozzarella, basil, and tomato sauce on hand-tossed dough
+            Caesar Salad - Crisp romaine, house-made dressing, parmesan, and garlic croutons
+            Grilled Salmon - Fresh Atlantic salmon with seasonal vegetables and lemon butter sauce`
           },
           { role: 'user', content: truncatedText }
         ],
@@ -48,23 +51,34 @@ export async function cleanMenuText(text: string): Promise<string[]> {
     if (!openAIResponse.ok) {
       const errorData = await openAIResponse.json();
       console.error('❌ OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      throw new Error(`OpenAI API error: ${JSON.stringify(errorData)}`);
     }
 
     const data = await openAIResponse.json();
-    console.log('🤖 AI cleanup complete');
-
-    if (!data.choices?.[0]?.message?.content) {
-      console.error('❌ Unexpected API response format:', data);
-      return [];
-    }
-
     const cleanedText = data.choices[0].message.content;
-    const menuItems = cleanedText.split('\n').filter(item => item.trim().length > 0);
-    console.log(`✨ Extracted ${menuItems.length} menu items:`, menuItems);
+    
+    // Split into array and filter out any empty lines or invalid items
+    const menuItems = cleanedText
+      .split('\n')
+      .map(item => item.trim())
+      .filter(item => {
+        // Ensure item has both name and description
+        const hasNameAndDescription = item.includes('-') && 
+          item.split('-').length === 2 &&
+          item.split('-')[0].trim().length > 0 &&
+          item.split('-')[1].trim().length > 0;
+        
+        // Ensure minimum word count
+        const wordCount = item.split(' ').length;
+        
+        return hasNameAndDescription && wordCount >= 5;
+      });
+
+    console.log('✨ Extracted valid menu items:', menuItems.length);
     return menuItems;
+
   } catch (error) {
-    console.error('❌ Error cleaning up menu text:', error);
+    console.error('❌ Error cleaning menu text:', error);
     throw error;
   }
 }
