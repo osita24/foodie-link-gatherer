@@ -19,11 +19,14 @@ export default {
     },
     extend: {
       colors: {
-        primary: "#FF9F66",
-        secondary: "#2D1810",
-        accent: "#FDE1D3",
-        background: "#FFFAF7",
-        "text-primary": "#333333",
+        primary: "#4A6741", // Deep olive green
+        secondary: "#2C3B29", // Dark forest green
+        accent: "#E8EDE7", // Light sage
+        background: "#FAFDF9", // Off-white with slight green tint
+        "text-primary": "#1A1F1A", // Almost black with slight green undertone
+        success: "#68A063", // Bright olive
+        warning: "#C5A572", // Warm gold
+        error: "#B54141", // Muted red
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
