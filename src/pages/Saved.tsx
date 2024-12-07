@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import SavedRestaurants from "@/components/profile/SavedRestaurants";
 import Header from "@/components/Header";
-import UnauthenticatedState from "@/components/auth/UnauthenticatedState";
 import AuthModal from "@/components/auth/AuthModal";
 
 const Saved = () => {
@@ -12,12 +11,18 @@ const Saved = () => {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (!session) {
+        setShowAuthModal(true);
+      }
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (!session) {
+        setShowAuthModal(true);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -27,11 +32,6 @@ const Saved = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <UnauthenticatedState
-          title="Your Restaurant Collection"
-          description="Create your personal collection of favorite restaurants. Save places you love or want to try, and access them anytime, anywhere."
-          onAuthClick={() => setShowAuthModal(true)}
-        />
         <AuthModal 
           open={showAuthModal}
           onOpenChange={setShowAuthModal}

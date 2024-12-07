@@ -4,7 +4,6 @@ import RestaurantPreferences from "@/components/profile/RestaurantPreferences";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
-import UnauthenticatedState from "@/components/auth/UnauthenticatedState";
 import AuthModal from "@/components/auth/AuthModal";
 
 const Profile = () => {
@@ -14,12 +13,18 @@ const Profile = () => {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (!session) {
+        setShowAuthModal(true);
+      }
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (!session) {
+        setShowAuthModal(true);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -29,11 +34,6 @@ const Profile = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <UnauthenticatedState
-          title="Access Your Profile"
-          description="Sign in to manage your dining preferences, view your saved restaurants, and get personalized recommendations tailored just for you."
-          onAuthClick={() => setShowAuthModal(true)}
-        />
         <AuthModal 
           open={showAuthModal}
           onOpenChange={setShowAuthModal}

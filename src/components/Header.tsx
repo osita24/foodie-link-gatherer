@@ -35,10 +35,19 @@ const Header = () => {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
-      if (!session) {
-        navigate('/');
+      if (session?.user) {
+        // Check if user has preferences
+        const { data: preferences } = await supabase
+          .from('user_preferences')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        if (!preferences) {
+          navigate('/onboarding');
+        }
       }
     });
 
@@ -93,8 +102,14 @@ const Header = () => {
         {isMenuOpen && (
           <MobileNav 
             session={session}
-            onAuthClick={() => setShowAuthModal(true)}
-            onSignOutClick={() => setShowSignOutDialog(true)}
+            onAuthClick={() => {
+              setShowAuthModal(true);
+              setIsMenuOpen(false);
+            }}
+            onSignOutClick={() => {
+              setShowSignOutDialog(true);
+              setIsMenuOpen(false);
+            }}
             isActive={isActive}
             onClose={() => setIsMenuOpen(false)}
           />
