@@ -9,7 +9,25 @@ import { supabase } from "@/integrations/supabase/client";
 const Hero = () => {
   const [restaurantUrl, setRestaurantUrl] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [session, setSession] = useState<any>(null);
   const navigate = useNavigate();
+
+  // Get and monitor auth session
+  useState(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("🔍 Initial session check:", session?.user?.email);
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("👤 Auth state changed:", session?.user?.email);
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,6 +78,13 @@ const Hero = () => {
     }
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
+  };
+
   return (
     <section className="relative min-h-[calc(100vh-5rem)] flex items-center justify-center bg-background px-4 py-12 md:py-20 overflow-hidden">
       <div className="container relative z-10 max-w-4xl mx-auto">
@@ -76,11 +101,17 @@ const Hero = () => {
             </div>
             
             <div className="space-y-4">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-secondary font-serif animate-fade-up">
-                Find Your Next Favorite Restaurant
-              </h1>
+              {session ? (
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-secondary font-serif animate-fade-up">
+                  {getGreeting()}, {session.user.email?.split('@')[0]}! 👋
+                </h1>
+              ) : (
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-secondary font-serif animate-fade-up">
+                  Find Your Next Favorite Restaurant
+                </h1>
+              )}
               <p className="text-base sm:text-lg text-muted-foreground/80 animate-fade-up [animation-delay:200ms] max-w-lg mx-auto">
-                Discover, save, and explore restaurants with ease using Google Maps links
+                {session ? "Ready to discover something new?" : "Discover, save, and explore restaurants with ease using Google Maps links"}
               </p>
             </div>
           </div>
