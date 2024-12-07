@@ -60,33 +60,33 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative min-h-[80vh] flex items-center justify-center bg-gradient-to-b from-background to-accent/20">
+    <section className="relative min-h-[calc(100vh-5rem)] flex items-center justify-center bg-gradient-to-b from-background to-accent/20 px-4 py-16 md:py-24"> {/* Adjusted height and padding */}
       <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
       
-      <div className="container relative px-4 md:px-6 z-10">
-        <div className="flex flex-col items-center space-y-8 text-center max-w-3xl mx-auto">
-          <div className="space-y-4">
-            <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent animate-fade-up">
+      <div className="container relative z-10">
+        <div className="flex flex-col items-center space-y-10 md:space-y-12 text-center max-w-3xl mx-auto"> {/* Increased vertical spacing */}
+          <div className="space-y-5"> {/* Increased spacing between title and description */}
+            <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent animate-fade-up px-4"> {/* Added horizontal padding */}
               Find Your Perfect Restaurant Match
             </h1>
-            <p className="mx-auto max-w-[700px] text-muted-foreground text-base md:text-lg animate-fade-up [animation-delay:200ms]">
+            <p className="mx-auto max-w-[700px] text-muted-foreground text-base md:text-lg animate-fade-up [animation-delay:200ms] px-4"> {/* Added horizontal padding */}
               Discover restaurants that match your taste preferences and get personalized recommendations tailored just for you.
             </p>
           </div>
 
-          <div className="w-full max-w-2xl mx-auto space-y-4 animate-fade-up [animation-delay:400ms]">
-            <form onSubmit={handleImport} className="flex flex-col sm:flex-row gap-3">
+          <div className="w-full max-w-2xl mx-auto space-y-6 animate-fade-up [animation-delay:400ms] px-4"> {/* Increased spacing and added padding */}
+            <form onSubmit={handleImport} className="flex flex-col sm:flex-row gap-4"> {/* Increased gap */}
               <Input
                 type="url"
                 placeholder="Paste Google Maps restaurant link..."
                 value={restaurantUrl}
                 onChange={(e) => setRestaurantUrl(e.target.value)}
-                className="h-14 text-lg shadow-xl transition-all duration-200 border-2 border-accent/50 focus:border-primary/50 hover:border-primary/30 focus:ring-2 focus:ring-primary/20"
+                className="h-14 text-base md:text-lg shadow-xl transition-all duration-200 border-2 border-accent/50 focus:border-primary/50 hover:border-primary/30 focus:ring-2 focus:ring-primary/20 rounded-xl" /* Added rounded corners */
               />
               <Button 
                 type="submit" 
                 disabled={isProcessing || !restaurantUrl}
-                className="h-14 px-8 text-lg shadow-lg hover:shadow-xl transition-all duration-200"
+                className="h-14 px-8 text-base md:text-lg shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl whitespace-nowrap" /* Added rounded corners and prevented text wrap */
               >
                 {isProcessing ? (
                   <>
@@ -99,8 +99,8 @@ const Hero = () => {
               </Button>
             </form>
             
-            <div className="text-sm text-muted-foreground/80 bg-accent/30 p-4 rounded-lg border border-accent/50 animate-fade-up [animation-delay:600ms]">
-              <p className="flex items-center gap-2">
+            <div className="text-sm text-muted-foreground/80 bg-accent/30 p-6 rounded-xl border border-accent/50 animate-fade-up [animation-delay:600ms] shadow-sm"> {/* Increased padding and rounded corners */}
+              <p className="flex items-center gap-2 justify-center flex-wrap">
                 <span className="font-semibold text-secondary">💡 Pro tip:</span>
                 Find a restaurant on Google Maps, click "Share" and copy the link to get started!
               </p>

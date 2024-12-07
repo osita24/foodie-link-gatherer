@@ -7,14 +7,14 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main>
+      <main className="pt-20"> {/* Added padding-top to account for fixed header */}
         <Hero />
         <Features />
         <FAQ />
       </main>
-      <footer className="bg-secondary text-white py-8">
-        <div className="container mx-auto px-4 text-center">
-          <p>© 2024 RestaurantMe. All rights reserved.</p>
+      <footer className="bg-secondary text-white py-12 mt-20"> {/* Increased padding and margin */}
+        <div className="container mx-auto px-6"> {/* Increased horizontal padding */}
+          <p className="text-center text-white/80">© 2024 FindDine. All rights reserved.</p>
         </div>
       </footer>
     </div>
