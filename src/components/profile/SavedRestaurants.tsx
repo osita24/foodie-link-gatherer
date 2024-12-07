@@ -1,9 +1,48 @@
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart, UtensilsCrossed } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface SavedRestaurant {
+  id: string;
+  name: string;
+  image_url: string | null;
+  cuisine: string | null;
+  rating: number | null;
+}
 
 const SavedRestaurants = () => {
-  // Placeholder data - will be replaced with real data later
-  const savedRestaurants = [];
+  const [savedRestaurants, setSavedRestaurants] = useState<SavedRestaurant[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSavedRestaurants = async () => {
+      try {
+        console.log("Fetching saved restaurants...");
+        const { data: restaurants, error } = await supabase
+          .from("saved_restaurants")
+          .select("*");
+
+        if (error) {
+          console.error("Error fetching saved restaurants:", error);
+          return;
+        }
+
+        console.log("Fetched restaurants:", restaurants);
+        setSavedRestaurants(restaurants);
+      } catch (error) {
+        console.error("Error in fetchSavedRestaurants:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSavedRestaurants();
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   if (savedRestaurants.length === 0) {
     return (
@@ -31,21 +70,40 @@ const SavedRestaurants = () => {
         <Card key={restaurant.id} className="overflow-hidden group hover:shadow-lg transition-shadow">
           <div className="relative h-48">
             <img
-              src={restaurant.image}
+              src={restaurant.image_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4"}
               alt={restaurant.name}
               className="w-full h-full object-cover"
             />
-            <button className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-sm hover:bg-gray-100 transition-colors">
+            <button 
+              className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-sm hover:bg-gray-100 transition-colors"
+              onClick={async () => {
+                try {
+                  await supabase
+                    .from("saved_restaurants")
+                    .delete()
+                    .eq("id", restaurant.id);
+                  setSavedRestaurants(prev => 
+                    prev.filter(r => r.id !== restaurant.id)
+                  );
+                } catch (error) {
+                  console.error("Error removing restaurant:", error);
+                }
+              }}
+            >
               <Heart className="h-4 w-4 text-red-500" fill="currentColor" />
             </button>
           </div>
           <CardContent className="p-4">
             <h3 className="font-semibold text-lg mb-1">{restaurant.name}</h3>
-            <p className="text-muted-foreground text-sm">{restaurant.cuisine}</p>
-            <div className="flex items-center mt-2">
-              <span className="text-yellow-400">★</span>
-              <span className="ml-1 text-sm">{restaurant.rating}</span>
-            </div>
+            {restaurant.cuisine && (
+              <p className="text-muted-foreground text-sm">{restaurant.cuisine}</p>
+            )}
+            {restaurant.rating && (
+              <div className="flex items-center mt-2">
+                <span className="text-yellow-400">★</span>
+                <span className="ml-1 text-sm">{restaurant.rating.toFixed(1)}</span>
+              </div>
+            )}
           </CardContent>
         </Card>
       ))}
