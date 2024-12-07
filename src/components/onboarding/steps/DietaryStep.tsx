@@ -34,7 +34,7 @@ const DietaryStep = ({ selected, onChange }: DietaryStepProps) => {
       className="space-y-6"
     >
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-transparent bg-clip-text">
+        <h1 className="text-2xl md:text-3xl font-bold text-primary">
           Any Dietary Preferences? 🥗
         </h1>
         <p className="text-gray-500">Help us find the perfect restaurants for you</p>
