@@ -1,39 +1,19 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { useSession } from "@supabase/auth-helpers-react";
 import SavedRestaurants from "@/components/profile/SavedRestaurants";
 import Header from "@/components/Header";
 import AuthModal from "@/components/auth/AuthModal";
 
 const Saved = () => {
-  const [session, setSession] = useState(null);
+  const session = useSession();
   const [showAuthModal, setShowAuthModal] = useState(false);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (!session) {
-        setShowAuthModal(true);
-      }
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (!session) {
-        setShowAuthModal(true);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   if (!session) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
         <AuthModal 
-          open={showAuthModal}
+          open={true}
           onOpenChange={setShowAuthModal}
         />
       </div>

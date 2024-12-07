@@ -2,8 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useSession, useSupabaseClient } from "@supabase/auth-helpers-react";
 import AuthModal from "./auth/AuthModal";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -22,60 +22,19 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
-  const [session, setSession] = useState(null);
+  const session = useSession();
+  const supabase = useSupabaseClient();
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
     let mounted = true;
 
-    const getInitialSession = async () => {
+    const checkUserPreferences = async () => {
+      if (!session?.user) return;
+
       try {
-        console.log("🔍 Getting initial session");
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error("❌ Error getting session:", error);
-          return;
-        }
-        
-        if (mounted) {
-          console.log("✅ Initial session:", session?.user?.id);
-          setSession(session);
-          
-          if (session?.user) {
-            console.log("👤 User authenticated, checking preferences");
-            const { data: preferences, error: prefError } = await supabase
-              .from('user_preferences')
-              .select('*')
-              .eq('user_id', session.user.id)
-              .maybeSingle();
-
-            if (prefError) {
-              console.error("❌ Error fetching preferences:", prefError);
-              return;
-            }
-
-            if (!preferences && location.pathname !== '/onboarding') {
-              console.log("⚠️ No preferences found, redirecting to onboarding");
-              localStorage.setItem('redirectAfterOnboarding', location.pathname);
-              navigate('/onboarding');
-            }
-          }
-        }
-      } catch (error) {
-        console.error("❌ Error in getInitialSession:", error);
-      }
-    };
-
-    getInitialSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (!mounted) return;
-      
-      console.log('🔄 Auth state changed:', _event, session?.user?.id);
-      setSession(session);
-      
-      if (session?.user) {
+        console.log("👤 User authenticated, checking preferences");
         const { data: preferences, error } = await supabase
           .from('user_preferences')
           .select('*')
@@ -92,15 +51,19 @@ const Header = () => {
           localStorage.setItem('redirectAfterOnboarding', location.pathname);
           navigate('/onboarding');
         }
+      } catch (error) {
+        console.error("❌ Error in checkUserPreferences:", error);
       }
-    });
+    };
+
+    if (mounted) {
+      checkUserPreferences();
+    }
 
     return () => {
-      console.log("🧹 Cleaning up auth state change listener");
       mounted = false;
-      subscription.unsubscribe();
     };
-  }, [navigate, location.pathname]);
+  }, [session, navigate, location.pathname, supabase]);
 
   const handleSignOut = async () => {
     try {
@@ -113,7 +76,6 @@ const Header = () => {
       
       console.log('✅ Successfully signed out');
       setShowSignOutDialog(false);
-      setSession(null);
       navigate('/');
       
       setTimeout(() => {
