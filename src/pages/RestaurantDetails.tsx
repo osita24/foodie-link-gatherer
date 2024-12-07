@@ -141,37 +141,26 @@ const RestaurantDetails = () => {
               <RestaurantInfo restaurant={restaurant} />
             </div>
             
-            <div className="block lg:hidden space-y-6">
-              <MenuSection 
-                menu={restaurant?.menu} 
-                photos={restaurant?.photos}
-                reviews={restaurant?.googleReviews}
-                menuUrl={restaurant?.website}
-              />
+            <MenuSection 
+              menu={restaurant?.menu} 
+              photos={restaurant?.photos}
+              reviews={restaurant?.googleReviews}
+              menuUrl={restaurant?.website}
+            />
+
+            <div className="block lg:hidden">
               <OrderSection />
             </div>
 
-            <div className="hidden lg:block space-y-6">
-              <MenuSection 
-                menu={restaurant?.menu} 
-                photos={restaurant?.photos}
-                reviews={restaurant?.googleReviews}
-                menuUrl={restaurant?.website}
-              />
-              <AdditionalInfo restaurant={restaurant} />
-              {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}
-              {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
-            </div>
-
-            <div className="block lg:hidden space-y-6">
-              <AdditionalInfo restaurant={restaurant} />
-              {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}
-              {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
-            </div>
+            <AdditionalInfo restaurant={restaurant} />
+            {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}
+            {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
           </div>
 
-          <div className="hidden lg:block space-y-6 lg:sticky lg:top-24 self-start">
-            <OrderSection />
+          <div className="hidden lg:block">
+            <div className="sticky top-24">
+              <OrderSection />
+            </div>
           </div>
         </div>
       </div>
