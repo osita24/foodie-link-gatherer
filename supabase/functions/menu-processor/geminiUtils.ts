@@ -4,7 +4,12 @@ export async function analyzeMenuData(photos: string[], reviews: string[], menuU
   console.log("🤖 Starting Gemini menu analysis");
   
   try {
-    const genAI = new GoogleGenerativeAI(Deno.env.get('GOOGLE_AI_KEY') || '');
+    const apiKey = Deno.env.get('GOOGLE_AI_KEY');
+    if (!apiKey) {
+      throw new Error("GOOGLE_AI_KEY is not configured");
+    }
+    
+    const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     
     let contextPrompt = "Based on the following restaurant data, generate a structured menu:\n";
@@ -31,7 +36,7 @@ export async function analyzeMenuData(photos: string[], reviews: string[], menuU
     
     Focus on commonly mentioned dishes and typical prices for this type of restaurant.`;
 
-    console.log("🔍 Sending prompt to Gemini:", prompt);
+    console.log("🔍 Sending prompt to Gemini");
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
