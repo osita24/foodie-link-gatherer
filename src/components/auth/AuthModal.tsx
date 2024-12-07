@@ -3,7 +3,8 @@ import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from "@/integrations/supabase/client";
 import { BookmarkPlus, Sparkles, UserCircle } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface AuthModalProps {
   open: boolean;
@@ -12,14 +13,29 @@ interface AuthModalProps {
 
 const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   console.log("Rendering AuthModal with open:", open);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event, session?.user?.id);
-      if (session) {
-        console.log("User is authenticated, closing modal");
+      
+      if (event === 'SIGNED_IN') {
+        console.log("User signed in successfully");
+        toast.success("Successfully signed in!");
         onOpenChange(false);
+      } else if (event === 'SIGNED_OUT') {
+        console.log("User signed out");
+        toast.info("Signed out successfully");
+      } else if (event === 'USER_UPDATED') {
+        console.log("User profile updated");
+      } else if (event === 'PASSWORD_RECOVERY') {
+        console.log("Password recovery event received");
+      } else if (event === 'TOKEN_REFRESHED') {
+        console.log("Token refreshed");
       }
+
+      // Clear any previous errors when auth state changes
+      setAuthError(null);
     });
 
     return () => {
@@ -27,6 +43,11 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       subscription.unsubscribe();
     };
   }, [onOpenChange]);
+
+  // Reset error when modal is opened/closed
+  useEffect(() => {
+    setAuthError(null);
+  }, [open]);
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -66,6 +87,12 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
           </div>
         </div>
 
+        {authError && (
+          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-600">{authError}</p>
+          </div>
+        )}
+
         <div className="mt-2">
           <Auth
             supabaseClient={supabase}
@@ -87,10 +114,24 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 container: {
                   gap: '12px',
                 },
+                message: {
+                  color: 'red',
+                },
               },
             }}
             providers={['google']}
-            redirectTo={`${window.location.origin}/`}
+            redirectTo={window.location.origin}
+            onError={(error) => {
+              console.error("Auth error:", error);
+              setAuthError(error.message);
+              if (error.message.includes('User already registered')) {
+                toast.error("This email is already registered. Please sign in instead.");
+              } else if (error.message.includes('Invalid login credentials')) {
+                toast.error("Invalid email or password. Please try again.");
+              } else {
+                toast.error(error.message);
+              }
+            }}
             view="sign_in"
           />
         </div>
