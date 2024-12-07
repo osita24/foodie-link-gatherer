@@ -2,7 +2,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { PriceRange, UserPreferences } from "@/types/preferences";
 import { Accordion } from "@/components/ui/accordion";
 import CuisinePreferences from "./preferences/CuisinePreferences";
 import DietaryPreferences from "./preferences/DietaryPreferences";
@@ -11,7 +10,7 @@ import PreferencesSection from "./preferences/PreferencesSection";
 import AtmospherePreferences from "./preferences/AtmospherePreferences";
 import AvoidancePreferences from "./preferences/AvoidancePreferences";
 
-const defaultPreferences: UserPreferences = {
+const defaultPreferences = {
   cuisinePreferences: [],
   dietaryRestrictions: [],
   foodsToAvoid: [],
@@ -122,19 +121,25 @@ const RestaurantPreferences = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
+    <div className="space-y-6 w-full px-4 md:px-0 md:max-w-3xl mx-auto pb-20">
       <PreferencesProgress completionPercentage={completionPercentage} />
 
-      <Accordion type="single" collapsible className="w-full space-y-4">
+      <Accordion 
+        type="single" 
+        collapsible 
+        className="w-full space-y-4"
+      >
         <PreferencesSection 
           value="dietary" 
           title="Dietary Preferences"
           selectedCount={preferences.dietaryRestrictions.length}
         >
-          <DietaryPreferences
-            selected={preferences.dietaryRestrictions}
-            onChange={(restrictions) => setPreferences(prev => ({ ...prev, dietaryRestrictions: restrictions }))}
-          />
+          <div className="pt-2">
+            <DietaryPreferences
+              selected={preferences.dietaryRestrictions}
+              onChange={(restrictions) => setPreferences(prev => ({ ...prev, dietaryRestrictions: restrictions }))}
+            />
+          </div>
         </PreferencesSection>
 
         <PreferencesSection 
@@ -142,10 +147,12 @@ const RestaurantPreferences = () => {
           title="Cuisine Preferences"
           selectedCount={preferences.cuisinePreferences.length}
         >
-          <CuisinePreferences 
-            selected={preferences.cuisinePreferences}
-            onChange={(cuisines) => setPreferences(prev => ({ ...prev, cuisinePreferences: cuisines }))}
-          />
+          <div className="pt-2">
+            <CuisinePreferences 
+              selected={preferences.cuisinePreferences}
+              onChange={(cuisines) => setPreferences(prev => ({ ...prev, cuisinePreferences: cuisines }))}
+            />
+          </div>
         </PreferencesSection>
 
         <PreferencesSection 
@@ -153,10 +160,12 @@ const RestaurantPreferences = () => {
           title="Foods to Avoid"
           selectedCount={preferences.foodsToAvoid.length}
         >
-          <AvoidancePreferences
-            selected={preferences.foodsToAvoid}
-            onChange={(items) => setPreferences(prev => ({ ...prev, foodsToAvoid: items }))}
-          />
+          <div className="pt-2">
+            <AvoidancePreferences
+              selected={preferences.foodsToAvoid}
+              onChange={(items) => setPreferences(prev => ({ ...prev, foodsToAvoid: items }))}
+            />
+          </div>
         </PreferencesSection>
 
         <PreferencesSection 
@@ -164,20 +173,24 @@ const RestaurantPreferences = () => {
           title="Atmosphere Preferences"
           selectedCount={preferences.atmospherePreferences.length}
         >
-          <AtmospherePreferences
-            selected={preferences.atmospherePreferences}
-            onChange={(atmospheres) => setPreferences(prev => ({ ...prev, atmospherePreferences: atmospheres }))}
-          />
+          <div className="pt-2">
+            <AtmospherePreferences
+              selected={preferences.atmospherePreferences}
+              onChange={(atmospheres) => setPreferences(prev => ({ ...prev, atmospherePreferences: atmospheres }))}
+            />
+          </div>
         </PreferencesSection>
       </Accordion>
 
-      <Button 
-        onClick={handleSave} 
-        className="w-full md:w-auto"
-        disabled={completionPercentage === 0}
-      >
-        Save Preferences
-      </Button>
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t md:relative md:border-0 md:p-0 md:bg-transparent">
+        <Button 
+          onClick={handleSave} 
+          className="w-full md:w-auto"
+          disabled={completionPercentage === 0}
+        >
+          Save Preferences
+        </Button>
+      </div>
     </div>
   );
 };
