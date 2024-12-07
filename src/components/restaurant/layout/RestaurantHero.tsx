@@ -1,4 +1,4 @@
-import { ActionButtons } from "@/components/restaurant/ActionButtons";
+import ActionButtons from "@/components/restaurant/ActionButtons";
 
 interface RestaurantHeroProps {
   photoUrl?: string;
