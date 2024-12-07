@@ -9,11 +9,12 @@ interface RestaurantInfoProps {
 
 const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
   const formatRating = (rating: number | undefined) => {
-    return rating?.toFixed(1) ?? "N/A";
+    if (typeof rating !== 'number') return 'N/A';
+    return rating.toFixed(1);
   };
 
   const formatReviewCount = (count: number | undefined) => {
-    if (!count) return "0";
+    if (typeof count !== 'number') return '0';
     if (count >= 1000) {
       return `${(count / 1000).toFixed(1)}K`;
     }
@@ -21,10 +22,11 @@ const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
   };
 
   const RatingStars = ({ rating }: { rating: number | undefined }) => {
+    const displayRating = formatRating(rating);
     return (
       <div className="flex items-center">
         <span className="text-yellow-400">★</span>
-        <span className="ml-1">{formatRating(rating)}</span>
+        <span className="ml-1">{displayRating}</span>
       </div>
     );
   };
@@ -50,7 +52,7 @@ const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
   };
 
   const getPriceRangeDisplay = (priceLevel?: number) => {
-    if (!priceLevel) return null;
+    if (typeof priceLevel !== 'number') return null;
     return (
       <div className="inline-flex items-center gap-0.5 px-3 py-1.5 bg-accent/30 rounded-full">
         {[...Array(priceLevel)].map((_, i) => (
@@ -60,7 +62,7 @@ const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
             strokeWidth={2.5}
           />
         ))}
-        {[...Array(4 - (priceLevel || 0))].map((_, i) => (
+        {[...Array(4 - priceLevel)].map((_, i) => (
           <DollarSign 
             key={i + priceLevel} 
             className="w-3.5 h-3.5 text-gray-300" 
