@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { List, Loader2, Sparkles, ExternalLink, Star } from "lucide-react";
+import { List, Loader2 } from "lucide-react";
 import { MenuCategory } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import MenuItem from "./menu/MenuItem";
+import MenuHeader from "./menu/MenuHeader";
 
 interface MenuSectionProps {
   menu?: MenuCategory[];
@@ -114,104 +114,16 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
     <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
       <CardContent className="p-0">
         <div className="relative">
-          {/* Menu header */}
-          <div className="bg-primary/5 p-6 text-center border-b border-primary/10">
-            <div className="flex flex-col items-center gap-2">
-              <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-serif text-secondary">Menu</h2>
-                <Badge 
-                  variant="secondary" 
-                  className="text-xs bg-accent/50 text-secondary/70 hover:bg-accent/70"
-                >
-                  <Sparkles className="w-3 h-3 mr-1 inline-block" />
-                  AI Enhanced Beta
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Menu information is automatically processed and continuously improving
-              </p>
-              {menuUrl && (
-                <a
-                  href={menuUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-1 inline-flex items-center gap-1 text-xs text-primary/70 hover:text-primary transition-colors"
-                >
-                  <span>View full menu</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              )}
-            </div>
-          </div>
-          
-          {/* Menu items */}
+          <MenuHeader menuUrl={menuUrl} />
           <div className="p-4 md:p-6 space-y-4">
             <div className="grid gap-3">
-              {processedMenu[0].items.map((item, index) => {
-                const recommendationScore = getRecommendationScore(item);
-                return (
-                  <div
-                    key={item.id}
-                    className="group relative p-3 rounded-lg hover:bg-accent/30 transition-all duration-300"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-base font-medium text-secondary group-hover:text-primary transition-colors">
-                            {item.name}
-                          </h3>
-                          {recommendationScore >= 90 && (
-                            <Badge 
-                              className="bg-green-100 text-green-800 text-xs px-2 py-0.5"
-                            >
-                              <Star className="w-3 h-3 mr-1 inline-block fill-current" />
-                              Top Pick
-                            </Badge>
-                          )}
-                        </div>
-                        {item.description && (
-                          <p className="mt-1 text-sm text-muted-foreground leading-snug">
-                            {item.description}
-                          </p>
-                        )}
-                        {item.category && (
-                          <Badge 
-                            variant="outline" 
-                            className="mt-1.5 text-xs bg-transparent border-primary/20 text-primary/70"
-                          >
-                            {item.category}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        {item.price > 0 && (
-                          <span className="text-base font-medium text-primary whitespace-nowrap">
-                            ${item.price.toFixed(2)}
-                          </span>
-                        )}
-                        {recommendationScore > 0 && (
-                          <div className="flex items-center gap-1">
-                            <div className="w-24 h-1 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className={cn(
-                                  "h-full rounded-full transition-all duration-500",
-                                  recommendationScore >= 90 ? "bg-green-500" :
-                                  recommendationScore >= 80 ? "bg-primary" :
-                                  "bg-primary/60"
-                                )}
-                                style={{ width: `${recommendationScore}%` }}
-                              />
-                            </div>
-                            <span className="text-xs text-muted-foreground">
-                              {recommendationScore}%
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              {processedMenu[0].items.map((item) => (
+                <MenuItem
+                  key={item.id}
+                  item={item}
+                  recommendationScore={getRecommendationScore(item)}
+                />
+              ))}
             </div>
           </div>
         </div>
