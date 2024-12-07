@@ -13,7 +13,7 @@ const FAQ = () => {
           Frequently Asked Questions
         </h2>
         <Accordion type="single" collapsible className="space-y-3">
-          <AccordionItem value="item-1" className="border rounded-lg px-3 md:px-4">
+          <AccordionItem value="item-1" className="border rounded-lg px-4 md:px-6">
             <AccordionTrigger className="text-base md:text-lg hover:text-primary transition-colors py-4 md:py-5">
               How do I import a restaurant?
             </AccordionTrigger>
@@ -21,7 +21,7 @@ const FAQ = () => {
               Simply copy the Google Maps link of the restaurant you want to import and paste it into the import field. We'll automatically extract all the relevant information.
             </AccordionContent>
           </AccordionItem>
-          <AccordionItem value="item-2" className="border rounded-lg px-3 md:px-4">
+          <AccordionItem value="item-2" className="border rounded-lg px-4 md:px-6">
             <AccordionTrigger className="text-base md:text-lg hover:text-primary transition-colors py-4 md:py-5">
               What information is imported?
             </AccordionTrigger>
@@ -29,7 +29,7 @@ const FAQ = () => {
               We import the restaurant's name, address, phone number, website, photos, reviews, and more - everything you need to keep track of your dining options.
             </AccordionContent>
           </AccordionItem>
-          <AccordionItem value="item-3" className="border rounded-lg px-3 md:px-4">
+          <AccordionItem value="item-3" className="border rounded-lg px-4 md:px-6">
             <AccordionTrigger className="text-base md:text-lg hover:text-primary transition-colors py-4 md:py-5">
               Is this service free?
             </AccordionTrigger>

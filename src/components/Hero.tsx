@@ -19,7 +19,6 @@ const Hero = () => {
     console.log("🔍 Starting import for URL:", restaurantUrl);
     
     try {
-      // Validate URL format
       if (!restaurantUrl.includes("google.com/maps") && !restaurantUrl.includes("goo.gl")) {
         throw new Error("Please enter a valid Google Maps URL");
       }
@@ -46,7 +45,6 @@ const Hero = () => {
       
       toast.success("Restaurant found! Loading details...");
       
-      // Navigate after a short delay to ensure the toast is visible
       setTimeout(() => {
         navigate(`/restaurant/${placeId}`);
       }, 500);
@@ -60,14 +58,9 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative min-h-[calc(100vh-5rem)] flex items-center justify-center bg-gradient-to-br from-background via-accent/20 to-primary/5 px-4 py-12 md:py-20 overflow-hidden">
-      {/* Decorative elements */}
-      <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
-      <div className="absolute top-20 -left-12 w-72 h-72 bg-primary/20 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-20 -right-12 w-72 h-72 bg-accent/30 rounded-full blur-3xl animate-pulse [animation-delay:1s]" />
-      
-      <div className="container relative z-10">
-        <div className="flex flex-col items-center space-y-8 md:space-y-10 text-center max-w-2xl mx-auto">
+    <section className="relative min-h-[calc(100vh-5rem)] flex items-center justify-center bg-white px-4 py-12 md:py-20 overflow-hidden">
+      <div className="container relative z-10 max-w-4xl mx-auto">
+        <div className="flex flex-col items-center space-y-8 md:space-y-10 text-center">
           {/* Header section with icon */}
           <div className="space-y-6">
             <div className="relative inline-block">
@@ -79,12 +72,12 @@ const Hero = () => {
               </div>
             </div>
             
-            <div className="space-y-3">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-secondary animate-fade-up">
-                Import Your Restaurant
+            <div className="space-y-4">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-secondary animate-fade-up">
+                Find Your Next Favorite Restaurant
               </h1>
-              <p className="text-base md:text-lg text-muted-foreground/80 animate-fade-up [animation-delay:200ms] max-w-lg mx-auto">
-                Simply paste a Google Maps link to get started
+              <p className="text-base sm:text-lg text-muted-foreground/80 animate-fade-up [animation-delay:200ms] max-w-lg mx-auto">
+                Discover, save, and explore restaurants with ease using Google Maps links
               </p>
             </div>
           </div>
@@ -105,7 +98,7 @@ const Hero = () => {
               <Button 
                 type="submit" 
                 disabled={isProcessing || !restaurantUrl}
-                className="h-12 px-6 text-base shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl whitespace-nowrap bg-primary hover:bg-primary/90 text-white"
+                className="h-12 px-6 text-base shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl whitespace-nowrap bg-primary hover:bg-primary/90 text-white w-full sm:w-auto"
               >
                 {isProcessing ? (
                   <>

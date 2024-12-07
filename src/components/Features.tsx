@@ -7,7 +7,7 @@ const Features = () => {
         <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-center text-secondary mb-10 md:mb-16 animate-fade-up">
           Smart Dining Decisions
         </h2>
-        <div className="grid md:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto">
           {[
             {
               icon: <Smartphone className="w-6 h-6 md:w-8 md:h-8 text-white" />,
@@ -48,10 +48,10 @@ const Features = () => {
                 >
                   {feature.icon}
                 </div>
-                <h3 className="text-lg md:text-xl font-bold mb-3 text-white transform group-hover:scale-105 transition-transform duration-300">
+                <h3 className="text-lg md:text-xl font-bold mb-3 text-white text-center">
                   {feature.title}
                 </h3>
-                <p className="text-sm md:text-base text-white/90 transform group-hover:translate-y-1 transition-transform duration-300">
+                <p className="text-sm md:text-base text-white/90 text-center">
                   {feature.description}
                 </p>
               </div>
