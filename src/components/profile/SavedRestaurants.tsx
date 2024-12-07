@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, UtensilsCrossed, Star, Clock, MapPin } from "lucide-react";
+import { Heart, UtensilsCrossed, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRestaurantMatch } from "@/hooks/useRestaurantMatch";
-import { RestaurantDetails } from "@/types/restaurant";
 
 interface SavedRestaurant {
   id: string;
@@ -17,7 +16,6 @@ interface SavedRestaurant {
 const SavedRestaurants = () => {
   const [savedRestaurants, setSavedRestaurants] = useState<SavedRestaurant[]>([]);
   const [loading, setLoading] = useState(true);
-  const [restaurantDetails, setRestaurantDetails] = useState<Record<string, RestaurantDetails>>({});
 
   useEffect(() => {
     const fetchSavedRestaurants = async () => {
@@ -34,26 +32,6 @@ const SavedRestaurants = () => {
 
         console.log("Fetched restaurants:", restaurants);
         setSavedRestaurants(restaurants);
-        
-        // Fetch additional details for each restaurant
-        restaurants.forEach(async (restaurant) => {
-          try {
-            const { data: details } = await supabase
-              .from("restaurant_details")
-              .select("*")
-              .eq("place_id", restaurant.place_id)
-              .single();
-
-            if (details) {
-              setRestaurantDetails(prev => ({
-                ...prev,
-                [restaurant.place_id]: details
-              }));
-            }
-          } catch (error) {
-            console.error("Error fetching restaurant details:", error);
-          }
-        });
       } catch (error) {
         console.error("Error in fetchSavedRestaurants:", error);
       } finally {
@@ -103,19 +81,20 @@ const SavedRestaurants = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {savedRestaurants.map((restaurant) => {
-        const details = restaurantDetails[restaurant.place_id];
-        const { overallScore } = useRestaurantMatch(details || null);
+        const { overallScore } = useRestaurantMatch(null);
 
         return (
           <Card key={restaurant.id} className="overflow-hidden group hover:shadow-lg transition-shadow">
             <div className="relative">
               <div className="absolute top-2 right-2 z-10 flex gap-2">
-                <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-sm">
-                  <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                    <span className="text-sm font-medium">{restaurant.rating?.toFixed(1)}</span>
+                {restaurant.rating && (
+                  <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-sm">
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                      <span className="text-sm font-medium">{restaurant.rating.toFixed(1)}</span>
+                    </div>
                   </div>
-                </div>
+                )}
                 <button 
                   className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-gray-100 transition-colors"
                   onClick={async () => {
@@ -148,18 +127,8 @@ const SavedRestaurants = () => {
               />
             </div>
             <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  <span>{details?.vicinity || "Location unavailable"}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  <span>{details?.priceLevel ? "£".repeat(details.priceLevel) : "Price N/A"}</span>
-                </div>
-              </div>
               {overallScore > 0 && (
-                <div className="mt-3 pt-3 border-t">
+                <div className="mt-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Match Score</span>
                     <div className="flex items-center gap-2">
