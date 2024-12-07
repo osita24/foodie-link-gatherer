@@ -1,6 +1,7 @@
-import { Star } from "lucide-react";
+import { Star, ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 interface MenuItemProps {
   item: {
@@ -14,6 +15,8 @@ interface MenuItemProps {
 }
 
 const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
   // Extract name from description if it contains a dash
   const hasDetailedDescription = item.description?.includes(" - ");
   const displayName = hasDetailedDescription 
@@ -22,6 +25,8 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
   const displayDescription = hasDetailedDescription
     ? item.description.split(" - ")[1]
     : item.description;
+
+  const hasLongDescription = displayDescription && displayDescription.length > 100;
 
   return (
     <div className="group relative p-3 rounded-lg hover:bg-accent/30 transition-all duration-300">
@@ -38,11 +43,37 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
               </Badge>
             )}
           </div>
+          
           {displayDescription && (
-            <p className="mt-1 text-sm text-muted-foreground leading-snug">
-              {displayDescription}
-            </p>
+            <div className="relative">
+              <p className={cn(
+                "mt-1 text-sm text-muted-foreground leading-snug",
+                !isExpanded && hasLongDescription && "line-clamp-2"
+              )}>
+                {displayDescription}
+              </p>
+              
+              {hasLongDescription && (
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="mt-1 text-xs text-primary flex items-center hover:text-primary/70 transition-colors"
+                >
+                  {isExpanded ? (
+                    <>
+                      <ChevronUp className="w-3 h-3 mr-1" />
+                      Show less
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="w-3 h-3 mr-1" />
+                      Read more
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           )}
+          
           {item.category && (
             <Badge 
               variant="outline" 
@@ -52,6 +83,7 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
             </Badge>
           )}
         </div>
+        
         <div className="flex flex-col items-end gap-2">
           {item.price && item.price > 0 && (
             <span className="text-base font-medium text-primary whitespace-nowrap">
