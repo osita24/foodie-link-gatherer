@@ -117,6 +117,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 },
               },
             }}
+            providers={[]}
             localization={{
               variables: {
                 sign_in: {
