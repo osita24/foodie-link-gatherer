@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Star, ChevronDown, ChevronUp, Lock, DollarSign } from "lucide-react";
+import { Star, ChevronDown, ChevronUp, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import AuthModal from "@/components/auth/AuthModal";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +10,6 @@ interface MenuItemProps {
     id: string;
     name: string;
     description?: string;
-    price?: number | string;
     category?: string;
   };
   recommendationScore: number;
@@ -44,29 +42,6 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
   const isLongDescription = description && description.length > 100;
   const displayDescription = isExpanded ? description : description?.substring(0, 100);
 
-  const getPriceDisplay = (price?: number | string) => {
-    if (!price) return null;
-    
-    // Convert string price to number if it's a string with a dollar sign
-    let numericPrice: number;
-    if (typeof price === 'string') {
-      // Remove dollar sign and convert to number
-      numericPrice = parseFloat(price.replace(/[$,]/g, ''));
-      if (isNaN(numericPrice)) return null;
-    } else {
-      numericPrice = price;
-    }
-
-    return (
-      <div className="inline-flex items-center gap-0.5 px-3 py-1.5 bg-accent/20 rounded-full">
-        <DollarSign className="w-3.5 h-3.5 text-primary/80" strokeWidth={2} />
-        <span className="text-sm font-semibold text-primary">
-          {numericPrice.toFixed(2)}
-        </span>
-      </div>
-    );
-  };
-
   return (
     <div className="group relative p-4 rounded-lg hover:bg-accent/20 transition-all duration-300">
       <div className="flex items-start justify-between gap-4">
@@ -75,7 +50,6 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
             <h3 className="text-base font-medium text-secondary group-hover:text-primary transition-colors">
               {cleanName}
             </h3>
-            {getPriceDisplay(item.price)}
           </div>
           
           {description && (
