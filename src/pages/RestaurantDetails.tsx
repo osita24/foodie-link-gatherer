@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import RestaurantInfo from "@/components/restaurant/RestaurantInfo";
-import PopularItems from "@/components/restaurant/PopularItems";
 import MenuSection from "@/components/restaurant/MenuSection";
 import PhotosSection from "@/components/restaurant/PhotosSection";
 import ReviewsSection from "@/components/restaurant/ReviewsSection";
@@ -124,34 +123,6 @@ const RestaurantDetails = () => {
     return null;
   }
 
-  // Generate match categories based on restaurant data
-  const matchCategories = [
-    {
-      category: "Taste Profile",
-      score: restaurant.types?.includes("restaurant") ? 90 : 75,
-      description: `Matches your dining preferences`,
-      icon: "🌶️"
-    },
-    {
-      category: "Price Range",
-      score: restaurant.priceLevel ? (5 - restaurant.priceLevel) * 20 : 80,
-      description: "Within your typical dining budget",
-      icon: "💰"
-    },
-    {
-      category: "Atmosphere",
-      score: restaurant.rating ? Math.round(restaurant.rating * 20) : 85,
-      description: restaurant.types?.includes("casual") ? "Casual dining atmosphere" : "Restaurant atmosphere",
-      icon: "✨"
-    },
-    {
-      category: "Service",
-      score: restaurant.userRatingsTotal > 100 ? 88 : 80,
-      description: `Based on ${restaurant.userRatingsTotal || 0} reviews`,
-      icon: "👨‍🍳"
-    }
-  ];
-
   return (
     <div className="min-h-screen bg-background pb-20 animate-fade-up">
       <Header />
@@ -190,7 +161,6 @@ const RestaurantDetails = () => {
                 photos={restaurant?.photos}
                 reviews={restaurant?.googleReviews}
               />
-              <PopularItems />
               <AdditionalInfo restaurant={restaurant} />
               {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}
               {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}

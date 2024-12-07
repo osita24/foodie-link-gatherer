@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { List, Loader2 } from "lucide-react";
+import { List, Loader2, Star } from "lucide-react";
 import { MenuCategory } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface MenuSectionProps {
   menu?: MenuCategory[];
@@ -14,6 +16,12 @@ interface MenuSectionProps {
 const MenuSection = ({ menu, photos, reviews }: MenuSectionProps) => {
   const [processedMenu, setProcessedMenu] = useState<MenuCategory[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Function to generate a random match score (70-100)
+  const generateMatchScore = () => Math.floor(Math.random() * 31) + 70;
+
+  // Randomly assign match scores to ~30% of items
+  const shouldShowMatchScore = () => Math.random() < 0.3;
 
   useEffect(() => {
     if (menu) {
@@ -70,12 +78,12 @@ const MenuSection = ({ menu, photos, reviews }: MenuSectionProps) => {
   if (isProcessing) {
     return (
       <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
-        <CardContent className="p-8 flex flex-col items-center justify-center min-h-[300px]">
-          <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
-          <p className="text-secondary text-lg font-medium">
+        <CardContent className="p-8 flex flex-col items-center justify-center min-h-[200px]">
+          <Loader2 className="w-6 h-6 text-primary animate-spin mb-3" />
+          <p className="text-secondary text-base font-medium">
             Processing Menu...
           </p>
-          <p className="text-muted-foreground text-sm mt-2">
+          <p className="text-muted-foreground text-sm mt-1">
             Analyzing photos to create your digital menu
           </p>
         </CardContent>
@@ -86,12 +94,12 @@ const MenuSection = ({ menu, photos, reviews }: MenuSectionProps) => {
   if (!processedMenu || processedMenu.length === 0) {
     return (
       <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
-        <CardContent className="p-8 flex flex-col items-center justify-center min-h-[300px]">
-          <List className="w-8 h-8 text-muted-foreground mb-4" />
-          <p className="text-secondary text-lg font-medium">
+        <CardContent className="p-8 flex flex-col items-center justify-center min-h-[200px]">
+          <List className="w-6 h-6 text-muted-foreground mb-3" />
+          <p className="text-secondary text-base font-medium">
             Menu Not Available
           </p>
-          <p className="text-muted-foreground text-sm mt-2">
+          <p className="text-muted-foreground text-sm mt-1">
             We're working on getting the latest menu information.
           </p>
         </CardContent>
@@ -104,48 +112,69 @@ const MenuSection = ({ menu, photos, reviews }: MenuSectionProps) => {
       <CardContent className="p-0">
         <div className="relative">
           {/* Decorative header */}
-          <div className="bg-primary/10 p-8 text-center border-b border-primary/20">
-            <h2 className="text-2xl md:text-3xl font-serif text-secondary">
+          <div className="bg-primary/5 p-6 text-center border-b border-primary/10">
+            <h2 className="text-xl md:text-2xl font-serif text-secondary">
               Our Menu
             </h2>
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/20 via-primary to-primary/20" />
+            <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-primary/20 via-primary to-primary/20" />
           </div>
           
           {/* Menu items */}
-          <div className="p-6 md:p-8 space-y-6">
-            <div className="grid gap-4 md:gap-6">
-              {processedMenu[0].items.map((item, index) => (
-                <div
-                  key={item.id}
-                  className="group relative p-4 rounded-lg hover:bg-accent/50 transition-all duration-300"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg md:text-xl font-medium text-secondary group-hover:text-primary transition-colors">
-                        {item.name}
-                      </h3>
-                      {item.description && (
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {item.description}
-                        </p>
+          <div className="p-4 md:p-6 space-y-4">
+            <div className="grid gap-3">
+              {processedMenu[0].items.map((item, index) => {
+                const showMatchScore = shouldShowMatchScore();
+                const matchScore = showMatchScore ? generateMatchScore() : null;
+
+                return (
+                  <div
+                    key={item.id}
+                    className="group relative p-3 rounded-lg hover:bg-accent/30 transition-all duration-300"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-base font-medium text-secondary group-hover:text-primary transition-colors">
+                            {item.name}
+                          </h3>
+                          {matchScore && (
+                            <Badge 
+                              variant="secondary"
+                              className={cn(
+                                "text-xs font-normal",
+                                matchScore >= 90 ? "bg-green-100 text-green-800" :
+                                matchScore >= 80 ? "bg-blue-100 text-blue-800" :
+                                "bg-orange-100 text-orange-800"
+                              )}
+                            >
+                              <Star className="w-3 h-3 mr-1 inline-block fill-current" />
+                              {matchScore}% match
+                            </Badge>
+                          )}
+                        </div>
+                        {item.description && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {item.description}
+                          </p>
+                        )}
+                      </div>
+                      {item.price && (
+                        <span className="text-sm font-medium text-primary whitespace-nowrap">
+                          ${item.price.toFixed(2)}
+                        </span>
                       )}
                     </div>
-                    {item.price && (
-                      <span className="text-lg font-medium text-primary whitespace-nowrap">
-                        ${item.price.toFixed(2)}
-                      </span>
-                    )}
+                    
+                    {/* Decorative line */}
+                    <div className="absolute bottom-0 left-3 right-3 h-px bg-accent/50 transform origin-left transition-transform duration-300 group-hover:scale-x-100" />
                   </div>
-                  
-                  {/* Decorative line */}
-                  <div className="absolute bottom-0 left-4 right-4 h-px bg-accent/50 transform origin-left transition-transform duration-300 group-hover:scale-x-100" />
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
           
           {/* Decorative footer */}
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary/20 via-primary to-primary/20" />
+          <div className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-primary/20 via-primary to-primary/20" />
         </div>
       </CardContent>
     </Card>
