@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "../auth/AuthModal";
-import { useParams, useLocation } from "react-router-dom";
-import { useRestaurantData } from "@/hooks/useRestaurantData";
+import { useParams } from "react-router-dom";
 
 const ActionButtons = () => {
   const [isSaving, setIsSaving] = useState(false);
@@ -13,30 +12,14 @@ const ActionButtons = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [session, setSession] = useState(null);
   const { id: placeId } = useParams();
-  const location = useLocation();
-  const { data: restaurant } = useRestaurantData(placeId);
 
   useEffect(() => {
-    // Store the current URL in localStorage when showing auth modal
-    if (showAuthModal) {
-      localStorage.setItem('redirectAfterAuth', location.pathname);
-      localStorage.setItem('pendingSave', placeId);
-    }
-
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log("Initial session:", session);
       setSession(session);
       if (session) {
         checkIfSaved(session.user.id);
-        
-        // Check if there's a pending save
-        const pendingSave = localStorage.getItem('pendingSave');
-        if (pendingSave === placeId) {
-          console.log("Found pending save for:", placeId);
-          handleSave(true);
-          localStorage.removeItem('pendingSave');
-        }
       }
     });
 
@@ -49,11 +32,14 @@ const ActionButtons = () => {
       if (session) {
         setShowAuthModal(false);
         checkIfSaved(session.user.id);
+        toast("Successfully signed in!", {
+          description: `Welcome ${session.user.email}`,
+        });
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [placeId, location.pathname]);
+  }, [placeId]);
 
   const checkIfSaved = async (userId: string) => {
     console.log("Checking if restaurant is saved...");
@@ -72,8 +58,8 @@ const ActionButtons = () => {
     console.log("Restaurant saved status:", data.length > 0);
   };
 
-  const handleSave = async (force = false) => {
-    if (!session && !force) {
+  const handleSave = async () => {
+    if (!session) {
       console.log("No session, showing auth modal");
       setShowAuthModal(true);
       return;
@@ -81,9 +67,9 @@ const ActionButtons = () => {
 
     try {
       setIsSaving(true);
-      console.log("Saving restaurant...", restaurant);
+      console.log("Saving restaurant...");
 
-      if (isSaved && !force) {
+      if (isSaved) {
         // Remove from saved
         const { error } = await supabase
           .from('saved_restaurants')
@@ -98,16 +84,14 @@ const ActionButtons = () => {
           description: "Restaurant removed from your saved list!",
         });
       } else {
-        // Add to saved with full restaurant details
+        // Add to saved
         const { error } = await supabase
           .from('saved_restaurants')
           .insert({
             user_id: session.user.id,
             place_id: placeId,
-            name: restaurant?.name,
-            image_url: restaurant?.photos?.[0],
-            cuisine: restaurant?.types?.[0],
-            rating: restaurant?.rating,
+            name: document.title, // This will get the restaurant name from the page title
+            image_url: document.querySelector('img')?.src, // Get the first image from the page
           });
 
         if (error) throw error;
@@ -141,7 +125,7 @@ const ActionButtons = () => {
           size="lg"
           className={`bg-primary text-white hover:bg-primary/90 transition-all duration-300 w-full sm:w-auto shadow-lg
             ${isSaving ? 'scale-105 bg-green-500' : ''}`}
-          onClick={() => handleSave()}
+          onClick={handleSave}
           disabled={isSaving}
         >
           {isSaving ? (

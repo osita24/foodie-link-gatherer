@@ -55,7 +55,8 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
         return await getPlaceDetails(extractedPlaceId);
       }
     } catch (error) {
-      console.log('⚠️ Could not extract place ID from URL, trying text search');
+      console.error('❌ Error parsing URL:', error);
+      throw new Error('Invalid Google Maps URL format');
     }
 
     // Extract search text and try text search
