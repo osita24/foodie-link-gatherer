@@ -10,8 +10,25 @@ import { useSession } from "@supabase/auth-helpers-react";
 const Hero = () => {
   const [restaurantUrl, setRestaurantUrl] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [userName, setUserName] = useState("");
   const session = useSession();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', session.user.id)
+          .single();
+        
+        setUserName(profile?.full_name || session.user.email?.split('@')[0] || '');
+      }
+    };
+
+    fetchUserProfile();
+  }, [session]);
 
   const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,7 +104,7 @@ const Hero = () => {
             <div className="space-y-4">
               {session?.user ? (
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-secondary font-serif animate-fade-up">
-                  {getGreeting()}, {session.user.email?.split('@')[0]}! 👋
+                  {getGreeting()}, {userName}! 👋
                 </h1>
               ) : (
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-secondary font-serif animate-fade-up">
@@ -100,7 +117,6 @@ const Hero = () => {
             </div>
           </div>
 
-          {/* Search form with enhanced styling */}
           <div className="w-full max-w-xl mx-auto space-y-4 animate-fade-up [animation-delay:400ms]">
             <form onSubmit={handleImport} className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1 group">
