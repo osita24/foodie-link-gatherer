@@ -5,29 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Search, Sparkles, Utensils } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useSession } from "@supabase/auth-helpers-react";
 
 const Hero = () => {
   const [restaurantUrl, setRestaurantUrl] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [session, setSession] = useState<any>(null);
+  const session = useSession();
   const navigate = useNavigate();
-
-  // Get and monitor auth session
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("🔍 Initial session check:", session?.user?.email);
-      setSession(session);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log("👤 Auth state changed:", session?.user?.email);
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,7 +85,7 @@ const Hero = () => {
             </div>
             
             <div className="space-y-4">
-              {session ? (
+              {session?.user ? (
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-secondary font-serif animate-fade-up">
                   {getGreeting()}, {session.user.email?.split('@')[0]}! 👋
                 </h1>
@@ -111,7 +95,7 @@ const Hero = () => {
                 </h1>
               )}
               <p className="text-base sm:text-lg text-muted-foreground/80 animate-fade-up [animation-delay:200ms] max-w-lg mx-auto">
-                {session ? "Ready to discover something new?" : "Discover, save, and explore restaurants with ease using Google Maps links"}
+                {session?.user ? "Ready to discover something new?" : "Discover, save, and explore restaurants with ease using Google Maps links"}
               </p>
             </div>
           </div>
