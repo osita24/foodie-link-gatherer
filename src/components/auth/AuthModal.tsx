@@ -6,11 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
 interface AuthModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
+const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const navigate = useNavigate();
   const [view, setView] = useState<"sign_in" | "sign_up">("sign_in");
 
@@ -24,7 +24,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
         .eq('user_id', session?.user.id)
         .maybeSingle();
 
-      onClose();
+      onOpenChange(false);
       
       // If no preferences exist, redirect to onboarding
       if (!preferences) {
@@ -34,7 +34,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
   });
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <Auth
           supabaseClient={supabase}
