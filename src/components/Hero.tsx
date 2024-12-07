@@ -10,20 +10,40 @@ const Hero = () => {
   const [restaurantUrl, setRestaurantUrl] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [session, setSession] = useState<any>(null);
+  const [userName, setUserName] = useState<string>("");
   const navigate = useNavigate();
 
-  // Get and monitor auth session
+  // Get and monitor auth session and user metadata
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const getUserData = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       console.log("🔍 Initial session check:", session?.user?.email);
       setSession(session);
-    });
+      
+      if (session?.user) {
+        // Get the user's full name from metadata
+        const fullName = session.user.user_metadata.full_name;
+        console.log("👤 User's full name:", fullName);
+        setUserName(fullName || session.user.email?.split('@')[0] || '');
+      }
+    };
+
+    getUserData();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log("👤 Auth state changed:", session?.user?.email);
       setSession(session);
+      
+      if (session?.user) {
+        // Update the user's name when auth state changes
+        const fullName = session.user.user_metadata.full_name;
+        console.log("👤 Updated user's full name:", fullName);
+        setUserName(fullName || session.user.email?.split('@')[0] || '');
+      } else {
+        setUserName('');
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -103,7 +123,7 @@ const Hero = () => {
             <div className="space-y-4">
               {session ? (
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-secondary font-serif animate-fade-up">
-                  {getGreeting()}, {session.user.email?.split('@')[0]}! 👋
+                  {getGreeting()}, {userName}! 👋
                 </h1>
               ) : (
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-secondary font-serif animate-fade-up">
