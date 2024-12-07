@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { navigationItems } from "./NavigationItems";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 interface DesktopNavProps {
   session: any;
@@ -25,9 +25,11 @@ const DesktopNav = ({ session, onAuthClick, onSignOutClick, isActive }: DesktopN
             }`}
             onClick={() => {
               if (!session && item.requiresAuth) {
+                console.log("🔒 Protected route accessed without session, showing auth modal");
                 onAuthClick();
                 return;
               }
+              console.log(`🔄 Navigating to ${item.path}`);
               navigate(item.path);
             }}
           >

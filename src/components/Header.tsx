@@ -28,6 +28,10 @@ const Header = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log("🔐 Current session state:", session?.user?.id);
+  }, [session]);
+
+  useEffect(() => {
     let mounted = true;
 
     const checkUserPreferences = async () => {

@@ -27,10 +27,12 @@ const MobileNav = ({ session, onAuthClick, onSignOutClick, isActive, onClose }: 
               }`}
               onClick={() => {
                 if (!session && item.requiresAuth) {
+                  console.log("🔒 Protected route accessed without session, showing auth modal");
                   onAuthClick();
                   onClose();
                   return;
                 }
+                console.log(`🔄 Navigating to ${item.path}`);
                 navigate(item.path);
                 onClose();
               }}
