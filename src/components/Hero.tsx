@@ -21,12 +21,17 @@ const Hero = () => {
     console.log("🔍 Starting import for URL:", restaurantUrl);
     
     try {
-      // Call the edge function without requiring authentication
+      // Validate URL format
+      if (!restaurantUrl.includes("google.com/maps") && !restaurantUrl.includes("goo.gl")) {
+        throw new Error("Please enter a valid Google Maps URL");
+      }
+
+      // Call the edge function
       const { data, error } = await supabase.functions.invoke('google-maps-proxy', {
         body: { url: restaurantUrl }
       });
 
-      console.log("📡 Response received:", data);
+      console.log("📡 Response from edge function:", data);
 
       if (error) {
         console.error("❌ Edge function error:", error);
@@ -35,23 +40,22 @@ const Hero = () => {
 
       if (!data?.result?.result?.place_id) {
         console.error("❌ No place_id in response:", data);
-        throw new Error("No restaurant data found");
+        throw new Error("Could not find restaurant information. Please check the URL and try again.");
       }
 
       const placeId = data.result.result.place_id;
-      console.log("✅ Found place ID:", placeId);
+      console.log("✅ Successfully found place ID:", placeId);
       
-      // Show success message before navigation
       toast.success("Restaurant found! Loading details...");
       
-      // Add a small delay before navigation to ensure the toast is visible
+      // Navigate after a short delay to ensure the toast is visible
       setTimeout(() => {
         navigate(`/restaurant/${placeId}`);
       }, 500);
       
     } catch (error) {
       console.error("❌ Import error:", error);
-      toast.error(error.message || "Failed to find restaurant. Please make sure you're using a valid Google Maps link.");
+      toast.error(error.message || "Failed to process restaurant URL. Please try again with a valid Google Maps link.");
     } finally {
       setIsProcessing(false);
     }
