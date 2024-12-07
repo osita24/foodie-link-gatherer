@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import PreferenceCard from "@/components/profile/preferences/PreferenceCard";
-import { Shell, Nut, Egg, Leaf, Ban, Fish, Flame } from "lucide-react";
+import { Shell, Nut, Egg, Leaf, Ban, Fish, Flame, Check } from "lucide-react";
 
 interface AvoidanceStepProps {
   selected: string[];
@@ -9,6 +9,7 @@ interface AvoidanceStepProps {
 
 const AvoidanceStep = ({ selected, onChange }: AvoidanceStepProps) => {
   const avoidanceItems = [
+    { name: "No Restrictions", icon: <Check className="w-5 h-5" /> },
     { name: "Shellfish", icon: <Shell className="w-5 h-5" /> },
     { name: "Peanuts", icon: <Nut className="w-5 h-5" /> },
     { name: "Tree Nuts", icon: <Nut className="w-5 h-5" /> },
@@ -21,9 +22,14 @@ const AvoidanceStep = ({ selected, onChange }: AvoidanceStepProps) => {
   ];
 
   const toggleItem = (item: string) => {
+    if (item === "No Restrictions") {
+      onChange(["No Restrictions"]);
+      return;
+    }
+
     const newSelected = selected.includes(item)
       ? selected.filter(i => i !== item)
-      : [...selected, item];
+      : [...selected.filter(s => s !== "No Restrictions"), item];
     onChange(newSelected);
   };
 

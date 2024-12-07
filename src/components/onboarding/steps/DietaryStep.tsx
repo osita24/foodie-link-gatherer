@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import PreferenceCard from "@/components/profile/preferences/PreferenceCard";
-import { Leaf, Ban, Scale, Wheat, Apple } from "lucide-react";
+import { Leaf, Ban, Scale, Wheat, Apple, Milk, Check } from "lucide-react";
 
 interface DietaryStepProps {
   selected: string[];
@@ -9,21 +9,27 @@ interface DietaryStepProps {
 
 const DietaryStep = ({ selected, onChange }: DietaryStepProps) => {
   const dietaryOptions = [
+    { name: "No Restrictions", icon: <Check className="w-5 h-5" /> },
     { name: "Vegetarian", icon: <Leaf className="w-5 h-5" /> },
     { name: "Vegan", icon: <Apple className="w-5 h-5" /> },
     { name: "Gluten-Free", icon: <Wheat className="w-5 h-5" /> },
     { name: "Halal", icon: <Ban className="w-5 h-5" /> },
     { name: "Kosher", icon: <Ban className="w-5 h-5" /> },
-    { name: "Dairy-Free", icon: <Ban className="w-5 h-5" /> },
+    { name: "Dairy-Free", icon: <Milk className="w-5 h-5" /> },
     { name: "Nut-Free", icon: <Ban className="w-5 h-5" /> },
     { name: "Low-Carb", icon: <Scale className="w-5 h-5" /> },
     { name: "Keto-Friendly", icon: <Scale className="w-5 h-5" /> }
   ];
 
   const toggleOption = (option: string) => {
+    if (option === "No Restrictions") {
+      onChange(["No Restrictions"]);
+      return;
+    }
+
     const newSelected = selected.includes(option)
       ? selected.filter(s => s !== option)
-      : [...selected, option];
+      : [...selected.filter(s => s !== "No Restrictions"), option];
     onChange(newSelected);
   };
 
