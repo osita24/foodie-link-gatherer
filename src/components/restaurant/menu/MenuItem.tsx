@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Star, ChevronDown, ChevronUp, Lock } from "lucide-react";
+import { Star, ChevronDown, ChevronUp, Lock, DollarSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -22,11 +22,10 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
 
   // Clean up the name by removing markdown and numbers
   const cleanName = item.name
-    .replace(/^\d+\.\s*/, '') // Remove leading numbers
-    .replace(/\*\*/g, '') // Remove markdown
-    .split(' - ')[0]; // Get the name part
+    .replace(/^\d+\.\s*/, '')
+    .replace(/\*\*/g, '')
+    .split(' - ')[0];
 
-  // Get the description part after the dash, if it exists
   const description = item.name.includes(' - ') 
     ? item.name.split(' - ')[1].replace(/\*\*/g, '').trim()
     : item.description;
@@ -34,24 +33,29 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
   const isLongDescription = description && description.length > 100;
   const displayDescription = isExpanded ? description : description?.substring(0, 100);
 
+  const getPriceDisplay = (price?: number) => {
+    if (!price) return null;
+    return (
+      <div className="inline-flex items-center gap-0.5 px-2.5 py-1 bg-accent/20 rounded-full">
+        <DollarSign className="w-3 h-3 text-primary/70" strokeWidth={2.5} />
+        <span className="text-sm font-medium text-primary/90">
+          {price.toFixed(2)}
+        </span>
+      </div>
+    );
+  };
+
   return (
-    <div className="group relative p-3 rounded-lg hover:bg-accent/30 transition-all duration-300">
+    <div className="group relative p-4 rounded-lg hover:bg-accent/20 transition-all duration-300">
       <div className="flex items-start justify-between gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
+        <div className="flex-1 space-y-2">
+          <div className="flex items-center justify-between gap-3">
             <h3 className="text-base font-medium text-secondary group-hover:text-primary transition-colors">
               {cleanName}
             </h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-xs gap-1 hover:bg-primary/10"
-              onClick={() => setShowAuthModal(true)}
-            >
-              <Lock className="w-3 h-3" />
-              View Match
-            </Button>
+            {getPriceDisplay(item.price)}
           </div>
+          
           {description && (
             <div className="mt-1">
               <p className="text-sm text-muted-foreground leading-relaxed">
@@ -78,14 +82,28 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
               )}
             </div>
           )}
-          {item.category && (
-            <Badge 
-              variant="outline" 
-              className="mt-1.5 text-xs bg-transparent border-primary/20 text-primary/70"
+          
+          <div className="flex items-center gap-3 flex-wrap">
+            {item.category && (
+              <Badge 
+                variant="outline" 
+                className="text-xs bg-transparent border-primary/20 text-primary/70"
+              >
+                {item.category}
+              </Badge>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2.5 text-xs gap-1.5 hover:bg-primary/10 group/match relative overflow-hidden"
+              onClick={() => setShowAuthModal(true)}
             >
-              {item.category}
-            </Badge>
-          )}
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/10 opacity-0 group-hover/match:opacity-100 transition-opacity" />
+              <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500/20" strokeWidth={2.5} />
+              <span className="relative z-10 font-medium">View Match Score</span>
+              <Lock className="w-3 h-3 text-primary/70" strokeWidth={2.5} />
+            </Button>
+          </div>
         </div>
       </div>
 
