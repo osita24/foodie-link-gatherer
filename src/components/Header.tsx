@@ -26,11 +26,6 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Add isActive function to check current route
-  const isActive = (path: string) => {
-    return location.pathname === path;
-  };
-
   useEffect(() => {
     const getInitialSession = async () => {
       console.log("🔍 Getting initial session");
@@ -134,7 +129,7 @@ const Header = () => {
               session={session}
               onAuthClick={() => setShowAuthModal(true)}
               onSignOutClick={() => setShowSignOutDialog(true)}
-              isActive={isActive}
+              isActive={(path: string) => location.pathname === path}
             />
 
             <Button
@@ -159,7 +154,7 @@ const Header = () => {
               setShowSignOutDialog(true);
               setIsMenuOpen(false);
             }}
-            isActive={isActive}
+            isActive={(path: string) => location.pathname === path}
             onClose={() => setIsMenuOpen(false)}
           />
         )}
