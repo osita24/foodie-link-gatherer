@@ -31,11 +31,20 @@ const Header = () => {
 
   const navigationItems = [
     { icon: Home, label: 'Home', path: '/' },
-    { icon: BookmarkPlus, label: 'Saved', path: '/saved' },
-    { icon: User, label: 'Profile', path: '/profile' },
+    { icon: BookmarkPlus, label: 'Saved', path: '/saved', requiresAuth: true },
+    { icon: User, label: 'Profile', path: '/profile', requiresAuth: true },
   ];
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   return (
     <>
@@ -63,7 +72,7 @@ const Header = () => {
                       isActive(item.path) ? 'text-primary' : 'text-gray-600'
                     }`}
                     onClick={() => {
-                      if (!session && (item.path === '/profile' || item.path === '/saved')) {
+                      if (!session && item.requiresAuth) {
                         setShowAuthModal(true);
                       } else {
                         navigate(item.path);
@@ -76,19 +85,18 @@ const Header = () => {
                 );
               })}
               
-              {!session && (
+              {!session ? (
                 <Button 
-                  className="bg-primary hover:bg-primary/90 text-white"
+                  className="bg-primary hover:bg-primary/90 text-white font-medium px-6"
                   onClick={() => setShowAuthModal(true)}
                 >
-                  Sign in
+                  Get Started
                 </Button>
-              )}
-              
-              {session && (
+              ) : (
                 <Button 
                   variant="outline"
-                  onClick={() => supabase.auth.signOut()}
+                  onClick={handleSignOut}
+                  className="border-gray-200 hover:bg-gray-50"
                 >
                   Sign out
                 </Button>
@@ -121,7 +129,7 @@ const Header = () => {
                       isActive(item.path) ? 'text-primary' : 'text-gray-600'
                     }`}
                     onClick={() => {
-                      if (!session && (item.path === '/profile' || item.path === '/saved')) {
+                      if (!session && item.requiresAuth) {
                         setShowAuthModal(true);
                       } else {
                         navigate(item.path);
@@ -135,24 +143,22 @@ const Header = () => {
                 );
               })}
               
-              {!session && (
+              {!session ? (
                 <Button 
-                  className="w-full bg-primary hover:bg-primary/90 text-white"
+                  className="w-full bg-primary hover:bg-primary/90 text-white font-medium"
                   onClick={() => {
                     setShowAuthModal(true);
                     setIsMenuOpen(false);
                   }}
                 >
-                  Sign in
+                  Get Started
                 </Button>
-              )}
-              
-              {session && (
+              ) : (
                 <Button 
                   variant="outline"
-                  className="w-full"
+                  className="w-full border-gray-200 hover:bg-gray-50"
                   onClick={() => {
-                    supabase.auth.signOut();
+                    handleSignOut();
                     setIsMenuOpen(false);
                   }}
                 >
