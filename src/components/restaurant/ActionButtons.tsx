@@ -32,8 +32,9 @@ const ActionButtons = () => {
       if (session) {
         setShowAuthModal(false);
         checkIfSaved(session.user.id);
-        toast("Welcome!", {
-          description: `Signed in as ${session.user.email}`,
+        toast({
+          title: "Successfully signed in!",
+          description: `Welcome ${session.user.email}`,
         });
       }
     });
@@ -43,23 +44,20 @@ const ActionButtons = () => {
 
   const checkIfSaved = async (userId: string) => {
     console.log("Checking if restaurant is saved...");
-    try {
-      const { data, error } = await supabase
-        .from('saved_restaurants')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('place_id', placeId);
+    const { data, error } = await supabase
+      .from('saved_restaurants')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('place_id', placeId)
+      .single();
 
-      if (error) {
-        console.error("Error checking saved status:", error);
-        return;
-      }
-
-      setIsSaved(data && data.length > 0);
-      console.log("Restaurant saved status:", data && data.length > 0);
-    } catch (error) {
+    if (error) {
       console.error("Error checking saved status:", error);
+      return;
     }
+
+    setIsSaved(!!data);
+    console.log("Restaurant saved status:", !!data);
   };
 
   const handleSave = async () => {
@@ -111,7 +109,8 @@ const ActionButtons = () => {
 
   const handleShare = () => {
     console.log("Share clicked");
-    toast("Share feature", {
+    toast({
+      title: "Share feature",
       description: "Coming soon!",
     });
   };
