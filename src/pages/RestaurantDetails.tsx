@@ -179,7 +179,6 @@ const RestaurantDetails = () => {
                 menu={restaurant?.menu} 
                 photos={restaurant?.photos}
                 reviews={restaurant?.googleReviews}
-                restaurantId={restaurant.id}
               />
               <OrderSection />
             </div>
@@ -190,7 +189,6 @@ const RestaurantDetails = () => {
                 menu={restaurant?.menu} 
                 photos={restaurant?.photos}
                 reviews={restaurant?.googleReviews}
-                restaurantId={restaurant.id}
               />
               <PopularItems />
               <AdditionalInfo restaurant={restaurant} />
