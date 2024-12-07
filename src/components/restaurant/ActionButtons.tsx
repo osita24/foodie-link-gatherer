@@ -1,20 +1,26 @@
 import { useState, useEffect } from "react";
-import { BookmarkPlus, Share2, Check } from "lucide-react";
+import { BookmarkPlus, Share2, Check, BookmarkCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "../auth/AuthModal";
+import { useParams } from "react-router-dom";
 
 const ActionButtons = () => {
   const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [session, setSession] = useState(null);
+  const { id: placeId } = useParams();
 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log("Initial session:", session);
       setSession(session);
+      if (session) {
+        checkIfSaved(session.user.id);
+      }
     });
 
     // Listen for auth changes
@@ -25,6 +31,7 @@ const ActionButtons = () => {
       setSession(session);
       if (session) {
         setShowAuthModal(false);
+        checkIfSaved(session.user.id);
         toast({
           title: "Successfully signed in!",
           description: `Welcome ${session.user.email}`,
@@ -33,7 +40,25 @@ const ActionButtons = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [placeId]);
+
+  const checkIfSaved = async (userId: string) => {
+    console.log("Checking if restaurant is saved...");
+    const { data, error } = await supabase
+      .from('saved_restaurants')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('place_id', placeId)
+      .single();
+
+    if (error) {
+      console.error("Error checking saved status:", error);
+      return;
+    }
+
+    setIsSaved(!!data);
+    console.log("Restaurant saved status:", !!data);
+  };
 
   const handleSave = async () => {
     if (!session) {
@@ -42,23 +67,48 @@ const ActionButtons = () => {
       return;
     }
 
-    setIsSaving(true);
-    // Here you would implement the save functionality
-    console.log("Saving with user:", session.user);
-    
-    toast({
-      title: "Restaurant saved!",
-      description: "You can find it in your saved restaurants.",
-    });
-    
-    setTimeout(() => {
+    try {
+      setIsSaving(true);
+      console.log("Saving restaurant...");
+
+      if (isSaved) {
+        // Remove from saved
+        const { error } = await supabase
+          .from('saved_restaurants')
+          .delete()
+          .eq('user_id', session.user.id)
+          .eq('place_id', placeId);
+
+        if (error) throw error;
+
+        setIsSaved(false);
+        toast.success("Restaurant removed from your saved list!");
+      } else {
+        // Add to saved
+        const { error } = await supabase
+          .from('saved_restaurants')
+          .insert({
+            user_id: session.user.id,
+            place_id: placeId,
+            name: document.title, // This will get the restaurant name from the page title
+            image_url: document.querySelector('img')?.src, // Get the first image from the page
+          });
+
+        if (error) throw error;
+
+        setIsSaved(true);
+        toast.success("Restaurant saved! Find it in your saved tab.");
+      }
+    } catch (error) {
+      console.error("Error saving restaurant:", error);
+      toast.error("Failed to save restaurant. Please try again.");
+    } finally {
       setIsSaving(false);
-    }, 1000);
+    }
   };
 
   const handleShare = () => {
     console.log("Share clicked");
-    // Implement share functionality
     toast({
       title: "Share feature",
       description: "Coming soon!",
@@ -77,10 +127,12 @@ const ActionButtons = () => {
         >
           {isSaving ? (
             <Check className="mr-2 h-5 w-5 animate-[scale-in_0.2s_ease-out]" />
+          ) : isSaved ? (
+            <BookmarkCheck className="mr-2 h-5 w-5" />
           ) : (
             <BookmarkPlus className="mr-2 h-5 w-5" />
           )}
-          {isSaving ? 'Saved!' : 'Save'}
+          {isSaving ? 'Saving...' : isSaved ? 'Saved' : 'Save'}
         </Button>
         <Button
           variant="outline"
