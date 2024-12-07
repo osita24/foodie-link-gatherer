@@ -72,11 +72,18 @@ const Header = () => {
       
       // Add a small delay before showing the success message
       setTimeout(() => {
-        toast.success('Successfully signed out');
+        toast({
+          title: "Success",
+          description: "Successfully signed out",
+        });
       }, 100);
     } catch (error) {
       console.error('Error signing out:', error);
-      toast.error('Failed to sign out. Please try again.');
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
