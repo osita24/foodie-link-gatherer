@@ -80,11 +80,11 @@ const Hero = () => {
             </div>
             
             <div className="space-y-3">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight bg-gradient-to-r from-secondary via-primary to-secondary bg-clip-text text-transparent animate-fade-up">
-                Find Your Next Favorite Spot
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-secondary animate-fade-up">
+                Import Your Restaurant
               </h1>
               <p className="text-base md:text-lg text-muted-foreground/80 animate-fade-up [animation-delay:200ms] max-w-lg mx-auto">
-                Share a Google Maps link to discover your perfect dining match
+                Simply paste a Google Maps link to get started
               </p>
             </div>
           </div>
@@ -105,7 +105,7 @@ const Hero = () => {
               <Button 
                 type="submit" 
                 disabled={isProcessing || !restaurantUrl}
-                className="h-12 px-6 text-base shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl whitespace-nowrap bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+                className="h-12 px-6 text-base shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl whitespace-nowrap bg-primary hover:bg-primary/90 text-white"
               >
                 {isProcessing ? (
                   <>
@@ -113,7 +113,7 @@ const Hero = () => {
                     Processing
                   </>
                 ) : (
-                  "Find Match"
+                  "Import"
                 )}
               </Button>
             </form>
