@@ -9,7 +9,6 @@ import ReviewsSection from "@/components/restaurant/ReviewsSection";
 import ActionButtons from "@/components/restaurant/ActionButtons";
 import OrderSection from "@/components/restaurant/OrderSection";
 import AdditionalInfo from "@/components/restaurant/AdditionalInfo";
-import MatchScorePrompt from "@/components/restaurant/MatchScorePrompt";
 import { RestaurantDetails as RestaurantDetailsType } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -143,7 +142,6 @@ const RestaurantDetails = () => {
             </div>
             
             <div className="block lg:hidden space-y-6">
-              <MatchScorePrompt />
               <MenuSection 
                 menu={restaurant?.menu} 
                 photos={restaurant?.photos}
@@ -173,7 +171,6 @@ const RestaurantDetails = () => {
           </div>
 
           <div className="hidden lg:block space-y-6 lg:sticky lg:top-24 self-start">
-            <MatchScorePrompt />
             <OrderSection />
           </div>
         </div>
