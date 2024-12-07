@@ -11,7 +11,7 @@ interface MenuItemProps {
     id: string;
     name: string;
     description?: string;
-    price?: number;
+    price?: number | string;
     category?: string;
   };
   recommendationScore: number;
@@ -44,13 +44,24 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
   const isLongDescription = description && description.length > 100;
   const displayDescription = isExpanded ? description : description?.substring(0, 100);
 
-  const getPriceDisplay = (price?: number) => {
+  const getPriceDisplay = (price?: number | string) => {
     if (!price) return null;
+    
+    // Convert string price to number if it's a string with a dollar sign
+    let numericPrice: number;
+    if (typeof price === 'string') {
+      // Remove dollar sign and convert to number
+      numericPrice = parseFloat(price.replace(/[$,]/g, ''));
+      if (isNaN(numericPrice)) return null;
+    } else {
+      numericPrice = price;
+    }
+
     return (
       <div className="inline-flex items-center gap-0.5 px-3 py-1.5 bg-accent/20 rounded-full">
         <DollarSign className="w-3.5 h-3.5 text-primary/80" strokeWidth={2} />
         <span className="text-sm font-semibold text-primary">
-          {price.toFixed(2)}
+          {numericPrice.toFixed(2)}
         </span>
       </div>
     );
