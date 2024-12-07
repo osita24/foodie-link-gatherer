@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { List, Loader2 } from "lucide-react";
+import { List, Loader2, Sparkles } from "lucide-react";
 import { MenuCategory } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 interface MenuSectionProps {
   menu?: MenuCategory[];
@@ -108,9 +109,21 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
         <div className="relative">
           {/* Decorative header */}
           <div className="bg-primary/10 p-8 text-center border-b border-primary/20">
-            <h2 className="text-2xl md:text-3xl font-serif text-secondary">
-              Our Menu
-            </h2>
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <h2 className="text-2xl md:text-3xl font-serif text-secondary">
+                Our Menu
+              </h2>
+              <Badge 
+                variant="secondary" 
+                className="text-xs bg-accent/50 text-secondary/70 hover:bg-accent/70"
+              >
+                <Sparkles className="w-3 h-3 mr-1 inline-block" />
+                AI Enhanced Beta
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Menu information is automatically processed and continuously improving
+            </p>
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/20 via-primary to-primary/20" />
           </div>
           
@@ -124,9 +137,19 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
-                      <h3 className="text-lg md:text-xl font-medium text-secondary group-hover:text-primary transition-colors">
-                        {item.name}
-                      </h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg md:text-xl font-medium text-secondary group-hover:text-primary transition-colors">
+                          {item.name}
+                        </h3>
+                        {item.category && (
+                          <Badge 
+                            variant="outline" 
+                            className="text-xs bg-transparent border-primary/20 text-primary/70"
+                          >
+                            {item.category}
+                          </Badge>
+                        )}
+                      </div>
                       {item.description && (
                         <p className="mt-1 text-sm text-muted-foreground">
                           {item.description}
