@@ -55,22 +55,17 @@ const Hero = () => {
         <p className="mt-4 text-lg text-muted-foreground">
           Share your favorite restaurant's URL and let us help you discover new dishes that match your taste.
         </p>
-        <form onSubmit={handleSubmit} className="mt-6 max-w-lg mx-auto">
-          <div className="flex flex-col gap-4">
-            <Input
-              type="text"
-              placeholder="Enter restaurant URL"
-              value={restaurantUrl}
-              onChange={(e) => setRestaurantUrl(e.target.value)}
-              required
-            />
-            <Button type="submit" className="w-full" disabled={isProcessing}>
-              {isProcessing ? "Processing..." : "Submit"}
-            </Button>
-          </div>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Tip: You can find the restaurant URL by searching for it on Google Maps and copying the link from your browser's address bar.
-          </p>
+        <form onSubmit={handleSubmit} className="mt-6">
+          <Input
+            type="text"
+            placeholder="Enter restaurant URL"
+            value={restaurantUrl}
+            onChange={(e) => setRestaurantUrl(e.target.value)}
+            required
+          />
+          <Button type="submit" className="mt-4" disabled={isProcessing}>
+            {isProcessing ? "Processing..." : "Submit"}
+          </Button>
         </form>
       </div>
     </section>
