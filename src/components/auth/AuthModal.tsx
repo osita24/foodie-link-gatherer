@@ -81,6 +81,9 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
             <h2 className="text-xl font-semibold text-secondary">
               Welcome to Cilantro
             </h2>
+            <p className="text-sm text-muted-foreground mt-2">
+              Sign in or create an account to get personalized restaurant recommendations
+            </p>
           </div>
 
           <Auth
@@ -107,7 +110,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 button: 'w-full bg-primary text-white hover:bg-primary/90 transition-colors rounded-lg py-2.5',
                 input: 'rounded-lg border-gray-200 focus:ring-primary',
                 label: 'text-secondary font-medium',
-                message: 'text-muted-foreground',
+                message: 'text-red-500 text-sm',
                 anchor: 'text-primary hover:text-primary/80 transition-colors',
               }
             }}
@@ -116,20 +119,20 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
             localization={{
               variables: {
                 sign_in: {
-                  email_label: 'Email',
+                  email_label: 'Email address',
                   password_label: 'Password',
-                  button_label: 'Sign in',
-                  link_text: "Don't have an account? Sign up",
-                  email_input_placeholder: 'Your email address',
-                  password_input_placeholder: 'Your password',
+                  button_label: 'Sign in to your account',
+                  link_text: "Don't have an account? Create one",
+                  email_input_placeholder: 'Enter your email',
+                  password_input_placeholder: 'Enter your password',
                 },
                 sign_up: {
-                  email_label: 'Email',
-                  password_label: 'Password',
-                  button_label: 'Create account',
+                  email_label: 'Email address',
+                  password_label: 'Create password',
+                  button_label: 'Create your account',
                   link_text: "Already have an account? Sign in",
-                  email_input_placeholder: 'Your email address',
-                  password_input_placeholder: 'Choose a password',
+                  email_input_placeholder: 'Enter your email',
+                  password_input_placeholder: 'Create a secure password',
                 },
               },
             }}
