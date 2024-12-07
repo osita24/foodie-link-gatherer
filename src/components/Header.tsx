@@ -89,15 +89,15 @@ const Header = () => {
 
   return (
     <>
-      <header className="fixed w-full top-0 bg-white/80 backdrop-blur-sm z-50 border-b border-gray-100">
+      <header className="fixed w-full top-0 bg-white/80 backdrop-blur-sm z-50 border-b border-accent/50">
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
             <div className="flex items-center">
               <span 
-                className="text-2xl font-bold text-primary cursor-pointer"
+                className="text-2xl font-bold text-primary cursor-pointer font-serif"
                 onClick={() => navigate('/')}
               >
-                FindDine
+                Cilantro
               </span>
             </div>
             
@@ -111,7 +111,7 @@ const Header = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden"
+              className="md:hidden text-primary hover:text-primary/80"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               <Menu className="h-6 w-6" />

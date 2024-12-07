@@ -58,7 +58,7 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative min-h-[calc(100vh-5rem)] flex items-center justify-center bg-white px-4 py-12 md:py-20 overflow-hidden">
+    <section className="relative min-h-[calc(100vh-5rem)] flex items-center justify-center bg-background px-4 py-12 md:py-20 overflow-hidden">
       <div className="container relative z-10 max-w-4xl mx-auto">
         <div className="flex flex-col items-center space-y-8 md:space-y-10 text-center">
           {/* Header section with icon */}
@@ -73,7 +73,7 @@ const Hero = () => {
             </div>
             
             <div className="space-y-4">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-secondary animate-fade-up">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-secondary font-serif animate-fade-up">
                 Find Your Next Favorite Restaurant
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground/80 animate-fade-up [animation-delay:200ms] max-w-lg mx-auto">
