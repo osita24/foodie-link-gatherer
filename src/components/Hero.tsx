@@ -16,23 +16,26 @@ const Hero = () => {
     if (!restaurantUrl) return;
 
     setIsProcessing(true);
-    console.log("🔍 Starting import for URL:", restaurantUrl);
+    console.log("🔍 Starting import process for URL:", restaurantUrl);
     
     try {
       if (!restaurantUrl.includes("google.com/maps") && !restaurantUrl.includes("goo.gl")) {
+        console.error("❌ Invalid URL format:", restaurantUrl);
         throw new Error("Please enter a valid Google Maps URL");
       }
 
-      console.log("📡 Calling edge function...");
+      console.log("📡 Invoking google-maps-proxy edge function...");
       const { data, error } = await supabase.functions.invoke('google-maps-proxy', {
-        body: { url: restaurantUrl }
+        body: { 
+          url: restaurantUrl.trim()
+        }
       });
 
-      console.log("📡 Response from edge function:", data);
+      console.log("📡 Edge function response:", { data, error });
 
       if (error) {
         console.error("❌ Edge function error:", error);
-        throw error;
+        throw new Error(error.message || "Failed to process restaurant URL");
       }
 
       if (!data?.result?.result?.place_id) {
@@ -49,7 +52,7 @@ const Hero = () => {
         navigate(`/restaurant/${placeId}`);
       }, 500);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ Import error:", error);
       toast.error(error.message || "Failed to process restaurant URL. Please try again with a valid Google Maps link.");
     } finally {
