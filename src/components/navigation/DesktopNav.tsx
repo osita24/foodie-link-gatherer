@@ -26,9 +26,9 @@ const DesktopNav = ({ session, onAuthClick, onSignOutClick, isActive }: DesktopN
             onClick={() => {
               if (!session && item.requiresAuth) {
                 onAuthClick();
-              } else {
-                navigate(item.path);
+                return;
               }
+              navigate(item.path);
             }}
           >
             <Icon className="h-4 w-4" />

@@ -28,10 +28,11 @@ const MobileNav = ({ session, onAuthClick, onSignOutClick, isActive, onClose }: 
               onClick={() => {
                 if (!session && item.requiresAuth) {
                   onAuthClick();
-                } else {
-                  navigate(item.path);
                   onClose();
+                  return;
                 }
+                navigate(item.path);
+                onClose();
               }}
             >
               <Icon className="h-4 w-4" />

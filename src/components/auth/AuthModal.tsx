@@ -36,12 +36,12 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-background">
-        <div className="space-y-6">
-          <div className="text-center space-y-2">
-            <div className="inline-block p-3 bg-primary/10 rounded-full mb-2">
+      <DialogContent className="sm:max-w-[400px] p-0 bg-background">
+        <div className="p-6 space-y-4">
+          <div className="text-center">
+            <div className="inline-block p-3 bg-primary/10 rounded-full mb-3">
               <svg 
-                className="w-8 h-8 text-primary"
+                className="w-6 h-6 text-primary"
                 fill="none" 
                 stroke="currentColor" 
                 viewBox="0 0 24 24"
@@ -54,39 +54,12 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-secondary">
-              Join FindDine Today
+            <h2 className="text-xl font-semibold text-secondary">
+              Welcome to FindDine
             </h2>
-            <p className="text-muted-foreground">
-              Get personalized restaurant recommendations tailored just for you
+            <p className="text-sm text-muted-foreground mt-1">
+              Find your next favorite restaurant
             </p>
-          </div>
-
-          <div className="grid gap-4 p-4 bg-accent/30 rounded-lg">
-            <div className="flex items-center gap-3 text-sm">
-              <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-primary/20 rounded-full">
-                <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <span className="text-secondary">Smart restaurant matches based on your taste</span>
-            </div>
-            <div className="flex items-center gap-3 text-sm">
-              <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-primary/20 rounded-full">
-                <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <span className="text-secondary">Save and organize your favorite spots</span>
-            </div>
-            <div className="flex items-center gap-3 text-sm">
-              <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-primary/20 rounded-full">
-                <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <span className="text-secondary">Personalized menu recommendations</span>
-            </div>
           </div>
 
           <Auth
