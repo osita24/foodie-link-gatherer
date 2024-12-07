@@ -7,7 +7,7 @@ import {
   calculateDietaryMatch, 
   calculateAtmosphereMatch, 
   calculatePriceMatch,
-  MatchResult 
+  MatchResult as CategoryMatchResult 
 } from './restaurant-match/matchCalculators';
 
 interface MatchCategory {
