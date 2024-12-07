@@ -67,45 +67,24 @@ const Hero = () => {
       <div className="absolute bottom-20 -right-12 w-72 h-72 bg-accent/30 rounded-full blur-3xl animate-pulse [animation-delay:1s]" />
       
       <div className="container relative z-10">
-        <div className="flex flex-col items-center space-y-8 md:space-y-10 text-center max-w-2xl mx-auto">
-          {/* Header section with icon */}
-          <div className="space-y-6">
-            <div className="relative inline-block">
-              <div className="absolute -top-8 -right-8 text-primary animate-bounce">
-                <Sparkles className="w-6 h-6" />
-              </div>
-              <div className="p-4 bg-primary/10 rounded-full">
-                <Utensils className="w-8 h-8 text-primary" />
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight bg-gradient-to-r from-secondary via-primary to-secondary bg-clip-text text-transparent animate-fade-up">
-                Find Your Next Favorite Spot
-              </h1>
-              <p className="text-base md:text-lg text-muted-foreground/80 animate-fade-up [animation-delay:200ms] max-w-lg mx-auto">
-                Share a Google Maps link to discover your perfect dining match
-              </p>
-            </div>
-          </div>
-
-          {/* Search form with enhanced styling */}
-          <div className="w-full max-w-xl mx-auto space-y-4 animate-fade-up [animation-delay:400ms]">
+        <div className="flex flex-col items-center max-w-3xl mx-auto">
+          {/* Search form with enhanced styling - moved up */}
+          <div className="w-full space-y-4 animate-fade-up mb-8 md:mb-12">
             <form onSubmit={handleImport} className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1 group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 h-5 w-5 transition-colors group-hover:text-primary" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60 h-6 w-6 transition-colors group-hover:text-primary" />
                 <Input
                   type="url"
                   placeholder="Paste restaurant link..."
                   value={restaurantUrl}
                   onChange={(e) => setRestaurantUrl(e.target.value)}
-                  className="h-12 pl-10 text-base shadow-lg transition-all duration-300 border-2 border-accent/50 focus:border-primary/50 hover:border-primary/30 focus:ring-2 focus:ring-primary/20 rounded-xl bg-background/80 backdrop-blur-sm"
+                  className="h-14 pl-12 text-lg shadow-xl transition-all duration-300 border-2 border-accent/50 focus:border-primary/50 hover:border-primary/30 focus:ring-2 focus:ring-primary/20 rounded-2xl bg-background/95 backdrop-blur-sm"
                 />
               </div>
               <Button 
                 type="submit" 
                 disabled={isProcessing || !restaurantUrl}
-                className="h-12 px-6 text-base shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl whitespace-nowrap bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+                className="h-14 px-8 text-base shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl whitespace-nowrap bg-gradient-to-r from-primary to-secondary hover:opacity-90 sm:w-auto w-full"
               >
                 {isProcessing ? (
                   <>
@@ -119,10 +98,31 @@ const Hero = () => {
             </form>
             
             {/* Enhanced tip box */}
-            <div className="text-sm text-muted-foreground/70 bg-accent/30 p-4 rounded-xl border border-accent/50 animate-fade-up [animation-delay:600ms] shadow-sm backdrop-blur-sm hover:bg-accent/40 transition-colors duration-300">
+            <div className="text-sm text-muted-foreground/70 bg-accent/30 p-3 rounded-xl border border-accent/50 animate-fade-up [animation-delay:600ms] shadow-sm backdrop-blur-sm hover:bg-accent/40 transition-colors duration-300">
               <p className="flex items-center gap-2 justify-center flex-wrap">
                 <span className="font-medium text-secondary">💡 Tip:</span>
                 Find a restaurant on Google Maps, click Share, and paste the link!
+              </p>
+            </div>
+          </div>
+
+          {/* Header section with icon - moved down */}
+          <div className="space-y-6 text-center">
+            <div className="relative inline-block">
+              <div className="absolute -top-8 -right-8 text-primary animate-bounce">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div className="p-4 bg-primary/10 rounded-full">
+                <Utensils className="w-8 h-8 text-primary" />
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight bg-gradient-to-r from-secondary via-primary to-secondary bg-clip-text text-transparent animate-fade-up">
+                Find Your Next Favorite Spot
+              </h1>
+              <p className="text-base md:text-lg text-muted-foreground/80 animate-fade-up [animation-delay:200ms] max-w-lg mx-auto">
+                Share a Google Maps link to discover your perfect dining match
               </p>
             </div>
           </div>
