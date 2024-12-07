@@ -1,4 +1,5 @@
-import { Star } from "lucide-react";
+import { useState } from "react";
+import { Star, ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +15,8 @@ interface MenuItemProps {
 }
 
 const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   // Clean up the name by removing markdown and numbers
   const cleanName = item.name
     .replace(/^\d+\.\s*/, '') // Remove leading numbers
@@ -25,10 +28,8 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
     ? item.name.split(' - ')[1].replace(/\*\*/g, '').trim()
     : item.description;
 
-  // Truncate description if it's too long
-  const truncatedDescription = description && description.length > 100
-    ? `${description.substring(0, 100)}...`
-    : description;
+  const isLongDescription = description && description.length > 100;
+  const displayDescription = isExpanded ? description : description?.substring(0, 100);
 
   return (
     <div className="group relative p-3 rounded-lg hover:bg-accent/30 transition-all duration-300">
@@ -45,10 +46,31 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
               </Badge>
             )}
           </div>
-          {truncatedDescription && (
-            <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
-              {truncatedDescription}
-            </p>
+          {description && (
+            <div className="mt-1">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {displayDescription}
+                {isLongDescription && !isExpanded && "..."}
+              </p>
+              {isLongDescription && (
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="mt-1 text-xs text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
+                >
+                  {isExpanded ? (
+                    <>
+                      Show less
+                      <ChevronUp className="w-3 h-3" />
+                    </>
+                  ) : (
+                    <>
+                      Show more
+                      <ChevronDown className="w-3 h-3" />
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           )}
           {item.category && (
             <Badge 
