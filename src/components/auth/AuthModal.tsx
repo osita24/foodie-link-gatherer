@@ -92,6 +92,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               }
             }}
             providers={[]}
+            magicLink={false}
             localization={{
               variables: {
                 sign_in: {
