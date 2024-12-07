@@ -1,8 +1,7 @@
-import { useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Auth } from "@supabase/auth-ui-react";
-import { ThemeSupa } from "@supabase/auth-ui-shared";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 interface AuthModalProps {
@@ -14,10 +13,11 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const navigate = useNavigate();
   const [view, setView] = useState<"sign_in" | "sign_up">("sign_in");
 
-  // Listen for auth state changes
-  supabase.auth.onAuthStateChange(async (event, session) => {
-    if (event === "SIGNED_IN") {
-      // Check if user has completed onboarding
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!session) return;
+
+      // Check if user has preferences
       const { data: preferences } = await supabase
         .from('user_preferences')
         .select('*')
@@ -28,10 +28,12 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       
       // If no preferences exist, redirect to onboarding
       if (!preferences) {
-        navigate("/onboarding");
+        navigate('/onboarding');
       }
-    }
-  });
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate, onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -40,21 +42,20 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
           supabaseClient={supabase}
           view={view}
           appearance={{
-            theme: ThemeSupa,
+            theme: 'default',
             variables: {
               default: {
                 colors: {
-                  brand: '#8B5CF6',
-                  brandAccent: '#7C3AED',
-                },
-              },
+                  brand: 'rgb(var(--primary))',
+                  brandAccent: 'rgb(var(--primary))',
+                }
+              }
             },
             className: {
               container: 'w-full',
-              button: 'w-full',
-              label: 'text-sm font-medium text-gray-700',
-              input: 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-violet-500 focus:ring-violet-500 sm:text-sm',
-            },
+              button: 'w-full bg-primary text-primary-foreground hover:bg-primary/90',
+              input: 'rounded-md',
+            }
           }}
           providers={[]}
           localization={{
