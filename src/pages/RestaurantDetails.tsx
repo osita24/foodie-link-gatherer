@@ -28,19 +28,27 @@ const RestaurantDetails = () => {
       }
 
       try {
-        console.log("Fetching details for restaurant ID:", id);
+        console.log("🔍 Starting fetch for restaurant ID:", id);
+        setIsLoading(true);
+        
         const { data, error } = await supabase.functions.invoke('google-maps-proxy', {
           body: { placeId: id }
         });
 
-        if (error) throw error;
+        console.log("📡 Response received:", data);
+
+        if (error) {
+          console.error("❌ Error from Edge Function:", error);
+          throw error;
+        }
 
         if (!data?.result?.result) {
+          console.error("❌ No result found in API response:", data);
           throw new Error("No restaurant data found");
         }
 
         const restaurantData = data.result.result;
-        console.log("Received restaurant data:", restaurantData);
+        console.log("✨ Processing restaurant data:", restaurantData);
 
         // Transform the data to match our type
         const transformedData: RestaurantDetailsType = {
@@ -82,12 +90,14 @@ const RestaurantDetails = () => {
           wheelchairAccessible: restaurantData.wheelchair_accessible_entrance,
         };
 
+        console.log("✅ Setting restaurant data:", transformedData);
         setRestaurant(transformedData);
       } catch (error) {
-        console.error("Error fetching restaurant details:", error);
+        console.error("❌ Error fetching restaurant details:", error);
         toast.error("Failed to load restaurant details");
         navigate('/');
       } finally {
+        console.log("🏁 Finishing loading state");
         setIsLoading(false);
       }
     };
@@ -96,6 +106,7 @@ const RestaurantDetails = () => {
   }, [id, navigate]);
 
   if (isLoading) {
+    console.log("🔄 Rendering loading state");
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -118,9 +129,11 @@ const RestaurantDetails = () => {
   }
 
   if (!restaurant) {
+    console.log("⚠️ No restaurant data available");
     return null;
   }
 
+  console.log("🎉 Rendering restaurant details:", restaurant.name);
   return (
     <div className="min-h-screen bg-background pb-20 animate-fade-up">
       <Header />
