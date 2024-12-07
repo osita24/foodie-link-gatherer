@@ -1,13 +1,34 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import AuthModal from "@/components/auth/AuthModal";
 
 interface MenuHeaderProps {
   menuUrl?: string;
 }
 
 const MenuHeader = ({ menuUrl }: MenuHeaderProps) => {
-  const { isAuthenticated } = useAuth();
+  const [session, setSession] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Initial session:", session);
+      setSession(session);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("Auth state changed:", _event, session);
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <div className="relative w-full bg-background rounded-lg p-6 mb-6">
@@ -23,12 +44,16 @@ const MenuHeader = ({ menuUrl }: MenuHeaderProps) => {
             </Badge>
           </div>
           
-          {!isAuthenticated && (
+          {!session && (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
                 Sign up to see how well this menu matches your preferences
               </p>
-              <Button variant="default" className="w-full sm:w-auto">
+              <Button 
+                variant="default" 
+                className="w-full sm:w-auto"
+                onClick={() => setShowAuthModal(true)}
+              >
                 Sign up to see match score
               </Button>
             </div>
@@ -39,6 +64,11 @@ const MenuHeader = ({ menuUrl }: MenuHeaderProps) => {
           </div>
         </div>
       </div>
+
+      <AuthModal 
+        open={showAuthModal}
+        onOpenChange={setShowAuthModal}
+      />
     </div>
   );
 };
