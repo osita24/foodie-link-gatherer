@@ -8,15 +8,12 @@ console.log("Menu processor function started");
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    console.log("Handling CORS preflight request");
     return new Response(null, {
-      status: 204,
-      headers: corsHeaders,
+      headers: corsHeaders
     });
   }
 
   try {
-    console.log("Processing request");
     const { menuUrl, photos, reviews } = await req.json();
     console.log("Input data:", { menuUrl, photosCount: photos?.length, reviewsCount: reviews?.length });
 
@@ -57,7 +54,6 @@ serve(async (req) => {
         id: `item-${index + 1}`,
         name: name.trim(),
         description: description?.trim() || '',
-        category: 'Main Menu'
       };
     });
 
@@ -79,9 +75,9 @@ serve(async (req) => {
           ...corsHeaders,
           'Content-Type': 'application/json',
         },
-        status: 200,
       },
     );
+
   } catch (error) {
     console.error("Error processing menu:", error);
     return new Response(
@@ -91,7 +87,7 @@ serve(async (req) => {
           ...corsHeaders,
           'Content-Type': 'application/json',
         },
-        status: 500,
+        status: 400,
       },
     );
   }
