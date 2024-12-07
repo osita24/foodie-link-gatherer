@@ -19,7 +19,6 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session?.user?.id);
       
-      // Check if we have a session, which indicates successful authentication
       if (session?.user) {
         console.log("User authenticated, checking for preferences");
 
@@ -66,7 +65,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               </svg>
             </div>
             <h2 className="text-xl font-semibold text-secondary">
-              Welcome to FindDine
+              Welcome to Cilantro
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
               Find your next favorite restaurant
@@ -81,15 +80,15 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               variables: {
                 default: {
                   colors: {
-                    brand: '#FF9F66',
-                    brandAccent: '#FF9F66',
+                    brand: '#4A6741',
+                    brandAccent: '#2C3B29',
                     brandButtonText: 'white',
-                    defaultButtonBackground: '#FDE1D3',
-                    defaultButtonBackgroundHover: '#FFD1B3',
+                    defaultButtonBackground: '#E8EDE7',
+                    defaultButtonBackgroundHover: '#D8DED7',
                     inputBackground: 'white',
                     inputBorder: '#E2E8F0',
-                    inputBorderHover: '#FF9F66',
-                    inputBorderFocus: '#FF9F66',
+                    inputBorderHover: '#4A6741',
+                    inputBorderFocus: '#4A6741',
                   }
                 }
               },
