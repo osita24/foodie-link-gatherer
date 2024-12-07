@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { processMenuData } from "./menuGenerator.ts";
 
 console.log("Menu processor function started");
 
@@ -19,9 +18,25 @@ serve(async (req) => {
     const { menuUrl, photos, reviews } = await req.json();
     console.log("Input data:", { menuUrl, photosCount: photos?.length, reviewsCount: reviews?.length });
 
-    const menuData = await processMenuData({ menuUrl, photos, reviews });
-    console.log("Menu data processed successfully");
+    // For now, return a basic menu structure to test the function
+    const menuData = {
+      menuSections: [
+        {
+          name: "Main Menu",
+          items: [
+            {
+              id: "1",
+              name: "Test Item",
+              description: "Test description",
+              price: "$10.00"
+            }
+          ]
+        }
+      ]
+    };
 
+    console.log("Returning test menu data");
+    
     return new Response(
       JSON.stringify(menuData),
       {
