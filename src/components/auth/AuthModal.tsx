@@ -3,6 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { ThemeSupa } from '@supabase/auth-ui-shared';
 
 interface AuthModalProps {
   open: boolean;
@@ -42,18 +43,18 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
           supabaseClient={supabase}
           view={view}
           appearance={{
-            theme: 'default',
+            theme: ThemeSupa,
             variables: {
               default: {
                 colors: {
-                  brand: 'rgb(var(--primary))',
-                  brandAccent: 'rgb(var(--primary))',
+                  brand: '#FF9F66',
+                  brandAccent: '#FF9F66',
                 }
               }
             },
             className: {
               container: 'w-full',
-              button: 'w-full bg-primary text-primary-foreground hover:bg-primary/90',
+              button: 'w-full bg-primary text-white hover:bg-primary/90',
               input: 'rounded-md',
             }
           }}
