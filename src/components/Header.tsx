@@ -65,7 +65,16 @@ const Header = () => {
           console.log("📋 User preferences:", preferences);
           if (!preferences) {
             console.log("⚠️ No preferences found, redirecting to onboarding");
+            // Store current path before redirecting
+            localStorage.setItem('redirectAfterOnboarding', location.pathname);
             navigate('/onboarding');
+          } else {
+            // Check if there's a stored path to redirect to
+            const redirectPath = localStorage.getItem('redirectAfterOnboarding');
+            if (redirectPath) {
+              localStorage.removeItem('redirectAfterOnboarding');
+              navigate(redirectPath);
+            }
           }
         }
       }
@@ -75,7 +84,7 @@ const Header = () => {
       console.log("🧹 Cleaning up auth state change listener");
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, location]);
 
   const handleSignOut = async () => {
     try {

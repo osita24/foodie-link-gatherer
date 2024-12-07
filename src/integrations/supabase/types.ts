@@ -42,6 +42,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_last_visited: {
+        Row: {
+          id: string
+          place_id: string
+          user_id: string
+          visited_at: string | null
+        }
+        Insert: {
+          id?: string
+          place_id: string
+          user_id: string
+          visited_at?: string | null
+        }
+        Update: {
+          id?: string
+          place_id?: string
+          user_id?: string
+          visited_at?: string | null
+        }
+        Relationships: []
+      }
       user_preferences: {
         Row: {
           atmosphere_preferences: string[] | null
