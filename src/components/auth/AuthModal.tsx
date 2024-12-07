@@ -1,10 +1,11 @@
-import { Auth } from "@supabase/auth-ui-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { toast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface AuthModalProps {
   open: boolean;
@@ -13,15 +14,18 @@ interface AuthModalProps {
 
 const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const navigate = useNavigate();
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     console.log("🔐 Setting up auth state change listener");
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("🔄 Auth state changed:", event, session?.user?.id);
       
-      if (session?.user) {
-        console.log("✅ User authenticated, checking for preferences");
-
+      if (event === 'SIGNED_IN') {
+        console.log("✅ User signed in successfully");
         try {
           const { data: preferences, error } = await supabase
             .from('user_preferences')
@@ -58,6 +62,58 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
     };
   }, [navigate, onOpenChange]);
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      let result;
+      
+      if (isSignUp) {
+        result = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        
+        if (result.error) {
+          if (result.error.message.includes('already registered')) {
+            toast({
+              title: "Account exists",
+              description: "This email is already registered. Please sign in instead.",
+              variant: "destructive",
+            });
+            setIsSignUp(false);
+          } else {
+            throw result.error;
+          }
+        } else {
+          toast({
+            title: "Success!",
+            description: "Please check your email to verify your account.",
+          });
+        }
+      } else {
+        result = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        
+        if (result.error) {
+          throw result.error;
+        }
+      }
+    } catch (error: any) {
+      console.error("❌ Auth error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "An error occurred during authentication.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[400px] p-0 bg-background">
@@ -79,64 +135,84 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               </svg>
             </div>
             <h2 className="text-xl font-semibold text-secondary">
-              Join Cilantro
+              {isSignUp ? "Create your account" : "Welcome back"}
             </h2>
             <p className="text-sm text-muted-foreground mt-2">
-              Discover and save your favorite restaurants
+              {isSignUp 
+                ? "Join Cilantro to discover and save your favorite restaurants" 
+                : "Sign in to continue your culinary journey"}
             </p>
           </div>
 
-          <Auth
-            supabaseClient={supabase}
-            appearance={{
-              theme: ThemeSupa,
-              variables: {
-                default: {
-                  colors: {
-                    brand: '#4A6741',
-                    brandAccent: '#2C3B29',
-                    brandButtonText: 'white',
-                    defaultButtonBackground: '#E8EDE7',
-                    defaultButtonBackgroundHover: '#D8DED7',
-                    inputBackground: 'white',
-                    inputBorder: '#E2E8F0',
-                    inputBorderHover: '#4A6741',
-                    inputBorderFocus: '#4A6741',
-                  }
-                }
-              },
-              className: {
-                container: 'w-full',
-                button: 'w-full bg-primary text-white hover:bg-primary/90 transition-colors rounded-lg py-2.5',
-                input: 'rounded-lg border-gray-200 focus:ring-primary',
-                label: 'text-secondary font-medium',
-                message: 'text-red-500 text-sm',
-                anchor: 'text-primary hover:text-primary/80 transition-colors',
-              }
-            }}
-            providers={[]}
-            magicLink={false}
-            localization={{
-              variables: {
-                sign_in: {
-                  email_label: 'Email',
-                  password_label: 'Password',
-                  button_label: 'Continue',
-                  link_text: "New to Cilantro? Create an account",
-                  email_input_placeholder: 'name@example.com',
-                  password_input_placeholder: 'Enter your password',
-                },
-                sign_up: {
-                  email_label: 'Email',
-                  password_label: 'Password',
-                  button_label: 'Create your account',
-                  link_text: "Already have an account? Sign in",
-                  email_input_placeholder: 'name@example.com',
-                  password_input_placeholder: 'Create a secure password',
-                },
-              },
-            }}
-          />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="name@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder={isSignUp ? "Create a secure password" : "Enter your password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full"
+                minLength={6}
+              />
+            </div>
+
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle 
+                      className="opacity-25" 
+                      cx="12" 
+                      cy="12" 
+                      r="10" 
+                      stroke="currentColor" 
+                      strokeWidth="4"
+                    />
+                    <path 
+                      className="opacity-75" 
+                      fill="currentColor" 
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Processing...
+                </span>
+              ) : (
+                isSignUp ? "Create account" : "Sign in"
+              )}
+            </Button>
+          </form>
+
+          <div className="text-center text-sm">
+            <button
+              type="button"
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-primary hover:text-primary/80 transition-colors"
+            >
+              {isSignUp 
+                ? "Already have an account? Sign in" 
+                : "New to Cilantro? Create an account"}
+            </button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
