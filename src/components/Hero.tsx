@@ -4,6 +4,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 const Hero = () => {
   const [restaurantUrl, setRestaurantUrl] = useState("");
@@ -25,11 +27,15 @@ const Hero = () => {
         body: { url: restaurantUrl }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase function error:", error);
+        throw error;
+      }
       
       console.log("Received response:", data);
       
       if (!data?.result?.result?.place_id) {
+        console.error("No place_id found in response:", data);
         throw new Error("No restaurant data found");
       }
 
@@ -39,7 +45,7 @@ const Hero = () => {
       
     } catch (error) {
       console.error("Error:", error);
-      toast.error("Failed to find restaurant. Please try again.");
+      toast.error("Failed to find restaurant. Please make sure you're using a valid Google Maps link.");
     } finally {
       setIsProcessing(false);
     }
@@ -80,9 +86,22 @@ const Hero = () => {
               {isProcessing ? "Processing..." : "Find Match"}
             </Button>
           </div>
-          <p className="text-sm text-gray-500 mt-4 animate-fade-up" style={{ animationDelay: "600ms" }}>
-            Works with all Google Maps URLs including shortened links (goo.gl/maps) and share links
-          </p>
+          
+          <Alert className="bg-accent/20 border-accent mt-6 animate-fade-up text-left" 
+                 style={{ animationDelay: "600ms" }}>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              <p className="font-medium mb-2">How to get a Google Maps link:</p>
+              <ol className="list-decimal list-inside space-y-2 text-sm">
+                <li>Open Google Maps and find the restaurant you want</li>
+                <li>Click the "Share" button (or tap the restaurant name and find "Share")</li>
+                <li>Choose "Copy link" and paste it here</li>
+              </ol>
+              <p className="text-sm mt-3 text-muted-foreground">
+                Works with all Google Maps URLs including shortened links (goo.gl/maps) and share links
+              </p>
+            </AlertDescription>
+          </Alert>
         </div>
       </div>
     </section>
