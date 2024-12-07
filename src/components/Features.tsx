@@ -2,12 +2,12 @@ import { Smartphone, Utensils, Target } from "lucide-react";
 
 const Features = () => {
   return (
-    <section id="features" className="py-20 md:py-32 bg-gradient-to-b from-accent/30 to-background overflow-hidden px-4"> {/* Increased padding */}
+    <section id="features" className="py-20 md:py-32 bg-gradient-to-b from-accent/30 to-background overflow-hidden px-4">
       <div className="container mx-auto">
-        <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-center text-secondary mb-16 md:mb-20 animate-fade-up px-4"> {/* Adjusted text sizes and spacing */}
+        <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-center text-secondary mb-16 md:mb-20 animate-fade-up px-4">
           Smart Dining Decisions
         </h2>
-        <div className="grid md:grid-cols-3 gap-8 md:gap-12 max-w-7xl mx-auto"> {/* Increased gaps and added max width */}
+        <div className="grid md:grid-cols-3 gap-8 md:gap-12 max-w-7xl mx-auto">
           {[
             {
               icon: <Smartphone className="w-8 h-8 text-white" />,
@@ -30,7 +30,7 @@ const Features = () => {
           ].map((feature, index) => (
             <div 
               key={index} 
-              className="relative group animate-fade-up px-4" {/* Added horizontal padding */}
+              className="relative group animate-fade-up px-4"  /* Added horizontal padding */
               style={{ 
                 animationDelay: `${index * 150}ms`,
                 transform: "translateY(0px)",
@@ -40,7 +40,7 @@ const Features = () => {
               <div className="absolute inset-0 bg-gradient-to-br opacity-90 rounded-2xl shadow-lg transform group-hover:scale-105 group-hover:-translate-y-2 transition-all duration-300"></div>
               <div 
                 className={`relative h-full bg-gradient-to-br ${feature.gradient} rounded-2xl p-8 md:p-10 shadow-lg 
-                  hover:shadow-2xl transition-all duration-300`} /* Increased padding */
+                  hover:shadow-2xl transition-all duration-300`}
               >
                 <div 
                   className="w-16 h-16 mx-auto mb-8 bg-white/10 rounded-full flex items-center justify-center 
