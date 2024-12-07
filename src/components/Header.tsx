@@ -27,27 +27,55 @@ const Header = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    let mounted = true;
+
     const getInitialSession = async () => {
-      console.log("🔍 Getting initial session");
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error("❌ Error getting session:", error);
-      } else {
-        console.log("✅ Initial session:", session?.user?.id);
+      try {
+        console.log("🔍 Getting initial session");
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error("❌ Error getting session:", error);
+          return;
+        }
+        
+        if (mounted) {
+          console.log("✅ Initial session:", session?.user?.id);
+          setSession(session);
+          
+          if (session?.user) {
+            console.log("👤 User authenticated, checking preferences");
+            const { data: preferences, error: prefError } = await supabase
+              .from('user_preferences')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+
+            if (prefError) {
+              console.error("❌ Error fetching preferences:", prefError);
+              return;
+            }
+
+            if (!preferences && location.pathname !== '/onboarding') {
+              console.log("⚠️ No preferences found, redirecting to onboarding");
+              localStorage.setItem('redirectAfterOnboarding', location.pathname);
+              navigate('/onboarding');
+            }
+          }
+        }
+      } catch (error) {
+        console.error("❌ Error in getInitialSession:", error);
       }
-      setSession(session);
     };
-    
+
     getInitialSession();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!mounted) return;
+      
       console.log('🔄 Auth state changed:', _event, session?.user?.id);
       setSession(session);
       
       if (session?.user) {
-        console.log("👤 User authenticated, checking preferences");
         const { data: preferences, error } = await supabase
           .from('user_preferences')
           .select('*')
@@ -56,30 +84,23 @@ const Header = () => {
 
         if (error) {
           console.error("❌ Error fetching preferences:", error);
-        } else {
-          console.log("📋 User preferences:", preferences);
-          if (!preferences) {
-            console.log("⚠️ No preferences found, redirecting to onboarding");
-            // Store current path before redirecting
-            localStorage.setItem('redirectAfterOnboarding', location.pathname);
-            navigate('/onboarding');
-          } else {
-            // Check if there's a stored path to redirect to
-            const redirectPath = localStorage.getItem('redirectAfterOnboarding');
-            if (redirectPath) {
-              localStorage.removeItem('redirectAfterOnboarding');
-              navigate(redirectPath);
-            }
-          }
+          return;
+        }
+
+        if (!preferences && location.pathname !== '/onboarding') {
+          console.log("⚠️ No preferences found, redirecting to onboarding");
+          localStorage.setItem('redirectAfterOnboarding', location.pathname);
+          navigate('/onboarding');
         }
       }
     });
 
     return () => {
       console.log("🧹 Cleaning up auth state change listener");
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate, location]);
+  }, [navigate, location.pathname]);
 
   const handleSignOut = async () => {
     try {
