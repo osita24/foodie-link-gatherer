@@ -3,6 +3,7 @@ import Index from "@/pages/Index";
 import Profile from "@/pages/Profile";
 import Saved from "@/pages/Saved";
 import Onboarding from "@/pages/Onboarding";
+import RestaurantDetails from "@/pages/RestaurantDetails";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/saved" element={<Saved />} />
         <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/restaurant/:id" element={<RestaurantDetails />} />
       </Routes>
     </Router>
   );
