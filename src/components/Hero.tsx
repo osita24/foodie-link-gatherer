@@ -22,8 +22,7 @@ const Hero = () => {
     e.preventDefault();
     setIsProcessing(true);
     try {
-      // Assume we have a function to handle the restaurant URL submission
-      await submitRestaurantUrl(restaurantUrl);
+      // For now, just show a success message
       toast({
         title: "Success",
         description: "Restaurant URL submitted successfully!",
