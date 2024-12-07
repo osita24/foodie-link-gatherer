@@ -19,9 +19,9 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session?.user?.id);
       
-      if (event === 'SIGNED_IN' || event === 'SIGNED_UP') {
-        console.log("User signed in/up, checking for preferences");
-        if (!session) return;
+      // Check if we have a session, which indicates successful authentication
+      if (session?.user) {
+        console.log("User authenticated, checking for preferences");
 
         const { data: preferences } = await supabase
           .from('user_preferences')
