@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Accordion } from "@/components/ui/accordion";
-import { UserPreferences } from "@/types/preferences";
+import { UserPreferences, PriceRange } from "@/types/preferences";
 import CuisinePreferences from "./preferences/CuisinePreferences";
 import DietaryPreferences from "./preferences/DietaryPreferences";
 import PreferencesProgress from "./preferences/PreferencesProgress";
@@ -11,14 +11,14 @@ import PreferencesSection from "./preferences/PreferencesSection";
 import AtmospherePreferences from "./preferences/AtmospherePreferences";
 import AvoidancePreferences from "./preferences/AvoidancePreferences";
 
-const defaultPreferences = {
+const defaultPreferences: UserPreferences = {
   cuisinePreferences: [],
   dietaryRestrictions: [],
   foodsToAvoid: [],
   atmospherePreferences: [],
   favoriteIngredients: [],
   spiceLevel: 3,
-  priceRange: 'moderate',
+  priceRange: 'moderate' as PriceRange,
   specialConsiderations: "",
 };
 
