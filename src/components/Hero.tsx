@@ -21,6 +21,7 @@ const Hero = () => {
     console.log("🔍 Starting import for URL:", restaurantUrl);
     
     try {
+      // Call the edge function without requiring authentication
       const { data, error } = await supabase.functions.invoke('google-maps-proxy', {
         body: { url: restaurantUrl }
       });
