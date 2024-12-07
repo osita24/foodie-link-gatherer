@@ -1,27 +1,37 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(Deno.env.get('GOOGLE_AI_KEY') || '');
-
-export async function analyzeMenuData(photos: string[], reviews: string[]) {
+export async function analyzeMenuData(photos: string[], reviews: string[], menuUrl?: string) {
   console.log("🤖 Starting Gemini menu analysis");
   
   try {
+    const genAI = new GoogleGenerativeAI(Deno.env.get('GOOGLE_AI_KEY') || '');
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     
-    const prompt = `Based on the following restaurant data, generate a structured menu:
-    ${reviews.length} customer reviews and ${photos.length} photos are available.
+    let contextPrompt = "Based on the following restaurant data, generate a structured menu:\n";
     
-    Reviews: ${reviews.slice(0, 5).join('\n')}
+    if (menuUrl) {
+      contextPrompt += `Restaurant website: ${menuUrl}\n`;
+    }
     
-    Please format the response as a JSON array of menu items, where each item has:
+    if (reviews?.length) {
+      contextPrompt += `Reviews mentioning food items:\n${reviews.slice(0, 5).join('\n')}\n`;
+    }
+    
+    if (photos?.length) {
+      contextPrompt += `${photos.length} photos are available for analysis.\n`;
+    }
+    
+    const prompt = `${contextPrompt}
+    Please generate a menu with common dishes from this restaurant.
+    Format the response as a JSON array of menu items, where each item has:
     - name (string)
-    - description (string, optional)
-    - price (number, optional)
-    - category (string)
+    - description (string)
+    - price (number, estimated if not found)
+    - category (string, e.g., "Appetizers", "Main Course", etc.)
     
-    Focus on commonly mentioned dishes and clear pricing information.`;
+    Focus on commonly mentioned dishes and typical prices for this type of restaurant.`;
 
-    console.log("🔍 Sending prompt to Gemini");
+    console.log("🔍 Sending prompt to Gemini:", prompt);
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();

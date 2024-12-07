@@ -12,17 +12,18 @@ serve(async (req) => {
   }
 
   try {
-    const { photos, reviews } = await req.json();
+    const { photos, reviews, menuUrl } = await req.json();
     console.log("📥 Received request with:", { 
       photoCount: photos?.length, 
-      reviewCount: reviews?.length 
+      reviewCount: reviews?.length,
+      menuUrl 
     });
 
-    if (!photos?.length && !reviews?.length) {
+    if (!photos?.length && !reviews?.length && !menuUrl) {
       throw new Error("No data provided for menu generation");
     }
 
-    const menuItems = await analyzeMenuData(photos, reviews);
+    const menuItems = await analyzeMenuData(photos, reviews, menuUrl);
 
     // Format response to match expected structure
     const response = {
