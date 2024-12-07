@@ -15,23 +15,34 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [view, setView] = useState<"sign_in" | "sign_up">("sign_up");
 
   useEffect(() => {
+    console.log("Setting up auth state change listener");
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!session) return;
-
-      const { data: preferences } = await supabase
-        .from('user_preferences')
-        .select('*')
-        .eq('user_id', session?.user.id)
-        .maybeSingle();
-
-      onOpenChange(false);
+      console.log("Auth state changed:", event, session?.user?.id);
       
-      if (!preferences) {
-        navigate('/onboarding');
+      if (event === 'SIGNED_IN' || event === 'SIGNED_UP') {
+        console.log("User signed in/up, checking for preferences");
+        if (!session) return;
+
+        const { data: preferences } = await supabase
+          .from('user_preferences')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        console.log("User preferences:", preferences);
+        onOpenChange(false);
+        
+        if (!preferences) {
+          console.log("No preferences found, redirecting to onboarding");
+          navigate('/onboarding');
+        }
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log("Cleaning up auth state change listener");
+      subscription.unsubscribe();
+    };
   }, [navigate, onOpenChange]);
 
   return (
