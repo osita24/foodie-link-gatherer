@@ -92,8 +92,6 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
           <Auth
             supabaseClient={supabase}
-            view={view}
-            onViewChange={setView}
             appearance={{
               theme: ThemeSupa,
               variables: {
