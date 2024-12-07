@@ -87,24 +87,11 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 container: {
                   gap: '12px',
                 },
-                input: {
-                  display: 'none',
-                },
-                message: {
-                  display: 'none',
-                },
-                divider: {
-                  display: 'none',
-                },
-                anchor: {
-                  display: 'none',
-                },
               },
             }}
             providers={['google']}
             redirectTo={`${window.location.origin}/`}
             view="sign_in"
-            showLinks={false}
           />
         </div>
       </DialogContent>
