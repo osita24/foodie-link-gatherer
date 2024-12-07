@@ -9,10 +9,37 @@ import ReviewsSection from "@/components/restaurant/ReviewsSection";
 import MatchScoreCard from "@/components/restaurant/MatchScoreCard";
 import ActionButtons from "@/components/restaurant/ActionButtons";
 import OrderSection from "@/components/restaurant/OrderSection";
-import MenuRecommendations from "@/components/restaurant/MenuRecommendations";
 import AdditionalInfo from "@/components/restaurant/AdditionalInfo";
 import { RestaurantDetails as RestaurantDetailsType } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
+
+// Define match categories with sample data
+const matchCategories = [
+  {
+    category: "Menu Match",
+    score: 92,
+    description: "Based on your favorite ingredients and dietary preferences",
+    icon: "🍽️"
+  },
+  {
+    category: "Cuisine Style",
+    score: 88,
+    description: "Aligns with your preferred cooking styles and flavors",
+    icon: "👨‍🍳"
+  },
+  {
+    category: "Price Point",
+    score: 85,
+    description: "Matches your typical dining budget",
+    icon: "💰"
+  },
+  {
+    category: "Atmosphere",
+    score: 90,
+    description: "Fits your preferred dining environment",
+    icon: "✨"
+  }
+];
 
 const RestaurantDetails = () => {
   const [restaurant, setRestaurant] = useState<RestaurantDetailsType | null>(null);
@@ -145,7 +172,6 @@ const RestaurantDetails = () => {
             
             <div className="block lg:hidden space-y-6">
               <MatchScoreCard categories={matchCategories} />
-              <MenuRecommendations />
               <MenuSection 
                 menu={restaurant?.menu} 
                 photos={restaurant?.photos}
@@ -155,7 +181,6 @@ const RestaurantDetails = () => {
             </div>
 
             <div className="hidden lg:block space-y-6">
-              <MenuRecommendations />
               <MenuSection 
                 menu={restaurant?.menu} 
                 photos={restaurant?.photos}
