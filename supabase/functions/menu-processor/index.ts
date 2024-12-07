@@ -1,12 +1,10 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { analyzeImage } from "./imageAnalyzer.ts";
-import { cleanMenuText } from "./textCleaner.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { analyzeMenuData } from "./geminiUtils.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -14,73 +12,41 @@ serve(async (req) => {
   }
 
   try {
-    const { photos = [], reviews = [] } = await req.json();
-    console.log('📸 Processing photos:', photos.length);
-    console.log('📝 Processing reviews:', reviews.length);
+    const { photos, reviews } = await req.json();
+    console.log("📥 Received request with:", { 
+      photoCount: photos?.length, 
+      reviewCount: reviews?.length 
+    });
 
-    let menuItems: string[] = [];
-    let processedPhotos = 0;
-    
-    // Process all images
-    for (const photoUrl of photos) {
-      try {
-        processedPhotos++;
-        console.log(`\n🖼️ Processing photo ${processedPhotos}/${photos.length}`);
-        
-        const analysis = await analyzeImage(photoUrl);
-        console.log(`📊 Image analysis result - Type: ${analysis.type}, Confidence: ${analysis.confidence}`);
-        
-        if (analysis.text) {
-          // Clean up the text with AI
-          const cleanedItems = await cleanMenuText(analysis.text);
-          menuItems = [...menuItems, ...cleanedItems];
-        }
-      } catch (error) {
-        console.error('❌ Error processing photo:', error);
-        continue;
-      }
+    if (!photos?.length && !reviews?.length) {
+      throw new Error("No data provided for menu generation");
     }
 
-    // If we didn't find enough menu items from images, try extracting from reviews
-    if (menuItems.length < 5 && reviews.length > 0) {
-      console.log('🔍 Looking for menu items in reviews...');
-      const reviewTexts = reviews
-        .map((review: any) => review.text)
-        .join('\n');
-      
-      const menuItemsFromReviews = await cleanMenuText(reviewTexts);
-      menuItems = [...new Set([...menuItems, ...menuItemsFromReviews])];
-    }
+    const menuItems = await analyzeMenuData(photos, reviews);
 
-    // Remove duplicates and empty items
-    const uniqueItems = [...new Set(menuItems)].filter(item => item.trim());
-    
-    // Format into a menu section
-    const menuSection = {
-      name: "Menu Items",
-      items: uniqueItems.map((name, index) => ({
-        id: `menu-item-${index}`,
-        name: name.trim()
-      }))
+    // Format response to match expected structure
+    const response = {
+      menuSections: [{
+        name: "Menu",
+        items: menuItems.map((item: any) => ({
+          id: crypto.randomUUID(),
+          ...item
+        }))
+      }]
     };
 
-    console.log(`✅ Final menu items: ${menuSection.items.length}`);
-
-    return new Response(
-      JSON.stringify({ menuSections: [menuSection] }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    console.log("📤 Sending response with menu items:", response);
+    return new Response(JSON.stringify(response), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
 
   } catch (error) {
-    console.error('❌ Error processing menu:', error);
+    console.error("❌ Error processing menu:", error);
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        timestamp: new Date().toISOString()
-      }),
+      JSON.stringify({ error: error.message }),
       { 
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500
       }
     );
   }
