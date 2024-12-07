@@ -129,17 +129,6 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 },
               },
             }}
-            onError={(error) => {
-              console.error("Auth error:", error);
-              setAuthError(error.message);
-              if (error.message.includes('User already registered')) {
-                toast.error("This email is already registered. Please sign in instead.");
-              } else if (error.message.includes('Invalid login credentials')) {
-                toast.error("Invalid email or password. Please try again.");
-              } else {
-                toast.error(error.message);
-              }
-            }}
             view="sign_in"
           />
         </div>
