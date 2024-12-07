@@ -32,8 +32,7 @@ const ActionButtons = () => {
       if (session) {
         setShowAuthModal(false);
         checkIfSaved(session.user.id);
-        toast({
-          title: "Successfully signed in!",
+        toast("Successfully signed in!", {
           description: `Welcome ${session.user.email}`,
         });
       }
@@ -48,16 +47,15 @@ const ActionButtons = () => {
       .from('saved_restaurants')
       .select('id')
       .eq('user_id', userId)
-      .eq('place_id', placeId)
-      .single();
+      .eq('place_id', placeId);
 
     if (error) {
       console.error("Error checking saved status:", error);
       return;
     }
 
-    setIsSaved(!!data);
-    console.log("Restaurant saved status:", !!data);
+    setIsSaved(data.length > 0);
+    console.log("Restaurant saved status:", data.length > 0);
   };
 
   const handleSave = async () => {
@@ -82,7 +80,9 @@ const ActionButtons = () => {
         if (error) throw error;
 
         setIsSaved(false);
-        toast.success("Restaurant removed from your saved list!");
+        toast("Restaurant removed", {
+          description: "Restaurant removed from your saved list!",
+        });
       } else {
         // Add to saved
         const { error } = await supabase
@@ -97,11 +97,15 @@ const ActionButtons = () => {
         if (error) throw error;
 
         setIsSaved(true);
-        toast.success("Restaurant saved! Find it in your saved tab.");
+        toast("Restaurant saved!", {
+          description: "Find it in your saved tab.",
+        });
       }
     } catch (error) {
       console.error("Error saving restaurant:", error);
-      toast.error("Failed to save restaurant. Please try again.");
+      toast("Failed to save", {
+        description: "Failed to save restaurant. Please try again.",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -109,8 +113,7 @@ const ActionButtons = () => {
 
   const handleShare = () => {
     console.log("Share clicked");
-    toast({
-      title: "Share feature",
+    toast("Share feature", {
       description: "Coming soon!",
     });
   };
