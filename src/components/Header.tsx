@@ -4,10 +4,21 @@ import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import AuthModal from "./auth/AuthModal";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const [session, setSession] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
@@ -40,6 +51,7 @@ const Header = () => {
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
+      setShowSignOutDialog(false);
       navigate('/');
     } catch (error) {
       console.error('Error signing out:', error);
@@ -95,7 +107,7 @@ const Header = () => {
               ) : (
                 <Button 
                   variant="outline"
-                  onClick={handleSignOut}
+                  onClick={() => setShowSignOutDialog(true)}
                   className="border-gray-200 hover:bg-gray-50"
                 >
                   Sign out
@@ -158,7 +170,7 @@ const Header = () => {
                   variant="outline"
                   className="w-full border-gray-200 hover:bg-gray-50"
                   onClick={() => {
-                    handleSignOut();
+                    setShowSignOutDialog(true);
                     setIsMenuOpen(false);
                   }}
                 >
@@ -174,6 +186,21 @@ const Header = () => {
         open={showAuthModal}
         onOpenChange={setShowAuthModal}
       />
+
+      <AlertDialog open={showSignOutDialog} onOpenChange={setShowSignOutDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to sign out?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You'll need to sign in again to access your saved restaurants and personalized recommendations.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSignOut}>Sign out</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
