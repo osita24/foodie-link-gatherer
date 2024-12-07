@@ -14,14 +14,14 @@ const PreferenceCard = ({ label, selected, onClick, icon }: PreferenceCardProps)
       type="button"
       onClick={onClick}
       className={cn(
-        "relative w-full min-h-[72px] p-3 rounded-lg transition-all duration-200",
+        "relative w-full h-16 px-3 rounded-lg transition-all duration-200",
         "border-2 hover:border-primary/50 hover:bg-accent/30",
         "flex items-center gap-2",
         selected ? "border-primary bg-accent shadow-sm" : "border-accent/50 bg-accent/20"
       )}
     >
       {icon && <div className="text-primary flex-shrink-0">{icon}</div>}
-      <span className="text-left text-sm font-medium break-words line-clamp-2 flex-1">
+      <span className="text-left text-sm font-medium truncate flex-1">
         {label}
       </span>
       {selected && (
