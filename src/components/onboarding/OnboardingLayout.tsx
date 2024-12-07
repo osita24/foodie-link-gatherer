@@ -26,7 +26,7 @@ const OnboardingLayout = ({
   canProgress = true,
 }: OnboardingLayoutProps) => {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-accent to-white">
       <div className="container max-w-2xl mx-auto px-4 py-8">
         <div className="space-y-6">
           <Progress value={(currentStep / totalSteps) * 100} className="h-2" />

@@ -21,6 +21,23 @@ const Onboarding = () => {
     atmospherePreferences: [] as string[],
   });
 
+  const canProgress = () => {
+    switch (step) {
+      case 1:
+        return name.trim().length > 0;
+      case 2:
+        return preferences.dietaryRestrictions.length > 0;
+      case 3:
+        return preferences.cuisinePreferences.length > 0;
+      case 4:
+        return preferences.foodsToAvoid.length > 0;
+      case 5:
+        return preferences.atmospherePreferences.length > 0;
+      default:
+        return false;
+    }
+  };
+
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -38,12 +55,10 @@ const Onboarding = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // Update user metadata with name
         await supabase.auth.updateUser({
           data: { full_name: name }
         });
 
-        // Save preferences
         const { error: preferencesError } = await supabase
           .from('user_preferences')
           .upsert({
@@ -142,7 +157,7 @@ const Onboarding = () => {
       onNext={handleNext}
       onBack={handleBack}
       isLastStep={step === 5}
-      canProgress={step === 1 ? name.trim().length > 0 : true}
+      canProgress={canProgress()}
     >
       {renderStep()}
     </OnboardingLayout>
