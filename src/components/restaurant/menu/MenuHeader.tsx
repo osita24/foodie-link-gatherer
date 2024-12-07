@@ -32,7 +32,7 @@ const MenuHeader = ({ menuUrl }: MenuHeaderProps) => {
               variant="secondary" 
               className="text-xs bg-accent/50 text-secondary/70"
             >
-              AI Enhanced
+              Beta
             </Badge>
           </div>
           
@@ -49,8 +49,9 @@ const MenuHeader = ({ menuUrl }: MenuHeaderProps) => {
             </div>
           )}
 
-          {menuUrl && (
-            <div className="text-xs text-muted-foreground mt-2">
+          <div className="text-xs text-muted-foreground mt-2 text-center space-y-2">
+            <p>Menu information is automatically processed and continuously improving</p>
+            {menuUrl && (
               <a
                 href={menuUrl}
                 target="_blank"
@@ -60,8 +61,8 @@ const MenuHeader = ({ menuUrl }: MenuHeaderProps) => {
                 <span>View full menu</span>
                 <ExternalLink className="w-3 h-3" />
               </a>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
