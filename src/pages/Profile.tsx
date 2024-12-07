@@ -1,24 +1,46 @@
 import { Card } from "@/components/ui/card";
 import ProfileSettings from "@/components/profile/ProfileSettings";
 import RestaurantPreferences from "@/components/profile/RestaurantPreferences";
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
+import UnauthenticatedState from "@/components/auth/UnauthenticatedState";
+import AuthModal from "@/components/auth/AuthModal";
 
 const Profile = () => {
-  const navigate = useNavigate();
+  const [session, setSession] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate('/');
-      }
-    };
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
 
-    checkAuth();
-  }, [navigate]);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <UnauthenticatedState
+          title="Access Your Profile"
+          description="Sign in to manage your dining preferences, view your saved restaurants, and get personalized recommendations tailored just for you."
+          onAuthClick={() => setShowAuthModal(true)}
+        />
+        <AuthModal 
+          open={showAuthModal}
+          onOpenChange={setShowAuthModal}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
