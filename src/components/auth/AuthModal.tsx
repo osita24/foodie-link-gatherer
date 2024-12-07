@@ -34,7 +34,6 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
         console.log("Token refreshed");
       }
 
-      // Clear any previous errors when auth state changes
       setAuthError(null);
     });
 
@@ -44,7 +43,6 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
     };
   }, [onOpenChange]);
 
-  // Reset error when modal is opened/closed
   useEffect(() => {
     setAuthError(null);
   }, [open]);
@@ -101,8 +99,8 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               variables: {
                 default: {
                   colors: {
-                    brand: '#000000',
-                    brandAccent: '#333333',
+                    brand: '#FF9F66',
+                    brandAccent: '#FF9F66',
                   },
                 },
               },
@@ -119,8 +117,6 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 },
               },
             }}
-            providers={['google']}
-            redirectTo={window.location.origin}
             localization={{
               variables: {
                 sign_in: {
