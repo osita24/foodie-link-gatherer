@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BookmarkPlus } from "lucide-react";
+import SavedRestaurants from "@/components/profile/SavedRestaurants";
 
 const Saved = () => {
   const navigate = useNavigate();
