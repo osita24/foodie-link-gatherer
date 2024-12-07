@@ -2,16 +2,16 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { List } from "lucide-react";
 import { MenuCategory } from "@/types/restaurant";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import MenuUploader from "./menu/MenuUploader";
 
 interface MenuSectionProps {
   menu?: MenuCategory[];
   photos?: string[];
   reviews?: any[];
+  restaurantId: string;
 }
 
-const MenuSection = ({ menu, photos, reviews }: MenuSectionProps) => {
+const MenuSection = ({ menu, photos, reviews, restaurantId }: MenuSectionProps) => {
   const [processedMenu, setProcessedMenu] = useState<MenuCategory[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -19,51 +19,13 @@ const MenuSection = ({ menu, photos, reviews }: MenuSectionProps) => {
     if (menu) {
       console.log("Using provided menu data:", menu);
       setProcessedMenu(menu);
-    } else if (photos?.length || reviews?.length) {
-      console.log("No menu provided, processing available data:", {
-        photos: photos?.length || 0,
-        reviews: reviews?.length || 0
-      });
-      processRestaurantData();
-    } else {
-      console.log("No data available to process");
     }
-  }, [menu, photos, reviews]);
+  }, [menu]);
 
-  const processRestaurantData = async () => {
-    setIsProcessing(true);
-    try {
-      console.log("Starting restaurant data processing");
-      
-      const { data, error } = await supabase.functions.invoke('menu-processor', {
-        body: { 
-          photos,
-          reviews
-        }
-      });
-
-      if (error) {
-        console.error("Error processing data:", error);
-        throw error;
-      }
-
-      console.log("Response from menu processor:", data);
-      
-      if (!data?.menuSections?.length) {
-        console.log("No menu sections generated");
-        toast.info("Could not generate menu information");
-        return;
-      }
-
-      console.log("Menu sections generated:", data.menuSections);
-      setProcessedMenu(data.menuSections);
-      toast.success(`Found ${data.menuSections[0].items.length} menu items`);
-      
-    } catch (error) {
-      console.error("Error processing restaurant data:", error);
-      toast.error("Failed to generate menu information");
-    } finally {
-      setIsProcessing(false);
+  const handleUploadComplete = (menuData: any) => {
+    console.log("Menu upload complete, updating menu data:", menuData);
+    if (menuData?.menuSections?.length) {
+      setProcessedMenu(menuData.menuSections);
     }
   };
 
@@ -78,25 +40,7 @@ const MenuSection = ({ menu, photos, reviews }: MenuSectionProps) => {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-center py-4">
-            Analyzing menu photos...
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!processedMenu || processedMenu.length === 0) {
-    return (
-      <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <List className="w-6 h-6" />
-            Menu
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-center py-4">
-            Menu information is not available at this time.
+            Analyzing menu...
           </p>
         </CardContent>
       </Card>
@@ -108,20 +52,32 @@ const MenuSection = ({ menu, photos, reviews }: MenuSectionProps) => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <List className="w-6 h-6" />
-          Menu Items
+          Menu
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ul className="space-y-2">
-          {processedMenu[0].items.map((item) => (
-            <li 
-              key={item.id}
-              className="text-lg font-medium"
-            >
-              {item.name}
-            </li>
-          ))}
-        </ul>
+        {(!processedMenu || processedMenu.length === 0) ? (
+          <div className="space-y-4">
+            <p className="text-muted-foreground text-center">
+              Help others by adding the menu
+            </p>
+            <MenuUploader 
+              restaurantId={restaurantId} 
+              onUploadComplete={handleUploadComplete}
+            />
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {processedMenu[0].items.map((item) => (
+              <li 
+                key={item.id}
+                className="text-lg font-medium"
+              >
+                {item.name}
+              </li>
+            ))}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );
