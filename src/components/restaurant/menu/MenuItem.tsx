@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import AuthModal from "@/components/auth/AuthModal";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MenuItemProps {
   item: {
@@ -19,6 +20,16 @@ interface MenuItemProps {
 const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [session, setSession] = useState(null);
+
+  // Listen for auth state changes
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    setSession(session);
+  });
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    setSession(session);
+  });
 
   // Clean up the name by removing markdown and numbers
   const cleanName = item.name
@@ -36,9 +47,9 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
   const getPriceDisplay = (price?: number) => {
     if (!price) return null;
     return (
-      <div className="inline-flex items-center gap-0.5 px-2.5 py-1 bg-accent/20 rounded-full">
-        <DollarSign className="w-3 h-3 text-primary/70" strokeWidth={2.5} />
-        <span className="text-sm font-medium text-primary/90">
+      <div className="inline-flex items-center gap-0.5 px-3 py-1.5 bg-accent/20 rounded-full">
+        <DollarSign className="w-3.5 h-3.5 text-primary/80" strokeWidth={2} />
+        <span className="text-sm font-semibold text-primary">
           {price.toFixed(2)}
         </span>
       </div>
@@ -92,17 +103,27 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
                 {item.category}
               </Badge>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2.5 text-xs gap-1.5 hover:bg-primary/10 group/match relative overflow-hidden"
-              onClick={() => setShowAuthModal(true)}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/10 opacity-0 group-hover/match:opacity-100 transition-opacity" />
-              <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500/20" strokeWidth={2.5} />
-              <span className="relative z-10 font-medium">View Match Score</span>
-              <Lock className="w-3 h-3 text-primary/70" strokeWidth={2.5} />
-            </Button>
+            {!session ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-3 text-xs gap-1.5 hover:bg-primary/10 group/match relative overflow-hidden
+                  border border-primary/20 rounded-full transition-all duration-300"
+                onClick={() => setShowAuthModal(true)}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/10 opacity-0 group-hover/match:opacity-100 transition-opacity" />
+                <Star className="w-3.5 h-3.5 text-yellow-400" strokeWidth={2} />
+                <span className="relative z-10 font-medium">Check if it's a match</span>
+                <Lock className="w-3 h-3 text-primary/70" strokeWidth={2} />
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-accent/20 rounded-full">
+                <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400/20" />
+                <span className="text-sm font-medium text-primary">
+                  {recommendationScore}% Match
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
