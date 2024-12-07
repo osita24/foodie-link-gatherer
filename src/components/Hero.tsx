@@ -11,27 +11,60 @@ const Hero = () => {
   const [restaurantUrl, setRestaurantUrl] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [userName, setUserName] = useState("");
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const session = useSession();
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (session?.user) {
-        console.log("🔍 Fetching profile for user:", session.user.id);
-        
-        const { data: profile, error } = await supabase
+      if (!session?.user?.id) {
+        console.log("👤 No user session found");
+        return;
+      }
+
+      setIsLoadingProfile(true);
+      console.log("🔍 Fetching profile for user:", session.user.id);
+
+      try {
+        // First, check if profile exists
+        const { data: existingProfile, error: checkError } = await supabase
           .from('profiles')
           .select('full_name')
           .eq('id', session.user.id)
-          .single();
-        
-        if (error) {
-          console.error("❌ Error fetching profile:", error);
-          return;
+          .maybeSingle();
+
+        if (checkError) {
+          console.error("❌ Error checking profile:", checkError);
+          throw checkError;
         }
 
-        console.log("✅ Profile fetched:", profile);
-        setUserName(profile?.full_name || session.user.email?.split('@')[0] || '');
+        if (!existingProfile) {
+          console.log("⚠️ No profile found, creating one...");
+          // Create profile if it doesn't exist
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert([{ 
+              id: session.user.id,
+              full_name: session.user.email?.split('@')[0] || 'User'
+            }]);
+
+          if (insertError) {
+            console.error("❌ Error creating profile:", insertError);
+            throw insertError;
+          }
+
+          setUserName(session.user.email?.split('@')[0] || 'User');
+        } else {
+          console.log("✅ Profile found:", existingProfile);
+          setUserName(existingProfile.full_name || session.user.email?.split('@')[0] || 'User');
+        }
+      } catch (error: any) {
+        console.error("❌ Profile error:", error);
+        // Fallback to email username if there's an error
+        setUserName(session.user.email?.split('@')[0] || 'User');
+        toast.error("Failed to load profile");
+      } finally {
+        setIsLoadingProfile(false);
       }
     };
 
@@ -112,7 +145,13 @@ const Hero = () => {
             <div className="space-y-4">
               {session?.user ? (
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-secondary font-serif animate-fade-up">
-                  {getGreeting()}, {userName}! 👋
+                  {isLoadingProfile ? (
+                    <span className="flex items-center justify-center gap-3">
+                      Loading... <Loader2 className="w-8 h-8 animate-spin" />
+                    </span>
+                  ) : (
+                    `${getGreeting()}, ${userName}! 👋`
+                  )}
                 </h1>
               ) : (
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-secondary font-serif animate-fade-up">
