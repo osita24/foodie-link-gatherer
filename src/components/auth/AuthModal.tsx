@@ -61,7 +61,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[400px] p-0 bg-background">
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-6">
           <div className="text-center">
             <div className="inline-block p-3 bg-primary/10 rounded-full mb-3">
               <svg 
@@ -79,10 +79,10 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               </svg>
             </div>
             <h2 className="text-xl font-semibold text-secondary">
-              Welcome to Cilantro
+              Join Cilantro
             </h2>
             <p className="text-sm text-muted-foreground mt-2">
-              Sign in or create an account to get personalized restaurant recommendations
+              Discover and save your favorite restaurants
             </p>
           </div>
 
@@ -119,19 +119,19 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
             localization={{
               variables: {
                 sign_in: {
-                  email_label: 'Email address',
+                  email_label: 'Email',
                   password_label: 'Password',
-                  button_label: 'Sign in to your account',
-                  link_text: "Don't have an account? Create one",
-                  email_input_placeholder: 'Enter your email',
+                  button_label: 'Continue',
+                  link_text: "New to Cilantro? Create an account",
+                  email_input_placeholder: 'name@example.com',
                   password_input_placeholder: 'Enter your password',
                 },
                 sign_up: {
-                  email_label: 'Email address',
-                  password_label: 'Create password',
+                  email_label: 'Email',
+                  password_label: 'Password',
                   button_label: 'Create your account',
                   link_text: "Already have an account? Sign in",
-                  email_input_placeholder: 'Enter your email',
+                  email_input_placeholder: 'name@example.com',
                   password_input_placeholder: 'Create a secure password',
                 },
               },
