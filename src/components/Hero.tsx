@@ -4,7 +4,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MapPin } from "lucide-react";
 
 const Hero = () => {
@@ -19,33 +18,39 @@ const Hero = () => {
     }
     
     setIsProcessing(true);
+    console.log("🔍 Starting import for URL:", restaurantUrl);
     
     try {
-      console.log("Fetching restaurant data for URL:", restaurantUrl);
-      
       const { data, error } = await supabase.functions.invoke('google-maps-proxy', {
         body: { url: restaurantUrl }
       });
 
+      console.log("📡 Response received:", data);
+
       if (error) {
-        console.error("Supabase function error:", error);
+        console.error("❌ Edge function error:", error);
         throw error;
       }
-      
-      console.log("Received response:", data);
-      
+
       if (!data?.result?.result?.place_id) {
-        console.error("No place_id found in response:", data);
+        console.error("❌ No place_id in response:", data);
         throw new Error("No restaurant data found");
       }
 
       const placeId = data.result.result.place_id;
-      console.log("Navigating to restaurant page with ID:", placeId);
-      navigate(`/restaurant/${placeId}`);
+      console.log("✅ Found place ID:", placeId);
+      
+      // Show success message before navigation
+      toast.success("Restaurant found! Loading details...");
+      
+      // Add a small delay before navigation to ensure the toast is visible
+      setTimeout(() => {
+        navigate(`/restaurant/${placeId}`);
+      }, 500);
       
     } catch (error) {
-      console.error("Error:", error);
-      toast.error("Failed to find restaurant. Please make sure you're using a valid Google Maps link.");
+      console.error("❌ Import error:", error);
+      toast.error(error.message || "Failed to find restaurant. Please make sure you're using a valid Google Maps link.");
     } finally {
       setIsProcessing(false);
     }

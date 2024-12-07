@@ -17,29 +17,46 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
       return await getPlaceDetails(placeId);
     }
 
+    if (!url) {
+      throw new Error('No URL or place ID provided');
+    }
+
     // Handle shortened URLs first
     let finalUrl = url;
-    if (url?.includes('goo.gl') || url?.includes('maps.app.goo.gl')) {
+    if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
       console.log('📎 Expanding shortened URL:', url);
-      const response = await fetch(url, { 
-        redirect: 'follow',
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      try {
+        const response = await fetch(url, { 
+          redirect: 'follow',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to expand URL: ${response.status}`);
         }
-      });
-      finalUrl = response.url;
-      console.log('📎 Expanded URL:', finalUrl);
+        finalUrl = response.url;
+        console.log('📎 Expanded URL:', finalUrl);
+      } catch (error) {
+        console.error('❌ Error expanding shortened URL:', error);
+        throw new Error('Failed to process shortened URL');
+      }
     }
 
     // Try to extract place ID from URL first
-    const urlObj = new URL(finalUrl);
-    const searchParams = new URLSearchParams(urlObj.search);
-    const extractedPlaceId = searchParams.get('place_id') || 
-                            finalUrl.match(/place\/[^/]+\/([^/?]+)/)?.[1];
+    try {
+      const urlObj = new URL(finalUrl);
+      const searchParams = new URLSearchParams(urlObj.search);
+      const extractedPlaceId = searchParams.get('place_id') || 
+                              finalUrl.match(/place\/[^/]+\/([^/?]+)/)?.[1];
 
-    if (extractedPlaceId?.startsWith('ChIJ')) {
-      console.log('🎯 Found place ID in URL:', extractedPlaceId);
-      return await getPlaceDetails(extractedPlaceId);
+      if (extractedPlaceId?.startsWith('ChIJ')) {
+        console.log('🎯 Found place ID in URL:', extractedPlaceId);
+        return await getPlaceDetails(extractedPlaceId);
+      }
+    } catch (error) {
+      console.error('❌ Error parsing URL:', error);
+      throw new Error('Invalid Google Maps URL format');
     }
 
     // Extract search text and try text search
@@ -51,10 +68,10 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
     searchUrl.searchParams.set('query', searchText);
     searchUrl.searchParams.set('type', 'restaurant');
     
-    console.log('🌐 Making text search request to:', searchUrl.toString());
+    console.log('🌐 Making text search request');
     const response = await fetch(searchUrl.toString());
     if (!response.ok) {
-      console.error('❌ Places API request failed:', response.status, await response.text());
+      console.error('❌ Places API request failed:', response.status);
       throw new Error(`Places API request failed with status ${response.status}`);
     }
     
@@ -62,12 +79,7 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
     console.log('📊 Search response status:', data.status);
     
     if (data.status === 'ZERO_RESULTS') {
-      console.log('⚠️ No results from text search, trying nearby search');
-      const coords = extractCoordinates(finalUrl);
-      if (coords) {
-        return await searchNearby(coords.lat, coords.lng);
-      }
-      throw new Error('No results found and no coordinates available for nearby search');
+      throw new Error('No restaurant found at this location');
     }
     
     if (data.status !== 'OK' || !data.results?.[0]) {
@@ -82,6 +94,30 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
   } catch (error) {
     console.error('❌ Error in searchRestaurant:', error);
     throw error;
+  }
+}
+
+function extractSearchText(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    
+    // Try different parameters where the search text might be
+    const searchParams = [
+      urlObj.searchParams.get('q'),
+      urlObj.searchParams.get('query'),
+      decodeURIComponent(urlObj.pathname.split('/place/')[1]?.split('/')[0] || '')
+        .replace(/\+/g, ' ')
+    ].filter(Boolean);
+
+    const searchText = searchParams[0] || 
+                      url.split('/place/')[1]?.split('/')[0]?.replace(/\+/g, ' ') || 
+                      url;
+
+    console.log('📝 Extracted search text:', searchText);
+    return searchText;
+  } catch (error) {
+    console.log('⚠️ Error parsing URL, using full URL as search text');
+    return url;
   }
 }
 
@@ -111,109 +147,18 @@ async function getPlaceDetails(placeId: string): Promise<any> {
   console.log('🌐 Making place details request');
   const response = await fetch(detailsUrl.toString());
   
-  // Log the raw response for debugging
-  const responseText = await response.text();
-  console.log('📝 Raw response:', responseText);
-  
   if (!response.ok) {
-    console.error('❌ Place details request failed:', response.status, responseText);
+    console.error('❌ Place details request failed:', response.status);
     throw new Error(`Place details request failed with status ${response.status}`);
   }
   
-  let data;
-  try {
-    data = JSON.parse(responseText);
-  } catch (error) {
-    console.error('❌ Failed to parse response:', error);
-    throw new Error('Failed to parse place details response');
-  }
+  const data = await response.json();
   
   if (data.status !== 'OK') {
     console.error('❌ Place Details API error:', data);
     throw new Error(`Place Details API error: ${data.status}`);
   }
 
-  // If photos exist, identify potential menu photos
-  if (data.result.photos) {
-    try {
-      const menuPhotoRefs = await identifyMenuPhotos(data.result.photos);
-      data.result.menuPhotos = menuPhotoRefs;
-    } catch (error) {
-      console.error('⚠️ Error processing menu photos:', error);
-      // Don't fail the whole request if menu photo processing fails
-      data.result.menuPhotos = [];
-    }
-  }
-  
   console.log('✅ Successfully retrieved place details');
   return data;
-}
-
-function extractSearchText(url: string): string {
-  try {
-    const urlObj = new URL(url);
-    
-    // Try different parameters where the search text might be
-    const searchParams = [
-      urlObj.searchParams.get('q'),
-      urlObj.searchParams.get('query'),
-      decodeURIComponent(urlObj.pathname.split('/place/')[1]?.split('/')[0] || '')
-        .replace(/\+/g, ' ')
-    ].filter(Boolean);
-
-    // Use the first non-empty value or fallback to the URL path
-    const searchText = searchParams[0] || 
-                      url.split('/place/')[1]?.split('/')[0]?.replace(/\+/g, ' ') || 
-                      url;
-
-    console.log('📝 Extracted search text:', searchText);
-    return searchText;
-  } catch (error) {
-    console.log('⚠️ Error parsing URL, using full URL as search text');
-    return url;
-  }
-}
-
-function extractCoordinates(url: string): { lat: number; lng: number } | null {
-  // Try to match coordinates in different formats
-  const patterns = [
-    /@(-?\d+\.\d+),(-?\d+\.\d+)/,
-    /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/,
-    /ll=(-?\d+\.\d+),(-?\d+\.\d+)/
-  ];
-
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match) {
-      return {
-        lat: parseFloat(match[1]),
-        lng: parseFloat(match[2])
-      };
-    }
-  }
-  return null;
-}
-
-async function searchNearby(lat: number, lng: number): Promise<any> {
-  console.log('🌍 Performing nearby search at coordinates:', { lat, lng });
-  
-  const nearbyUrl = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json');
-  nearbyUrl.searchParams.set('key', GOOGLE_API_KEY);
-  nearbyUrl.searchParams.set('location', `${lat},${lng}`);
-  nearbyUrl.searchParams.set('radius', '100');
-  nearbyUrl.searchParams.set('type', 'restaurant');
-
-  const response = await fetch(nearbyUrl.toString());
-  if (!response.ok) {
-    throw new Error(`Nearby search failed with status ${response.status}`);
-  }
-  
-  const data = await response.json();
-
-  if (data.status !== 'OK' || !data.results?.[0]) {
-    throw new Error('No restaurants found at this location');
-  }
-
-  console.log('✅ Found restaurant via nearby search');
-  return await getPlaceDetails(data.results[0].place_id);
 }
