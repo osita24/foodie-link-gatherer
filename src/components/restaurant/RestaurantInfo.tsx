@@ -1,4 +1,4 @@
-import { Phone, MapPin, Clock, Globe } from "lucide-react";
+import { Phone, MapPin, Clock, Globe, DollarSign } from "lucide-react";
 import { RestaurantDetails } from "@/types/restaurant";
 import { formatPhoneNumber } from "@/utils/formatPhoneNumber";
 import ServiceOptions from "./ServiceOptions";
@@ -49,6 +49,17 @@ const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
     }
   };
 
+  const getPriceRangeDisplay = (priceLevel?: number) => {
+    if (!priceLevel) return null;
+    return (
+      <div className="flex items-center gap-1">
+        {[...Array(priceLevel)].map((_, i) => (
+          <DollarSign key={i} className="w-4 h-4 text-primary fill-current" />
+        ))}
+      </div>
+    );
+  };
+
   console.log("Restaurant data in RestaurantInfo:", restaurant);
 
   return (
@@ -60,6 +71,7 @@ const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
           <span className="text-muted-foreground">
             {formatReviewCount(restaurant?.reviews)} reviews
           </span>
+          {getPriceRangeDisplay(restaurant?.priceLevel)}
         </div>
         <ServiceOptions 
           delivery={restaurant?.delivery}

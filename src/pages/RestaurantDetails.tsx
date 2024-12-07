@@ -6,10 +6,10 @@ import RestaurantInfo from "@/components/restaurant/RestaurantInfo";
 import MenuSection from "@/components/restaurant/MenuSection";
 import PhotosSection from "@/components/restaurant/PhotosSection";
 import ReviewsSection from "@/components/restaurant/ReviewsSection";
-import MatchScoreCard from "@/components/restaurant/MatchScoreCard";
 import ActionButtons from "@/components/restaurant/ActionButtons";
 import OrderSection from "@/components/restaurant/OrderSection";
 import AdditionalInfo from "@/components/restaurant/AdditionalInfo";
+import MatchScorePrompt from "@/components/restaurant/MatchScorePrompt";
 import { RestaurantDetails as RestaurantDetailsType } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -122,34 +122,6 @@ const RestaurantDetails = () => {
     return null;
   }
 
-  // Generate match categories based on restaurant data
-  const matchCategories = [
-    {
-      category: "Taste Profile",
-      score: restaurant.types?.includes("restaurant") ? 90 : 75,
-      description: `Matches your dining preferences`,
-      icon: "🌶️"
-    },
-    {
-      category: "Price Range",
-      score: restaurant.priceLevel ? (5 - restaurant.priceLevel) * 20 : 80,
-      description: "Within your typical dining budget",
-      icon: "💰"
-    },
-    {
-      category: "Atmosphere",
-      score: restaurant.rating ? Math.round(restaurant.rating * 20) : 85,
-      description: restaurant.types?.includes("casual") ? "Casual dining atmosphere" : "Restaurant atmosphere",
-      icon: "✨"
-    },
-    {
-      category: "Service",
-      score: restaurant.userRatingsTotal > 100 ? 88 : 80,
-      description: `Based on ${restaurant.userRatingsTotal || 0} reviews`,
-      icon: "👨‍🍳"
-    }
-  ];
-
   return (
     <div className="min-h-screen bg-background pb-20 animate-fade-up">
       <Header />
@@ -171,7 +143,7 @@ const RestaurantDetails = () => {
             </div>
             
             <div className="block lg:hidden space-y-6">
-              <MatchScoreCard categories={matchCategories} />
+              <MatchScorePrompt />
               <MenuSection 
                 menu={restaurant?.menu} 
                 photos={restaurant?.photos}
@@ -201,7 +173,7 @@ const RestaurantDetails = () => {
           </div>
 
           <div className="hidden lg:block space-y-6 lg:sticky lg:top-24 self-start">
-            <MatchScoreCard categories={matchCategories} />
+            <MatchScorePrompt />
             <OrderSection />
           </div>
         </div>

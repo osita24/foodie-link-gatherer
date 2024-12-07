@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { Star, ChevronDown, ChevronUp } from "lucide-react";
+import { Star, ChevronDown, ChevronUp, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import AuthModal from "@/components/auth/AuthModal";
 
 interface MenuItemProps {
   item: {
@@ -16,6 +18,7 @@ interface MenuItemProps {
 
 const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Clean up the name by removing markdown and numbers
   const cleanName = item.name
@@ -39,12 +42,15 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
             <h3 className="text-base font-medium text-secondary group-hover:text-primary transition-colors">
               {cleanName}
             </h3>
-            {recommendationScore >= 90 && (
-              <Badge className="bg-green-100 text-green-800 text-xs px-2 py-0.5">
-                <Star className="w-3 h-3 mr-1 inline-block fill-current" />
-                Top Pick
-              </Badge>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs gap-1 hover:bg-primary/10"
+              onClick={() => setShowAuthModal(true)}
+            >
+              <Lock className="w-3 h-3" />
+              View Match
+            </Button>
           </div>
           {description && (
             <div className="mt-1">
@@ -81,22 +87,12 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
             </Badge>
           )}
         </div>
-        {recommendationScore > 0 && (
-          <div className="flex items-center gap-1">
-            <div className="w-16 h-1 bg-gray-200 rounded-full overflow-hidden">
-              <div 
-                className={cn(
-                  "h-full rounded-full transition-all duration-500",
-                  recommendationScore >= 90 ? "bg-green-500" :
-                  recommendationScore >= 80 ? "bg-primary" :
-                  "bg-primary/60"
-                )}
-                style={{ width: `${recommendationScore}%` }}
-              />
-            </div>
-          </div>
-        )}
       </div>
+
+      <AuthModal 
+        open={showAuthModal}
+        onOpenChange={setShowAuthModal}
+      />
     </div>
   );
 };
