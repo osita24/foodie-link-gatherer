@@ -26,6 +26,11 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Add isActive function to check current route
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
+
   useEffect(() => {
     const getInitialSession = async () => {
       console.log("🔍 Getting initial session");
