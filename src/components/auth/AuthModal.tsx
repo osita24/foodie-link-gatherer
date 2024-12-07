@@ -83,13 +83,17 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               Welcome to Cilantro
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Find your next favorite restaurant
+              {view === "sign_in" 
+                ? "Sign in to access your preferences"
+                : "Create an account to get personalized recommendations"
+              }
             </p>
           </div>
 
           <Auth
             supabaseClient={supabase}
             view={view}
+            onViewChange={setView}
             appearance={{
               theme: ThemeSupa,
               variables: {
