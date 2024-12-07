@@ -42,6 +42,20 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
   const isLongDescription = description && description.length > 100;
   const displayDescription = isExpanded ? description : description?.substring(0, 100);
 
+  const getMatchColor = (score: number) => {
+    if (score >= 90) return "bg-success/10 text-success border-success/20";
+    if (score >= 75) return "bg-primary/10 text-primary border-primary/20";
+    if (score >= 60) return "bg-warning/10 text-warning border-warning/20";
+    return "bg-gray-100 text-gray-600 border-gray-200";
+  };
+
+  const getMatchDescription = (score: number) => {
+    if (score >= 90) return "Perfect match! Aligns with your preferences";
+    if (score >= 75) return "Great match based on your taste profile";
+    if (score >= 60) return "Good match with some of your preferences";
+    return "Moderate match with your preferences";
+  };
+
   return (
     <div className="group relative p-4 rounded-lg hover:bg-accent/20 transition-all duration-300">
       <div className="flex items-start justify-between gap-4">
@@ -102,11 +116,17 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
                 <Lock className="w-3 h-3 text-primary/70" strokeWidth={2} />
               </Button>
             ) : (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-accent/20 rounded-full">
-                <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400/20" />
-                <span className="text-sm font-medium text-primary">
-                  {recommendationScore}% Match
-                </span>
+              <div className={`flex flex-col gap-1 w-full sm:w-auto ${getMatchColor(recommendationScore)} 
+                rounded-lg p-3 border animate-fade-up transition-all duration-300`}>
+                <div className="flex items-center gap-2">
+                  <Star className="w-3.5 h-3.5 fill-current" />
+                  <span className="text-sm font-medium">
+                    {recommendationScore}% Match
+                  </span>
+                </div>
+                <p className="text-xs opacity-90">
+                  {getMatchDescription(recommendationScore)}
+                </p>
               </div>
             )}
           </div>

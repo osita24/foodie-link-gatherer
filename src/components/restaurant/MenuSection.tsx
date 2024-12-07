@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import MenuItem from "./menu/MenuItem";
 import MenuHeader from "./menu/MenuHeader";
+import MatchScoreCard from "./MatchScoreCard";
+import { useRestaurantMatch } from "@/hooks/useRestaurantMatch";
 
 interface MenuSectionProps {
   menu?: MenuCategory[];
@@ -17,6 +19,7 @@ interface MenuSectionProps {
 const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
   const [processedMenu, setProcessedMenu] = useState<MenuCategory[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { categories } = useRestaurantMatch(null);
 
   useEffect(() => {
     if (menu) {
@@ -109,24 +112,27 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
   }
 
   return (
-    <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
-      <CardContent className="p-0">
-        <div className="relative">
-          <MenuHeader menuUrl={menuUrl} />
-          <div className="p-4 md:p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {processedMenu[0].items.map((item) => (
-                <MenuItem
-                  key={item.id}
-                  item={item}
-                  recommendationScore={getRecommendationScore(item)}
-                />
-              ))}
+    <div className="space-y-6">
+      <MatchScoreCard categories={categories} />
+      <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
+        <CardContent className="p-0">
+          <div className="relative">
+            <MenuHeader menuUrl={menuUrl} />
+            <div className="p-4 md:p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {processedMenu[0].items.map((item) => (
+                  <MenuItem
+                    key={item.id}
+                    item={item}
+                    recommendationScore={getRecommendationScore(item)}
+                  />
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
