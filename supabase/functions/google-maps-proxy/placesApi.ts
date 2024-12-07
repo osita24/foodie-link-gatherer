@@ -1,5 +1,3 @@
-import { identifyMenuPhotos } from "./utils/photoUtils.ts";
-
 const GOOGLE_API_KEY = Deno.env.get('GOOGLE_PLACES_API_KEY');
 
 export async function searchRestaurant(url?: string, placeId?: string): Promise<any> {
