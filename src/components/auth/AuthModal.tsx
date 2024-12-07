@@ -13,7 +13,6 @@ interface AuthModalProps {
 
 const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const navigate = useNavigate();
-  const [view, setView] = useState<"sign_in" | "sign_up">("sign_up");
 
   useEffect(() => {
     console.log("🔐 Setting up auth state change listener");
@@ -82,12 +81,6 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
             <h2 className="text-xl font-semibold text-secondary">
               Welcome to Cilantro
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              {view === "sign_in" 
-                ? "Sign in to access your preferences"
-                : "Create an account to get personalized recommendations"
-              }
-            </p>
           </div>
 
           <Auth
@@ -127,12 +120,16 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   password_label: 'Password',
                   button_label: 'Sign in',
                   link_text: "Don't have an account? Sign up",
+                  email_input_placeholder: 'Your email address',
+                  password_input_placeholder: 'Your password',
                 },
                 sign_up: {
                   email_label: 'Email',
                   password_label: 'Password',
                   button_label: 'Create account',
                   link_text: "Already have an account? Sign in",
+                  email_input_placeholder: 'Your email address',
+                  password_input_placeholder: 'Choose a password',
                 },
               },
             }}
