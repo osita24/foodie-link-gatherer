@@ -30,19 +30,30 @@ const PriceRangeSelector = ({ value, onChange }: PriceRangeSelectorProps) => {
           )}
         >
           <div className="flex flex-col items-center gap-2">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5 px-3 py-1.5 bg-white/50 rounded-full">
               {[...Array(range.icons)].map((_, i) => (
                 <DollarSign
                   key={i}
-                  size={16}
+                  size={14}
                   className={cn(
                     "transition-colors",
-                    value === range.value ? "text-primary" : "text-gray-400"
+                    value === range.value 
+                      ? "text-primary fill-primary/20" 
+                      : "text-gray-400",
                   )}
+                  strokeWidth={2.5}
+                />
+              ))}
+              {[...Array(4 - range.icons)].map((_, i) => (
+                <DollarSign
+                  key={i + range.icons}
+                  size={14}
+                  className="text-gray-300"
+                  strokeWidth={2.5}
                 />
               ))}
             </div>
-            <span className="font-medium">{range.label}</span>
+            <span className="font-medium text-sm">{range.label}</span>
           </div>
         </button>
       ))}

@@ -52,9 +52,20 @@ const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
   const getPriceRangeDisplay = (priceLevel?: number) => {
     if (!priceLevel) return null;
     return (
-      <div className="flex items-center gap-1">
+      <div className="inline-flex items-center gap-0.5 px-3 py-1.5 bg-accent/30 rounded-full">
         {[...Array(priceLevel)].map((_, i) => (
-          <DollarSign key={i} className="w-4 h-4 text-primary fill-current" />
+          <DollarSign 
+            key={i} 
+            className="w-3.5 h-3.5 text-primary fill-primary/20" 
+            strokeWidth={2.5}
+          />
+        ))}
+        {[...Array(4 - (priceLevel || 0))].map((_, i) => (
+          <DollarSign 
+            key={i + priceLevel} 
+            className="w-3.5 h-3.5 text-gray-300" 
+            strokeWidth={2.5}
+          />
         ))}
       </div>
     );
@@ -66,7 +77,7 @@ const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
     <div className="space-y-6 text-left">
       <div>
         <h1 className="text-4xl font-bold mb-4 text-left">{restaurant?.name ?? 'Restaurant Name Not Available'}</h1>
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center gap-4 mb-4 flex-wrap">
           <RatingStars rating={restaurant?.rating} />
           <span className="text-muted-foreground">
             {formatReviewCount(restaurant?.reviews)} reviews
