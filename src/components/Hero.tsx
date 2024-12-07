@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Link2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -66,30 +66,27 @@ const Hero = () => {
       <div className="container relative px-4 md:px-6 z-10">
         <div className="flex flex-col items-center space-y-8 text-center max-w-3xl mx-auto">
           <div className="space-y-4">
-            <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent animate-fade-up">
+            <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent animate-fade-up">
               Find Your Perfect Restaurant Match
             </h1>
-            <p className="mx-auto max-w-[700px] text-muted-foreground text-lg md:text-xl animate-fade-up [animation-delay:200ms]">
+            <p className="mx-auto max-w-[700px] text-muted-foreground text-base md:text-lg animate-fade-up [animation-delay:200ms]">
               Discover restaurants that match your taste preferences and get personalized recommendations tailored just for you.
             </p>
           </div>
 
           <div className="w-full max-w-2xl mx-auto space-y-4 animate-fade-up [animation-delay:400ms]">
             <form onSubmit={handleImport} className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1 group">
-                <Input
-                  type="url"
-                  placeholder="Paste Google Maps restaurant link..."
-                  value={restaurantUrl}
-                  onChange={(e) => setRestaurantUrl(e.target.value)}
-                  className="h-12 pr-12 text-lg shadow-lg transition-shadow duration-200 border-2 border-accent/50 focus:border-primary/50 hover:border-primary/30"
-                />
-                <Link2 className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-hover:text-primary/70 transition-colors" />
-              </div>
+              <Input
+                type="url"
+                placeholder="Paste Google Maps restaurant link..."
+                value={restaurantUrl}
+                onChange={(e) => setRestaurantUrl(e.target.value)}
+                className="h-14 text-lg shadow-xl transition-all duration-200 border-2 border-accent/50 focus:border-primary/50 hover:border-primary/30 focus:ring-2 focus:ring-primary/20"
+              />
               <Button 
                 type="submit" 
                 disabled={isProcessing || !restaurantUrl}
-                className="h-12 px-8 text-lg shadow-lg hover:shadow-xl transition-all duration-200"
+                className="h-14 px-8 text-lg shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 {isProcessing ? (
                   <>
