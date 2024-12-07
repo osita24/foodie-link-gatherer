@@ -17,12 +17,20 @@ const Hero = () => {
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (session?.user) {
-        const { data: profile } = await supabase
+        console.log("🔍 Fetching profile for user:", session.user.id);
+        
+        const { data: profile, error } = await supabase
           .from('profiles')
           .select('full_name')
           .eq('id', session.user.id)
           .single();
         
+        if (error) {
+          console.error("❌ Error fetching profile:", error);
+          return;
+        }
+
+        console.log("✅ Profile fetched:", profile);
         setUserName(profile?.full_name || session.user.email?.split('@')[0] || '');
       }
     };
