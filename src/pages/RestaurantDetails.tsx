@@ -3,43 +3,17 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import RestaurantInfo from "@/components/restaurant/RestaurantInfo";
+import PopularItems from "@/components/restaurant/PopularItems";
 import MenuSection from "@/components/restaurant/MenuSection";
 import PhotosSection from "@/components/restaurant/PhotosSection";
 import ReviewsSection from "@/components/restaurant/ReviewsSection";
 import MatchScoreCard from "@/components/restaurant/MatchScoreCard";
 import ActionButtons from "@/components/restaurant/ActionButtons";
 import OrderSection from "@/components/restaurant/OrderSection";
+import MenuRecommendations from "@/components/restaurant/MenuRecommendations";
 import AdditionalInfo from "@/components/restaurant/AdditionalInfo";
 import { RestaurantDetails as RestaurantDetailsType } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
-
-// Define match categories with sample data
-const matchCategories = [
-  {
-    category: "Menu Match",
-    score: 92,
-    description: "Based on your favorite ingredients and dietary preferences",
-    icon: "🍽️"
-  },
-  {
-    category: "Cuisine Style",
-    score: 88,
-    description: "Aligns with your preferred cooking styles and flavors",
-    icon: "👨‍🍳"
-  },
-  {
-    category: "Price Point",
-    score: 85,
-    description: "Matches your typical dining budget",
-    icon: "💰"
-  },
-  {
-    category: "Atmosphere",
-    score: 90,
-    description: "Fits your preferred dining environment",
-    icon: "✨"
-  }
-];
 
 const RestaurantDetails = () => {
   const [restaurant, setRestaurant] = useState<RestaurantDetailsType | null>(null);
@@ -150,6 +124,34 @@ const RestaurantDetails = () => {
     return null;
   }
 
+  // Generate match categories based on restaurant data
+  const matchCategories = [
+    {
+      category: "Taste Profile",
+      score: restaurant.types?.includes("restaurant") ? 90 : 75,
+      description: `Matches your dining preferences`,
+      icon: "🌶️"
+    },
+    {
+      category: "Price Range",
+      score: restaurant.priceLevel ? (5 - restaurant.priceLevel) * 20 : 80,
+      description: "Within your typical dining budget",
+      icon: "💰"
+    },
+    {
+      category: "Atmosphere",
+      score: restaurant.rating ? Math.round(restaurant.rating * 20) : 85,
+      description: restaurant.types?.includes("casual") ? "Casual dining atmosphere" : "Restaurant atmosphere",
+      icon: "✨"
+    },
+    {
+      category: "Service",
+      score: restaurant.userRatingsTotal > 100 ? 88 : 80,
+      description: `Based on ${restaurant.userRatingsTotal || 0} reviews`,
+      icon: "👨‍🍳"
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-background pb-20 animate-fade-up">
       <Header />
@@ -172,22 +174,23 @@ const RestaurantDetails = () => {
             
             <div className="block lg:hidden space-y-6">
               <MatchScoreCard categories={matchCategories} />
+              <MenuRecommendations />
               <MenuSection 
                 menu={restaurant?.menu} 
                 photos={restaurant?.photos}
                 reviews={restaurant?.googleReviews}
-                menuUrl={restaurant?.website}  // Pass the website URL which might contain menu
               />
               <OrderSection />
             </div>
 
             <div className="hidden lg:block space-y-6">
+              <MenuRecommendations />
               <MenuSection 
                 menu={restaurant?.menu} 
                 photos={restaurant?.photos}
                 reviews={restaurant?.googleReviews}
-                menuUrl={restaurant?.website}  // Pass the website URL which might contain menu
               />
+              <PopularItems />
               <AdditionalInfo restaurant={restaurant} />
               {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}
               {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
