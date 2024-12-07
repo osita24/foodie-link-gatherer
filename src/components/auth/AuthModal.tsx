@@ -1,7 +1,7 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import AuthForm from "./AuthForm";
 import AuthHeader from "./AuthHeader";
@@ -12,7 +12,6 @@ interface AuthModalProps {
 }
 
 const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
-  const navigate = useNavigate();
   const location = useLocation();
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +42,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
             console.log("⚠️ No preferences found, redirecting to onboarding");
             // Store current path before redirecting
             localStorage.setItem('redirectAfterOnboarding', location.pathname);
-            navigate('/onboarding');
+            window.location.href = '/onboarding';
           }
         } catch (error: any) {
           console.error("❌ Error in auth flow:", error);
@@ -60,10 +59,11 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       console.log("🧹 Cleaning up auth state change listener");
       subscription.unsubscribe();
     };
-  }, [navigate, onOpenChange, location]);
+  }, [onOpenChange, location]);
 
   const handleSubmit = async (email: string, password: string) => {
     setIsLoading(true);
+    console.log("🔑 Attempting authentication...");
 
     try {
       let result;
@@ -73,9 +73,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
           email,
           password,
           options: {
-            data: {
-              redirect_to: location.pathname
-            }
+            emailRedirectTo: window.location.href
           }
         });
         
