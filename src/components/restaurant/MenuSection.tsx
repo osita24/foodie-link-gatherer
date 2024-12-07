@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { List, Loader2, Sparkles } from "lucide-react";
+import { List, Loader2, Sparkles, ExternalLink } from "lucide-react";
 import { MenuCategory } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -108,22 +108,35 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
       <CardContent className="p-0">
         <div className="relative">
           {/* Decorative header */}
-          <div className="bg-primary/10 p-8 text-center border-b border-primary/20">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <h2 className="text-2xl md:text-3xl font-serif text-secondary">
-                Our Menu
-              </h2>
-              <Badge 
-                variant="secondary" 
-                className="text-xs bg-accent/50 text-secondary/70 hover:bg-accent/70"
-              >
-                <Sparkles className="w-3 h-3 mr-1 inline-block" />
-                AI Enhanced Beta
-              </Badge>
+          <div className="bg-primary/10 p-6 md:p-8 text-center border-b border-primary/20">
+            <div className="flex flex-col items-center">
+              <div className="flex items-center justify-center gap-2">
+                <h2 className="text-2xl md:text-3xl font-serif text-secondary">
+                  Our Menu
+                </h2>
+                <Badge 
+                  variant="secondary" 
+                  className="text-xs bg-accent/50 text-secondary/70 hover:bg-accent/70"
+                >
+                  <Sparkles className="w-3 h-3 mr-1 inline-block" />
+                  AI Enhanced Beta
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Menu information is automatically processed and continuously improving
+              </p>
+              {menuUrl && (
+                <a
+                  href={menuUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-flex items-center gap-1 text-xs text-primary/70 hover:text-primary transition-colors"
+                >
+                  <span>View full menu</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Menu information is automatically processed and continuously improving
-            </p>
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/20 via-primary to-primary/20" />
           </div>
           
