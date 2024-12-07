@@ -3,24 +3,26 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PriceRange, UserPreferences } from "@/types/preferences";
+import { Accordion } from "@/components/ui/accordion";
 import CuisinePreferences from "./preferences/CuisinePreferences";
 import DietaryPreferences from "./preferences/DietaryPreferences";
 import SpiceLevelSelector from "./preferences/SpiceLevelSelector";
 import PriceRangeSelector from "./preferences/PriceRangeSelector";
 import PreferenceCard from "./preferences/PreferenceCard";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Progress } from "@/components/ui/progress";
+import PreferencesProgress from "./preferences/PreferencesProgress";
+import PreferencesSection from "./preferences/PreferencesSection";
 import { 
   UtensilsCrossed, 
   Leaf, 
   Cherry, 
   Wind,
-  Settings2
+  Settings2,
+  Shell,
+  Fish,
+  Coffee,
+  Soup,
+  Pizza,
+  Beef,
 } from "lucide-react";
 
 const defaultPreferences: UserPreferences = {
@@ -40,11 +42,11 @@ const RestaurantPreferences = () => {
 
   const atmosphereTypes = [
     { name: "Casual Dining", icon: <UtensilsCrossed /> },
-    { name: "Fine Dining", icon: <UtensilsCrossed /> },
+    { name: "Fine Dining", icon: <Settings2 /> },
     { name: "Family-Friendly", icon: <UtensilsCrossed /> },
     { name: "Romantic", icon: <Cherry /> },
     { name: "Outdoor Seating", icon: <Wind /> },
-    { name: "Quiet/Intimate", icon: <Wind /> },
+    { name: "Quiet/Intimate", icon: <Coffee /> },
     { name: "Lively/Energetic", icon: <Wind /> },
     { name: "Modern/Trendy", icon: <Settings2 /> },
     { name: "Traditional/Classic", icon: <Settings2 /> }
@@ -52,20 +54,14 @@ const RestaurantPreferences = () => {
 
   const favoriteIngredients = [
     { name: "Chicken", icon: <UtensilsCrossed /> },
-    { name: "Beef", icon: <UtensilsCrossed /> },
-    { name: "Fish", icon: <UtensilsCrossed /> },
+    { name: "Beef", icon: <Beef /> },
+    { name: "Fish", icon: <Fish /> },
     { name: "Tofu", icon: <Leaf /> },
     { name: "Mushrooms", icon: <Leaf /> },
-    { name: "Avocado", icon: <Cherry /> },
-    { name: "Cheese", icon: <Cherry /> },
+    { name: "Seafood", icon: <Shell /> },
     { name: "Rice", icon: <Cherry /> },
-    { name: "Noodles", icon: <UtensilsCrossed /> },
-    { name: "Eggs", icon: <Cherry /> },
-    { name: "Shrimp", icon: <UtensilsCrossed /> },
-    { name: "Lamb", icon: <UtensilsCrossed /> },
-    { name: "Garlic", icon: <Leaf /> },
-    { name: "Ginger", icon: <Leaf /> },
-    { name: "Tomatoes", icon: <Cherry /> },
+    { name: "Noodles", icon: <Soup /> },
+    { name: "Pizza", icon: <Pizza /> },
     { name: "Fresh Herbs", icon: <Leaf /> }
   ];
 
@@ -176,118 +172,78 @@ const RestaurantPreferences = () => {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      <div className="space-y-2">
-        <h2 className="text-lg font-medium">Complete Your Taste Profile</h2>
-        <Progress value={completionPercentage} className="h-2" />
-        <p className="text-sm text-gray-500">
-          {completionPercentage === 100 
-            ? "All preferences set! Feel free to update them anytime."
-            : "Fill out your preferences to get better restaurant recommendations"}
-        </p>
-      </div>
+      <PreferencesProgress completionPercentage={completionPercentage} />
 
       <Accordion type="single" collapsible className="w-full space-y-4">
-        <AccordionItem value="cuisines" className="border rounded-lg bg-white shadow-sm">
-          <AccordionTrigger className="px-4">
-            <div className="flex items-center space-x-2">
-              <span className="text-lg">Cuisine Preferences</span>
-              {preferences.cuisinePreferences.length > 0 && (
-                <span className="text-sm text-gray-500">
-                  ({preferences.cuisinePreferences.length} selected)
-                </span>
-              )}
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4">
-            <CuisinePreferences 
-              selected={preferences.cuisinePreferences}
-              onChange={(cuisines) => setPreferences(prev => ({ ...prev, cuisinePreferences: cuisines }))}
-            />
-          </AccordionContent>
-        </AccordionItem>
+        <PreferencesSection 
+          value="cuisines" 
+          title="Cuisine Preferences"
+          selectedCount={preferences.cuisinePreferences.length}
+        >
+          <CuisinePreferences 
+            selected={preferences.cuisinePreferences}
+            onChange={(cuisines) => setPreferences(prev => ({ ...prev, cuisinePreferences: cuisines }))}
+          />
+        </PreferencesSection>
 
-        <AccordionItem value="dietary" className="border rounded-lg bg-white shadow-sm">
-          <AccordionTrigger className="px-4">
-            <div className="flex items-center space-x-2">
-              <span className="text-lg">Dietary Preferences</span>
-              {preferences.dietaryRestrictions.length > 0 && (
-                <span className="text-sm text-gray-500">
-                  ({preferences.dietaryRestrictions.length} selected)
-                </span>
-              )}
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4">
-            <DietaryPreferences
-              selected={preferences.dietaryRestrictions}
-              onChange={(restrictions) => setPreferences(prev => ({ ...prev, dietaryRestrictions: restrictions }))}
-            />
-          </AccordionContent>
-        </AccordionItem>
+        <PreferencesSection 
+          value="dietary" 
+          title="Dietary Preferences"
+          selectedCount={preferences.dietaryRestrictions.length}
+        >
+          <DietaryPreferences
+            selected={preferences.dietaryRestrictions}
+            onChange={(restrictions) => setPreferences(prev => ({ ...prev, dietaryRestrictions: restrictions }))}
+          />
+        </PreferencesSection>
 
-        <AccordionItem value="ingredients" className="border rounded-lg bg-white shadow-sm">
-          <AccordionTrigger className="px-4">
-            <div className="flex items-center space-x-2">
-              <span className="text-lg">Favorite Ingredients</span>
-              {preferences.favoriteIngredients.length > 0 && (
-                <span className="text-sm text-gray-500">
-                  ({preferences.favoriteIngredients.length} selected)
-                </span>
-              )}
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {favoriteIngredients.map((ingredient) => (
-                <PreferenceCard
-                  key={ingredient.name}
-                  label={ingredient.name}
-                  selected={preferences.favoriteIngredients.includes(ingredient.name)}
-                  onClick={() => setPreferences(prev => ({
-                    ...prev,
-                    favoriteIngredients: toggleArrayPreference(prev.favoriteIngredients, ingredient.name)
-                  }))}
-                  icon={ingredient.icon}
-                />
-              ))}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
+        <PreferencesSection 
+          value="ingredients" 
+          title="Favorite Ingredients"
+          selectedCount={preferences.favoriteIngredients.length}
+        >
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {favoriteIngredients.map((ingredient) => (
+              <PreferenceCard
+                key={ingredient.name}
+                label={ingredient.name}
+                selected={preferences.favoriteIngredients.includes(ingredient.name)}
+                onClick={() => setPreferences(prev => ({
+                  ...prev,
+                  favoriteIngredients: toggleArrayPreference(prev.favoriteIngredients, ingredient.name)
+                }))}
+                icon={ingredient.icon}
+              />
+            ))}
+          </div>
+        </PreferencesSection>
 
-        <AccordionItem value="atmosphere" className="border rounded-lg bg-white shadow-sm">
-          <AccordionTrigger className="px-4">
-            <div className="flex items-center space-x-2">
-              <span className="text-lg">Atmosphere Preferences</span>
-              {preferences.atmospherePreferences.length > 0 && (
-                <span className="text-sm text-gray-500">
-                  ({preferences.atmospherePreferences.length} selected)
-                </span>
-              )}
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {atmosphereTypes.map((atmosphere) => (
-                <PreferenceCard
-                  key={atmosphere.name}
-                  label={atmosphere.name}
-                  selected={preferences.atmospherePreferences.includes(atmosphere.name)}
-                  onClick={() => setPreferences(prev => ({
-                    ...prev,
-                    atmospherePreferences: toggleArrayPreference(prev.atmospherePreferences, atmosphere.name)
-                  }))}
-                  icon={atmosphere.icon}
-                />
-              ))}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
+        <PreferencesSection 
+          value="atmosphere" 
+          title="Atmosphere Preferences"
+          selectedCount={preferences.atmospherePreferences.length}
+        >
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {atmosphereTypes.map((atmosphere) => (
+              <PreferenceCard
+                key={atmosphere.name}
+                label={atmosphere.name}
+                selected={preferences.atmospherePreferences.includes(atmosphere.name)}
+                onClick={() => setPreferences(prev => ({
+                  ...prev,
+                  atmospherePreferences: toggleArrayPreference(prev.atmospherePreferences, atmosphere.name)
+                }))}
+                icon={atmosphere.icon}
+              />
+            ))}
+          </div>
+        </PreferencesSection>
 
-        <AccordionItem value="additional" className="border rounded-lg bg-white shadow-sm">
-          <AccordionTrigger className="px-4">
-            <span className="text-lg">Additional Preferences</span>
-          </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4 space-y-6">
+        <PreferencesSection 
+          value="additional" 
+          title="Additional Preferences"
+        >
+          <div className="space-y-6">
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Spice Level Preference</h3>
               <SpiceLevelSelector
@@ -303,8 +259,8 @@ const RestaurantPreferences = () => {
                 onChange={(value) => setPreferences(prev => ({ ...prev, priceRange: value }))}
               />
             </div>
-          </AccordionContent>
-        </AccordionItem>
+          </div>
+        </PreferencesSection>
       </Accordion>
 
       <Button 

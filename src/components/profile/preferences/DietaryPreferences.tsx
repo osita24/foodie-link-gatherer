@@ -1,4 +1,4 @@
-import { Leaf, Apple, Wheat, Ban, Scale, Milk } from "lucide-react";
+import { Leaf, Apple, Wheat, Ban, Scale, Milk, Check } from "lucide-react";
 import PreferenceCard from "./PreferenceCard";
 
 interface DietaryPreferencesProps {
@@ -8,6 +8,7 @@ interface DietaryPreferencesProps {
 
 const DietaryPreferences = ({ selected, onChange }: DietaryPreferencesProps) => {
   const dietaryPreferences = [
+    { name: "No Restrictions", icon: <Check /> },
     { name: "Vegetarian", icon: <Leaf /> },
     { name: "Vegan", icon: <Apple /> },
     { name: "Gluten-Free", icon: <Wheat /> },
@@ -20,9 +21,14 @@ const DietaryPreferences = ({ selected, onChange }: DietaryPreferencesProps) => 
   ];
 
   const toggleDietary = (diet: string) => {
+    if (diet === "No Restrictions") {
+      onChange(["No Restrictions"]);
+      return;
+    }
+
     const newDietary = selected.includes(diet)
       ? selected.filter(d => d !== diet)
-      : [...selected, diet];
+      : [...selected.filter(s => s !== "No Restrictions"), diet];
     onChange(newDietary);
   };
 
