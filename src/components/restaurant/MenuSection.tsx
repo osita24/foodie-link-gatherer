@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { List, Loader2, Sparkles, ExternalLink } from "lucide-react";
+import { List, Loader2, Sparkles, ExternalLink, Star } from "lucide-react";
 import { MenuCategory } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface MenuSectionProps {
   menu?: MenuCategory[];
@@ -71,6 +72,12 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
     }
   };
 
+  // Placeholder function for recommendation score (to be implemented with real user preferences later)
+  const getRecommendationScore = (item: any) => {
+    // Placeholder logic - returns a random score between 70 and 100
+    return Math.floor(Math.random() * 31) + 70;
+  };
+
   if (isProcessing) {
     return (
       <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
@@ -107,13 +114,11 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
     <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
       <CardContent className="p-0">
         <div className="relative">
-          {/* Decorative header */}
-          <div className="bg-primary/10 p-6 md:p-8 text-center border-b border-primary/20">
-            <div className="flex flex-col items-center">
-              <div className="flex items-center justify-center gap-2">
-                <h2 className="text-2xl md:text-3xl font-serif text-secondary">
-                  Our Menu
-                </h2>
+          {/* Menu header */}
+          <div className="bg-primary/5 p-6 text-center border-b border-primary/10">
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex items-center gap-2">
+                <h2 className="text-2xl font-serif text-secondary">Menu</h2>
                 <Badge 
                   variant="secondary" 
                   className="text-xs bg-accent/50 text-secondary/70 hover:bg-accent/70"
@@ -122,7 +127,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
                   AI Enhanced Beta
                 </Badge>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
+              <p className="text-xs text-muted-foreground">
                 Menu information is automatically processed and continuously improving
               </p>
               {menuUrl && (
@@ -130,61 +135,85 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
                   href={menuUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center gap-1 text-xs text-primary/70 hover:text-primary transition-colors"
+                  className="mt-1 inline-flex items-center gap-1 text-xs text-primary/70 hover:text-primary transition-colors"
                 >
                   <span>View full menu</span>
                   <ExternalLink className="w-3 h-3" />
                 </a>
               )}
             </div>
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/20 via-primary to-primary/20" />
           </div>
           
           {/* Menu items */}
-          <div className="p-6 md:p-8 space-y-6">
-            <div className="grid gap-4 md:gap-6">
-              {processedMenu[0].items.map((item, index) => (
-                <div
-                  key={item.id}
-                  className="group relative p-4 rounded-lg hover:bg-accent/50 transition-all duration-300"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-lg md:text-xl font-medium text-secondary group-hover:text-primary transition-colors">
-                          {item.name}
-                        </h3>
+          <div className="p-4 md:p-6 space-y-4">
+            <div className="grid gap-3">
+              {processedMenu[0].items.map((item, index) => {
+                const recommendationScore = getRecommendationScore(item);
+                return (
+                  <div
+                    key={item.id}
+                    className="group relative p-3 rounded-lg hover:bg-accent/30 transition-all duration-300"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-base font-medium text-secondary group-hover:text-primary transition-colors">
+                            {item.name}
+                          </h3>
+                          {recommendationScore >= 90 && (
+                            <Badge 
+                              className="bg-green-100 text-green-800 text-xs px-2 py-0.5"
+                            >
+                              <Star className="w-3 h-3 mr-1 inline-block fill-current" />
+                              Top Pick
+                            </Badge>
+                          )}
+                        </div>
+                        {item.description && (
+                          <p className="mt-1 text-sm text-muted-foreground leading-snug">
+                            {item.description}
+                          </p>
+                        )}
                         {item.category && (
                           <Badge 
                             variant="outline" 
-                            className="text-xs bg-transparent border-primary/20 text-primary/70"
+                            className="mt-1.5 text-xs bg-transparent border-primary/20 text-primary/70"
                           >
                             {item.category}
                           </Badge>
                         )}
                       </div>
-                      {item.description && (
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {item.description}
-                        </p>
-                      )}
+                      <div className="flex flex-col items-end gap-2">
+                        {item.price > 0 && (
+                          <span className="text-base font-medium text-primary whitespace-nowrap">
+                            ${item.price.toFixed(2)}
+                          </span>
+                        )}
+                        {recommendationScore > 0 && (
+                          <div className="flex items-center gap-1">
+                            <div className="w-24 h-1 bg-gray-200 rounded-full overflow-hidden">
+                              <div 
+                                className={cn(
+                                  "h-full rounded-full transition-all duration-500",
+                                  recommendationScore >= 90 ? "bg-green-500" :
+                                  recommendationScore >= 80 ? "bg-primary" :
+                                  "bg-primary/60"
+                                )}
+                                style={{ width: `${recommendationScore}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              {recommendationScore}%
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    {item.price > 0 && (
-                      <span className="text-lg font-medium text-primary whitespace-nowrap">
-                        ${item.price.toFixed(2)}
-                      </span>
-                    )}
                   </div>
-                  
-                  {/* Decorative line */}
-                  <div className="absolute bottom-0 left-4 right-4 h-px bg-accent/50 transform origin-left transition-transform duration-300 group-hover:scale-x-100" />
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
-          
-          {/* Decorative footer */}
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary/20 via-primary to-primary/20" />
         </div>
       </CardContent>
     </Card>

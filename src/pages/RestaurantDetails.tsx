@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import RestaurantInfo from "@/components/restaurant/RestaurantInfo";
-import PopularItems from "@/components/restaurant/PopularItems";
 import MenuSection from "@/components/restaurant/MenuSection";
 import PhotosSection from "@/components/restaurant/PhotosSection";
 import ReviewsSection from "@/components/restaurant/ReviewsSection";
@@ -177,6 +176,7 @@ const RestaurantDetails = () => {
                 menu={restaurant?.menu} 
                 photos={restaurant?.photos}
                 reviews={restaurant?.googleReviews}
+                menuUrl={restaurant?.website}
               />
               <OrderSection />
             </div>
@@ -186,8 +186,8 @@ const RestaurantDetails = () => {
                 menu={restaurant?.menu} 
                 photos={restaurant?.photos}
                 reviews={restaurant?.googleReviews}
+                menuUrl={restaurant?.website}
               />
-              <PopularItems />
               <AdditionalInfo restaurant={restaurant} />
               {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}
               {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
