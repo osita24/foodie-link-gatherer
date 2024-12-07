@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -29,10 +30,10 @@ serve(async (req) => {
     const response = {
       menuSections: [{
         name: "Menu",
-        items: menuItems.map((item: any) => ({
+        items: Array.isArray(menuItems) ? menuItems.map((item: any) => ({
           id: crypto.randomUUID(),
           ...item
-        }))
+        })) : []
       }]
     };
 
@@ -44,7 +45,10 @@ serve(async (req) => {
   } catch (error) {
     console.error("❌ Error processing menu:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        menuSections: [{ name: "Menu", items: [] }]
+      }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
