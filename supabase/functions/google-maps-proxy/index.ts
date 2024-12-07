@@ -64,7 +64,7 @@ serve(async (req) => {
     console.error('❌ Edge function error:', error);
     
     const errorResponse = {
-      error: error.message,
+      error: error.message || 'Internal server error',
       details: error.stack,
       timestamp: new Date().toISOString()
     };

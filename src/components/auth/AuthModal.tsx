@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ThemeSupa } from '@supabase/auth-ui-shared';
+import { toast } from "@/hooks/use-toast";
 
 interface AuthModalProps {
   open: boolean;
@@ -15,31 +16,45 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [view, setView] = useState<"sign_in" | "sign_up">("sign_up");
 
   useEffect(() => {
-    console.log("Setting up auth state change listener");
+    console.log("🔐 Setting up auth state change listener");
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event, session?.user?.id);
+      console.log("🔄 Auth state changed:", event, session?.user?.id);
       
       if (session?.user) {
-        console.log("User authenticated, checking for preferences");
+        console.log("✅ User authenticated, checking for preferences");
 
-        const { data: preferences } = await supabase
-          .from('user_preferences')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
+        try {
+          const { data: preferences, error } = await supabase
+            .from('user_preferences')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
 
-        console.log("User preferences:", preferences);
-        onOpenChange(false);
-        
-        if (!preferences) {
-          console.log("No preferences found, redirecting to onboarding");
-          navigate('/onboarding');
+          if (error) {
+            console.error("❌ Error fetching preferences:", error);
+            throw error;
+          }
+
+          console.log("📋 User preferences:", preferences);
+          onOpenChange(false);
+          
+          if (!preferences) {
+            console.log("⚠️ No preferences found, redirecting to onboarding");
+            navigate('/onboarding');
+          }
+        } catch (error: any) {
+          console.error("❌ Error in auth flow:", error);
+          toast({
+            title: "Error",
+            description: "There was a problem with authentication. Please try again.",
+            variant: "destructive",
+          });
         }
       }
     });
 
     return () => {
-      console.log("Cleaning up auth state change listener");
+      console.log("🧹 Cleaning up auth state change listener");
       subscription.unsubscribe();
     };
   }, [navigate, onOpenChange]);

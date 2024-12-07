@@ -28,7 +28,13 @@ const Header = () => {
 
   useEffect(() => {
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      console.log("🔍 Getting initial session");
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error("❌ Error getting session:", error);
+      } else {
+        console.log("✅ Initial session:", session?.user?.id);
+      }
       setSession(session);
     };
     
@@ -37,51 +43,60 @@ const Header = () => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log('Auth state changed:', _event, session?.user?.id);
+      console.log('🔄 Auth state changed:', _event, session?.user?.id);
       setSession(session);
       
       if (session?.user) {
-        // Check if user has preferences
-        const { data: preferences } = await supabase
+        console.log("👤 User authenticated, checking preferences");
+        const { data: preferences, error } = await supabase
           .from('user_preferences')
           .select('*')
           .eq('user_id', session.user.id)
           .maybeSingle();
 
-        if (!preferences) {
-          navigate('/onboarding');
+        if (error) {
+          console.error("❌ Error fetching preferences:", error);
+        } else {
+          console.log("📋 User preferences:", preferences);
+          if (!preferences) {
+            console.log("⚠️ No preferences found, redirecting to onboarding");
+            navigate('/onboarding');
+          }
         }
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log("🧹 Cleaning up auth state change listener");
+      subscription.unsubscribe();
+    };
   }, [navigate]);
-
-  const isActive = (path: string) => location.pathname === path;
 
   const handleSignOut = async () => {
     try {
-      console.log('Signing out...');
+      console.log('🔄 Signing out...');
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        console.error("❌ Sign out error:", error);
+        throw error;
+      }
       
-      console.log('Successfully signed out');
+      console.log('✅ Successfully signed out');
       setShowSignOutDialog(false);
       setSession(null);
       navigate('/');
       
-      // Add a small delay before showing the success message
       setTimeout(() => {
         toast({
           title: "Success",
           description: "Successfully signed out",
         });
       }, 100);
-    } catch (error) {
-      console.error('Error signing out:', error);
+    } catch (error: any) {
+      console.error('❌ Error signing out:', error);
       toast({
         title: "Error",
-        description: "Failed to sign out. Please try again.",
+        description: error.message || "Failed to sign out. Please try again.",
         variant: "destructive",
       });
     }
