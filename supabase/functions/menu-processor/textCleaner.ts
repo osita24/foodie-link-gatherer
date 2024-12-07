@@ -5,7 +5,7 @@ export async function cleanMenuText(text: string): Promise<string[]> {
     const rawKey = Deno.env.get('OPENAI_API_KEY');
     if (!rawKey) {
       console.error('❌ OpenAI API key is not configured');
-      throw new Error('OpenAI API key is not configured');
+      return fallbackTextProcessing(text);
     }
 
     // Clean up the key by removing any "Api key:" prefix if present
@@ -19,7 +19,7 @@ export async function cleanMenuText(text: string): Promise<string[]> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
@@ -47,7 +47,7 @@ export async function cleanMenuText(text: string): Promise<string[]> {
     if (!openAIResponse.ok) {
       const errorData = await openAIResponse.json();
       console.error('❌ OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      return fallbackTextProcessing(text);
     }
 
     const data = await openAIResponse.json();
@@ -55,7 +55,7 @@ export async function cleanMenuText(text: string): Promise<string[]> {
 
     if (!data.choices?.[0]?.message?.content) {
       console.error('❌ Unexpected API response format:', data);
-      return [];
+      return fallbackTextProcessing(text);
     }
 
     const cleanedText = data.choices[0].message.content;
@@ -64,6 +64,43 @@ export async function cleanMenuText(text: string): Promise<string[]> {
     return menuItems;
   } catch (error) {
     console.error('❌ Error cleaning up menu text:', error);
-    throw error;
+    return fallbackTextProcessing(text);
   }
+}
+
+// Simple fallback text processing when OpenAI is unavailable
+function fallbackTextProcessing(text: string): string[] {
+  console.log('⚠️ Using fallback text processing');
+  
+  // Split text into lines
+  const lines = text.split(/[\n\r]+/);
+  
+  // Basic processing rules
+  const menuItems = lines
+    .map(line => line.trim())
+    .filter(line => {
+      // Remove empty lines and very short text
+      if (line.length < 3) return false;
+      
+      // Remove lines that are likely prices or just numbers
+      if (/^\$?\d+(\.\d{2})?$/.test(line)) return false;
+      
+      // Remove common non-menu text
+      const nonMenuWords = ['hours', 'open', 'close', 'phone', 'address', 'website'];
+      if (nonMenuWords.some(word => line.toLowerCase().includes(word))) return false;
+      
+      return true;
+    })
+    .map(line => {
+      // Capitalize first letter of each word
+      return line.split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+    });
+
+  // Remove duplicates
+  const uniqueItems = [...new Set(menuItems)];
+  
+  console.log('⚠️ Fallback processing found items:', uniqueItems.length);
+  return uniqueItems;
 }
