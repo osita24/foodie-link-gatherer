@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { UserPreferences } from '@/types/preferences';
 import { RestaurantDetails } from '@/types/restaurant';
+import { mapSupabaseToUserPreferences } from '@/utils/preferencesMapper';
+import { 
+  calculateCuisineMatch, 
+  calculateDietaryMatch, 
+  calculateAtmosphereMatch, 
+  calculatePriceMatch,
+  MatchResult 
+} from './restaurant-match/matchCalculators';
 
 interface MatchCategory {
   category: string;
@@ -42,7 +49,7 @@ export const useRestaurantMatch = (restaurant: RestaurantDetails | null): MatchR
           return;
         }
 
-        const { data: preferences, error } = await supabase
+        const { data: preferencesData, error } = await supabase
           .from('user_preferences')
           .select('*')
           .eq('user_id', session.user.id)
@@ -53,18 +60,14 @@ export const useRestaurantMatch = (restaurant: RestaurantDetails | null): MatchR
           throw error;
         }
 
-        console.log('✅ User preferences loaded:', preferences);
+        console.log('✅ User preferences loaded:', preferencesData);
+        
+        const preferences = mapSupabaseToUserPreferences(preferencesData);
 
-        // Calculate cuisine match
+        // Calculate matches using the utility functions
         const cuisineMatch = calculateCuisineMatch(restaurant, preferences);
-        
-        // Calculate dietary match
         const dietaryMatch = calculateDietaryMatch(restaurant, preferences);
-        
-        // Calculate atmosphere match
         const atmosphereMatch = calculateAtmosphereMatch(restaurant, preferences);
-        
-        // Calculate price match
         const priceMatch = calculatePriceMatch(restaurant, preferences);
 
         const categories: MatchCategory[] = [
@@ -122,104 +125,4 @@ export const useRestaurantMatch = (restaurant: RestaurantDetails | null): MatchR
   }, [restaurant]);
 
   return matchResult;
-};
-
-// Helper functions for match calculations
-const calculateCuisineMatch = (restaurant: RestaurantDetails, preferences: UserPreferences) => {
-  // Default high score if user has no preferences
-  if (!preferences.cuisinePreferences?.length) {
-    return { score: 85, description: "Based on popular cuisine type" };
-  }
-
-  const restaurantCuisines = restaurant.types?.filter(type => 
-    type.includes('cuisine') || type.includes('food')
-  ) || [];
-
-  const matchCount = restaurantCuisines.filter(cuisine =>
-    preferences.cuisinePreferences.some(pref => 
-      cuisine.toLowerCase().includes(pref.toLowerCase())
-    )
-  ).length;
-
-  const score = matchCount > 0 
-    ? Math.min(100, 70 + (matchCount * 10))
-    : 70;
-
-  return {
-    score,
-    description: matchCount > 0 
-      ? `Matches ${matchCount} of your preferred cuisines`
-      : "Popular cuisine type that you might enjoy"
-  };
-};
-
-const calculateDietaryMatch = (restaurant: RestaurantDetails, preferences: UserPreferences) => {
-  if (!preferences.dietaryRestrictions?.length) {
-    return { score: 90, description: "No dietary restrictions specified" };
-  }
-
-  // Check if restaurant has relevant attributes
-  const hasVegetarian = restaurant.servesVegetarianFood;
-  const score = hasVegetarian ? 95 : 75;
-
-  return {
-    score,
-    description: hasVegetarian 
-      ? "Offers vegetarian options"
-      : "Limited information about dietary options"
-  };
-};
-
-const calculateAtmosphereMatch = (restaurant: RestaurantDetails, preferences: UserPreferences) => {
-  if (!preferences.atmospherePreferences?.length) {
-    return { score: 85, description: "Based on general atmosphere" };
-  }
-
-  // Map restaurant attributes to atmosphere preferences
-  const atmosphereAttributes = [
-    restaurant.reservable && 'Fine Dining',
-    restaurant.dineIn && 'Casual Dining',
-    // Add more mappings as needed
-  ].filter(Boolean);
-
-  const matchCount = atmosphereAttributes.filter(attr =>
-    preferences.atmospherePreferences.includes(attr as string)
-  ).length;
-
-  const score = matchCount > 0 
-    ? Math.min(100, 75 + (matchCount * 10))
-    : 75;
-
-  return {
-    score,
-    description: matchCount > 0
-      ? `Matches ${matchCount} of your preferred atmosphere types`
-      : "General atmosphere rating"
-  };
-};
-
-const calculatePriceMatch = (restaurant: RestaurantDetails, preferences: UserPreferences) => {
-  if (!preferences.priceRange) {
-    return { score: 85, description: "Based on average pricing" };
-  }
-
-  // Map price levels to preference ranges
-  const priceMap: Record<string, number[]> = {
-    'budget': [1],
-    'moderate': [1, 2],
-    'upscale': [2, 3],
-    'luxury': [3, 4]
-  };
-
-  const preferredLevels = priceMap[preferences.priceRange];
-  const restaurantLevel = restaurant.priceLevel || 2;
-
-  const score = preferredLevels.includes(restaurantLevel) ? 95 : 75;
-
-  return {
-    score,
-    description: score > 90 
-      ? "Matches your preferred price range"
-      : "Slightly outside your preferred price range"
-  };
 };
