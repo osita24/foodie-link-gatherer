@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Info } from "lucide-react";
+import { MapPin } from "lucide-react";
 
 const Hero = () => {
   const [restaurantUrl, setRestaurantUrl] = useState("");
@@ -87,21 +87,11 @@ const Hero = () => {
             </Button>
           </div>
           
-          <Alert className="bg-accent/20 border-accent mt-6 animate-fade-up text-left" 
-                 style={{ animationDelay: "600ms" }}>
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              <p className="font-medium mb-2">How to get a Google Maps link:</p>
-              <ol className="list-decimal list-inside space-y-2 text-sm">
-                <li>Open Google Maps and find the restaurant you want</li>
-                <li>Click the "Share" button (or tap the restaurant name and find "Share")</li>
-                <li>Choose "Copy link" and paste it here</li>
-              </ol>
-              <p className="text-sm mt-3 text-muted-foreground">
-                Works with all Google Maps URLs including shortened links (goo.gl/maps) and share links
-              </p>
-            </AlertDescription>
-          </Alert>
+          <div className="text-sm text-gray-500 mt-4 flex items-center justify-center gap-2 animate-fade-up"
+               style={{ animationDelay: "600ms" }}>
+            <MapPin className="h-4 w-4 text-primary animate-bounce" />
+            <span>Pro tip: Just click "Share" in Google Maps and paste the link here! ✨</span>
+          </div>
         </div>
       </div>
     </section>
