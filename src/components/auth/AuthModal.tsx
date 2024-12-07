@@ -129,7 +129,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 },
               },
             }}
-            onAuthError={(error) => {
+            onError={(error) => {
               console.error("Auth error:", error);
               setAuthError(error.message);
               if (error.message.includes('User already registered')) {
