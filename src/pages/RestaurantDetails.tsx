@@ -2,18 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import Header from "@/components/Header";
-import RestaurantInfo from "@/components/restaurant/RestaurantInfo";
-import MenuSection from "@/components/restaurant/MenuSection";
-import PhotosSection from "@/components/restaurant/PhotosSection";
-import ReviewsSection from "@/components/restaurant/ReviewsSection";
-import MatchScoreCard from "@/components/restaurant/MatchScoreCard";
-import ActionButtons from "@/components/restaurant/ActionButtons";
-import OrderSection from "@/components/restaurant/OrderSection";
-import AdditionalInfo from "@/components/restaurant/AdditionalInfo";
 import { RestaurantDetails as RestaurantDetailsType } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
+import RestaurantHero from "@/components/restaurant/layout/RestaurantHero";
+import MainContent from "@/components/restaurant/layout/MainContent";
+import Sidebar from "@/components/restaurant/layout/Sidebar";
+import MatchScoreCard from "@/components/restaurant/MatchScoreCard";
+import OrderSection from "@/components/restaurant/OrderSection";
 
-// Define match categories with sample data
+// Define match categories
 const matchCategories = [
   {
     category: "Menu Match",
@@ -153,55 +150,18 @@ const RestaurantDetails = () => {
   return (
     <div className="min-h-screen bg-background pb-20 animate-fade-up">
       <Header />
-      <div className="w-full h-[30vh] sm:h-[40vh] md:h-[50vh] relative">
-        <img 
-          src={restaurant?.photos?.[0] || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4"}
-          alt="Restaurant hero"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        <ActionButtons />
-      </div>
-
+      <RestaurantHero photoUrl={restaurant?.photos?.[0]} />
+      
       <div className="container mx-auto px-4 -mt-10 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <RestaurantInfo restaurant={restaurant} />
-            </div>
-            
-            <div className="block lg:hidden space-y-6">
-              <MatchScoreCard categories={matchCategories} />
-              <MenuSection 
-                menu={restaurant?.menu} 
-                photos={restaurant?.photos}
-                reviews={restaurant?.googleReviews}
-              />
-              <OrderSection />
-            </div>
-
-            <div className="hidden lg:block space-y-6">
-              <MenuSection 
-                menu={restaurant?.menu} 
-                photos={restaurant?.photos}
-                reviews={restaurant?.googleReviews}
-              />
-              <AdditionalInfo restaurant={restaurant} />
-              {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}
-              {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
-            </div>
-
-            <div className="block lg:hidden space-y-6">
-              <AdditionalInfo restaurant={restaurant} />
-              {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}
-              {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
-            </div>
-          </div>
-
-          <div className="hidden lg:block space-y-6 lg:sticky lg:top-24 self-start">
+          <MainContent restaurant={restaurant} />
+          
+          <div className="block lg:hidden space-y-6">
             <MatchScoreCard categories={matchCategories} />
             <OrderSection />
           </div>
+          
+          <Sidebar matchCategories={matchCategories} />
         </div>
       </div>
     </div>
