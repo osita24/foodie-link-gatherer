@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, UtensilsCrossed } from "lucide-react";
+import { Heart, UtensilsCrossed, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface SavedRestaurant {
   id: string;
@@ -9,11 +10,13 @@ interface SavedRestaurant {
   image_url: string | null;
   cuisine: string | null;
   rating: number | null;
+  place_id: string;
 }
 
 const SavedRestaurants = () => {
   const [savedRestaurants, setSavedRestaurants] = useState<SavedRestaurant[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSavedRestaurants = async () => {
@@ -21,7 +24,8 @@ const SavedRestaurants = () => {
         console.log("Fetching saved restaurants...");
         const { data: restaurants, error } = await supabase
           .from("saved_restaurants")
-          .select("*");
+          .select("*")
+          .order('created_at', { ascending: false });
 
         if (error) {
           console.error("Error fetching saved restaurants:", error);
@@ -64,10 +68,22 @@ const SavedRestaurants = () => {
     );
   }
 
+  const formatCuisine = (cuisine: string | null) => {
+    if (!cuisine) return null;
+    return cuisine
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {savedRestaurants.map((restaurant) => (
-        <Card key={restaurant.id} className="overflow-hidden group hover:shadow-lg transition-shadow">
+        <Card 
+          key={restaurant.id} 
+          className="overflow-hidden group hover:shadow-lg transition-shadow cursor-pointer"
+          onClick={() => navigate(`/restaurant/${restaurant.place_id}`)}
+        >
           <div className="relative h-48">
             <img
               src={restaurant.image_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4"}
@@ -76,7 +92,8 @@ const SavedRestaurants = () => {
             />
             <button 
               className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-sm hover:bg-gray-100 transition-colors"
-              onClick={async () => {
+              onClick={async (e) => {
+                e.stopPropagation();
                 try {
                   await supabase
                     .from("saved_restaurants")
@@ -96,12 +113,14 @@ const SavedRestaurants = () => {
           <CardContent className="p-4">
             <h3 className="font-semibold text-lg mb-1">{restaurant.name}</h3>
             {restaurant.cuisine && (
-              <p className="text-muted-foreground text-sm">{restaurant.cuisine}</p>
+              <p className="text-muted-foreground text-sm mb-2">
+                {formatCuisine(restaurant.cuisine)}
+              </p>
             )}
             {restaurant.rating && (
-              <div className="flex items-center mt-2">
-                <span className="text-yellow-400">★</span>
-                <span className="ml-1 text-sm">{restaurant.rating.toFixed(1)}</span>
+              <div className="flex items-center gap-1">
+                <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                <span className="text-sm font-medium">{restaurant.rating.toFixed(1)}</span>
               </div>
             )}
           </CardContent>
