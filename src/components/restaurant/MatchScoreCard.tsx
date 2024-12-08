@@ -56,9 +56,9 @@ const MatchScoreCard = ({ restaurant }: MatchScoreCardProps) => {
   if (!session) {
     return (
       <>
-        <Card className="bg-gradient-to-br from-primary/5 to-accent/10 border-accent/20 hover:shadow-lg transition-all duration-300">
+        <Card className="bg-gradient-to-br from-primary/5 to-accent/10 border-accent/20">
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <div className="bg-primary/10 p-2 rounded-full">
                 <Star className="w-5 h-5 text-primary" />
               </div>
@@ -66,15 +66,14 @@ const MatchScoreCard = ({ restaurant }: MatchScoreCardProps) => {
                 <h3 className="text-base font-medium text-secondary">
                   See Your Match Score
                 </h3>
-                <p className="text-sm text-muted-foreground">
-                  Find your perfect menu matches
+                <p className="text-sm text-muted-foreground mt-1">
+                  Find out how well this matches your taste
                 </p>
               </div>
               <Button 
                 onClick={() => setShowAuthModal(true)}
                 size="sm"
-                variant="outline"
-                className="bg-background hover:bg-accent/50"
+                className="bg-primary hover:bg-primary/90"
               >
                 Sign in
               </Button>
@@ -87,34 +86,35 @@ const MatchScoreCard = ({ restaurant }: MatchScoreCardProps) => {
   }
 
   return (
-    <Card className="bg-gradient-to-br from-primary/5 to-accent/10 border-accent/20 overflow-hidden">
+    <Card className="bg-gradient-to-br from-primary/5 to-accent/10 border-accent/20">
       <CardContent className="p-4">
         {isLoading ? (
-          <div className="flex items-center justify-center py-2">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          <div className="flex items-center justify-center p-4">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : insights ? (
           <div className="flex items-center gap-4">
-            <div className="relative shrink-0">
-              <div className="bg-primary/10 p-2.5 rounded-full">
-                <Star className="w-5 h-5 text-primary animate-pulse" />
+            <div className="relative">
+              <div className="bg-primary/10 p-3 rounded-full">
+                <Star className="w-6 h-6 text-primary animate-pulse" />
               </div>
-              <Sparkles className="w-3 h-3 text-primary absolute -top-1 -right-1 animate-bounce" />
+              <Sparkles className="w-4 h-4 text-primary absolute -top-1 -right-1 animate-bounce" />
             </div>
-            <div className="min-w-0">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-semibold text-primary">
+            <div className="flex-1">
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-primary">
                   {insights.matchScore}%
                 </span>
                 <span className="text-sm text-muted-foreground">match</span>
               </div>
-              <div className="mt-1 space-y-0.5">
+              <div className="mt-2 space-y-1">
                 {insights.reasons.map((reason, index) => (
                   <p 
                     key={index}
-                    className="text-sm text-muted-foreground flex items-center gap-1.5 truncate"
+                    className="text-sm text-muted-foreground flex items-center gap-2"
+                    style={{ animationDelay: `${index * 150}ms` }}
                   >
-                    <span className="w-1 h-1 rounded-full bg-primary/60 shrink-0" />
+                    <span className="w-1 h-1 rounded-full bg-primary/60" />
                     {reason}
                   </p>
                 ))}
