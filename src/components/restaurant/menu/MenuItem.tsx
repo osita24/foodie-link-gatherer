@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, ThumbsUp, AlertTriangle, Sparkles, ArrowRight, Info } from "lucide-react";
+import { ChevronDown, ChevronUp, ThumbsUp, AlertTriangle, Sparkles, ArrowRight, Info, Crown, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
@@ -18,11 +18,13 @@ interface MenuItemProps {
   };
   matchDetails: {
     score: number;
+    matchType?: 'perfect' | 'good' | 'neutral' | 'warning' | 'avoid';
     reason?: string;
     warning?: string;
-    matchType?: 'perfect' | 'good' | 'neutral' | 'warning';
     highlights?: string[];
     considerations?: string[];
+    rank?: number;
+    rankDescription?: string;
   };
 }
 
@@ -48,6 +50,8 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
       case 'good':
         return "border-l-4 border-blue-400 bg-gradient-to-r from-blue-50 to-transparent";
       case 'warning':
+        return "border-l-4 border-yellow-400 bg-gradient-to-r from-yellow-50 to-transparent";
+      case 'avoid':
         return "border-l-4 border-red-400 bg-gradient-to-r from-red-50 to-transparent";
       default:
         return "hover:bg-gray-50/50";
@@ -61,13 +65,18 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
       case 'good':
         return "text-blue-700 bg-blue-100";
       case 'warning':
+        return "text-yellow-700 bg-yellow-100";
+      case 'avoid':
         return "text-red-700 bg-red-100";
       default:
         return "text-gray-700 bg-gray-100";
     }
   };
 
-  const getMatchIcon = (matchType: string = 'neutral') => {
+  const getMatchIcon = (matchType: string = 'neutral', rank?: number) => {
+    if (rank && rank <= 3) {
+      return rank === 1 ? <Crown className="w-3 h-3 ml-1" /> : <Star className="w-3 h-3 ml-1" />;
+    }
     switch (matchType) {
       case 'perfect':
         return <Sparkles className="w-3 h-3 ml-1" />;
@@ -75,22 +84,27 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
         return <ThumbsUp className="w-3 h-3 ml-1" />;
       case 'warning':
         return <AlertTriangle className="w-3 h-3 ml-1" />;
+      case 'avoid':
+        return <AlertTriangle className="w-3 h-3 ml-1" />;
       default:
         return <Info className="w-3 h-3 ml-1" />;
     }
   };
 
-  const getMatchDescription = (matchType: string = 'neutral') => {
-    switch (matchType) {
-      case 'perfect':
-        return "Perfect match for your preferences!";
-      case 'good':
-        return "Good match with your tastes";
-      case 'warning':
-        return "May not align with your preferences";
-      default:
-        return "New dish to explore";
-    }
+  const getRankBadge = (rank?: number) => {
+    if (!rank || rank > 3) return null;
+    
+    const badges = {
+      1: "bg-gradient-to-r from-yellow-400 to-yellow-600 text-white",
+      2: "bg-gradient-to-r from-slate-400 to-slate-600 text-white",
+      3: "bg-gradient-to-r from-amber-600 to-amber-800 text-white"
+    };
+
+    return (
+      <Badge className={cn("absolute -top-2 -right-2", badges[rank as keyof typeof badges])}>
+        #{rank}
+      </Badge>
+    );
   };
 
   return (
@@ -101,6 +115,8 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
         getMatchStyle(matchDetails.matchType)
       )}
     >
+      {getRankBadge(matchDetails.rank)}
+      
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 space-y-2">
           <div className="flex items-start gap-2 flex-wrap">
@@ -117,8 +133,8 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
                       getScoreColor(matchDetails.matchType)
                     )}
                   >
-                    {getMatchDescription(matchDetails.matchType)}
-                    {getMatchIcon(matchDetails.matchType)}
+                    {matchDetails.rankDescription || "Try something new"}
+                    {getMatchIcon(matchDetails.matchType, matchDetails.rank)}
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent>
