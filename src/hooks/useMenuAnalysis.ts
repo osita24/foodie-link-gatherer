@@ -38,7 +38,7 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
         let bestMatchScore = -1;
         let bestMatchId = null;
 
-        // Analyze each menu item
+        // Analyze each menu item using the edge function
         for (const item of processedMenu[0].items) {
           console.log(`🔍 Analyzing item: ${item.name}`);
           
