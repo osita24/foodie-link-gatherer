@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useSession } from "@supabase/auth-helpers-react";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import RestaurantInfo from "@/components/restaurant/RestaurantInfo";
@@ -10,6 +11,7 @@ import ActionButtons from "@/components/restaurant/ActionButtons";
 import OrderSection from "@/components/restaurant/OrderSection";
 import AdditionalInfo from "@/components/restaurant/AdditionalInfo";
 import MatchScoreCard from "@/components/restaurant/MatchScoreCard";
+import MatchScorePrompt from "@/components/restaurant/MatchScorePrompt";
 import { RestaurantDetails as RestaurantDetailsType } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
 
