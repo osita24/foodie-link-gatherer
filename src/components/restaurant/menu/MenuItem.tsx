@@ -33,29 +33,38 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
   const displayDescription = isExpanded ? description : description?.substring(0, 100);
 
   const getMatchStyle = (score: number) => {
-    if (score >= 90) return "border-l-4 border-emerald-400 bg-emerald-50/50";
-    if (score <= 30) return "border-l-4 border-red-400 bg-red-50/50";
-    return "";
+    if (score >= 85) return "border-l-4 border-emerald-400 bg-gradient-to-r from-emerald-50 to-transparent";
+    if (score <= 40) return "border-l-4 border-red-400 bg-gradient-to-r from-red-50 to-transparent";
+    return "hover:bg-gray-50/50";
   };
 
   return (
-    <div className={cn(
-      "group relative p-4 rounded-lg transition-all duration-300",
-      getMatchStyle(matchDetails.score)
-    )}>
+    <div 
+      className={cn(
+        "group relative p-4 rounded-lg transition-all duration-300",
+        "hover:shadow-md",
+        getMatchStyle(matchDetails.score)
+      )}
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 space-y-2">
           <div className="flex items-start gap-2 flex-wrap">
             <h3 className="text-base font-medium text-gray-900">
               {cleanName}
             </h3>
-            {matchDetails.score >= 90 && (
-              <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-0">
+            {matchDetails.score >= 85 && (
+              <Badge 
+                className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-0
+                  animate-fade-in-up"
+              >
                 Perfect Match! 🎯
               </Badge>
             )}
-            {matchDetails.score <= 30 && (
-              <Badge className="bg-red-100 text-red-700 hover:bg-red-200 border-0">
+            {matchDetails.score <= 40 && (
+              <Badge 
+                className="bg-red-100 text-red-700 hover:bg-red-200 border-0
+                  animate-fade-in-up"
+              >
                 Heads Up! ⚠️
               </Badge>
             )}
@@ -82,18 +91,20 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
             </div>
           )}
           
-          <div className="flex items-center gap-2 flex-wrap">
-            {matchDetails.score >= 90 && matchDetails.reason && (
-              <p className="text-sm text-emerald-700">
-                {matchDetails.reason} ✨
-              </p>
-            )}
-            {matchDetails.score <= 30 && matchDetails.warning && (
-              <p className="text-sm text-red-700">
-                {matchDetails.warning} ⚠️
-              </p>
-            )}
-          </div>
+          {(matchDetails.reason || matchDetails.warning) && (
+            <div className="flex items-center gap-2 flex-wrap animate-fade-in-up">
+              {matchDetails.score >= 85 && matchDetails.reason && (
+                <p className="text-sm text-emerald-700 font-medium">
+                  {matchDetails.reason} ✨
+                </p>
+              )}
+              {matchDetails.score <= 40 && matchDetails.warning && (
+                <p className="text-sm text-red-700 font-medium">
+                  {matchDetails.warning} ⚠️
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

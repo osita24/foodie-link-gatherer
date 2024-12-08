@@ -75,14 +75,35 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
     }
   };
 
-  const getMatchDetails = (item: any) => {
-    // Generate a random score for now - this should be replaced with actual logic
-    const score = Math.floor(Math.random() * 31) + 70;
-    return {
-      score,
-      reason: score >= 90 ? "Perfect match for your preferences!" : undefined,
-      warning: score <= 30 ? "Contains ingredients you might want to avoid" : undefined
-    };
+  const getMatchDetails = async (item: any) => {
+    try {
+      const { data: preferences } = await supabase
+        .from('user_preferences')
+        .select('*')
+        .single();
+
+      if (!preferences) {
+        return { score: 75 };
+      }
+
+      const { data, error } = await supabase.functions.invoke('menu-processor', {
+        body: { 
+          action: 'analyze-item',
+          item,
+          preferences
+        }
+      });
+
+      if (error || !data) {
+        console.error("Error analyzing item:", error);
+        return { score: 75 };
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Error getting match details:", error);
+      return { score: 75 };
+    }
   };
 
   if (isProcessing) {
