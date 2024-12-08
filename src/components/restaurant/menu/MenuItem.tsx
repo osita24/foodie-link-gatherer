@@ -14,7 +14,6 @@ interface MenuItemProps {
     score: number;
     reason?: string;
     warning?: string;
-    tag?: string;
   };
 }
 
@@ -39,12 +38,6 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
     return "hover:bg-gray-50/50";
   };
 
-  const getTagStyle = (score: number) => {
-    if (score >= 85) return "bg-emerald-100 text-emerald-700 hover:bg-emerald-200";
-    if (score <= 40) return "bg-red-100 text-red-700 hover:bg-red-200";
-    return "bg-blue-100 text-blue-700 hover:bg-blue-200";
-  };
-
   return (
     <div 
       className={cn(
@@ -59,14 +52,20 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
             <h3 className="text-base font-medium text-gray-900">
               {cleanName}
             </h3>
-            {matchDetails.tag && (
+            {matchDetails.score >= 85 && (
               <Badge 
-                className={cn(
-                  "border-0 animate-fade-in-up",
-                  getTagStyle(matchDetails.score)
-                )}
+                className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-0
+                  animate-fade-in-up"
               >
-                {matchDetails.tag}
+                Perfect Match! 🎯
+              </Badge>
+            )}
+            {matchDetails.score <= 40 && (
+              <Badge 
+                className="bg-red-100 text-red-700 hover:bg-red-200 border-0
+                  animate-fade-in-up"
+              >
+                Heads Up! ⚠️
               </Badge>
             )}
           </div>

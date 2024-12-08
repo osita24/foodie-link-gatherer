@@ -41,62 +41,136 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
   const processRestaurantData = async () => {
     setIsProcessing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('menu-processor', {
-        body: { menuUrl, photos, reviews }
-      });
+      console.log("Starting menu processing");
       
+      const { data, error } = await supabase.functions.invoke('menu-processor', {
+        body: { 
+          menuUrl,
+          photos,
+          reviews
+        }
+      });
+
       if (error) {
-        console.error('Error processing menu:', error);
+        console.error("Error processing data:", error);
         throw error;
       }
+
+      console.log("Response from menu processor:", data);
       
-      console.log('Processed menu data:', data);
-      setProcessedMenu(data.menuSections || []);
+      if (!data?.menuSections?.length) {
+        console.log("No menu sections generated");
+        toast.info("Could not generate menu information");
+        return;
+      }
+
+      console.log("Menu sections generated:", data.menuSections);
+      setProcessedMenu(data.menuSections);
+      toast.success(`Found ${data.menuSections[0].items.length} menu items`);
+      
     } catch (error) {
-      console.error('Error processing menu:', error);
-      toast.error("Failed to process menu data");
+      console.error("Error processing restaurant data:", error);
+      toast.error("Failed to generate menu information");
     } finally {
       setIsProcessing(false);
     }
   };
 
+  useEffect(() => {
+    const loadMatchDetails = async () => {
+      if (!processedMenu?.[0]?.items) return;
+
+      const details: Record<string, any> = {};
+      
+      for (const item of processedMenu[0].items) {
+        try {
+          const { data: preferences } = await supabase
+            .from('user_preferences')
+            .select('*')
+            .single();
+
+          if (!preferences) {
+            details[item.id] = { score: 75 };
+            continue;
+          }
+
+          const { data, error } = await supabase.functions.invoke('menu-processor', {
+            body: { 
+              action: 'analyze-item',
+              item,
+              preferences
+            }
+          });
+
+          if (error || !data) {
+            console.error("Error analyzing item:", error);
+            details[item.id] = { score: 75 };
+            continue;
+          }
+
+          details[item.id] = data;
+        } catch (error) {
+          console.error("Error getting match details:", error);
+          details[item.id] = { score: 75 };
+        }
+      }
+
+      setItemMatchDetails(details);
+    };
+
+    loadMatchDetails();
+  }, [processedMenu]);
+
   if (isProcessing) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
+        <CardContent className="p-8 flex flex-col items-center justify-center min-h-[300px]">
+          <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
+          <p className="text-secondary text-lg font-medium">
+            Processing Menu...
+          </p>
+          <p className="text-muted-foreground text-sm mt-2">
+            Analyzing available information to create your digital menu
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!processedMenu || processedMenu.length === 0) {
+    return (
+      <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
+        <CardContent className="p-8 flex flex-col items-center justify-center min-h-[300px]">
+          <List className="w-8 h-8 text-muted-foreground mb-4" />
+          <p className="text-secondary text-lg font-medium">
+            Menu Not Available
+          </p>
+          <p className="text-muted-foreground text-sm mt-2">
+            We're working on getting the latest menu information.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-start gap-4">
-            <List className="h-5 w-5 text-primary" />
-            <div className="space-y-1">
-              <h2 className="text-xl font-semibold">Menu</h2>
-              <p className="text-sm text-gray-500">
-                Browse through the menu items and see personalized recommendations
-              </p>
-            </div>
-          </div>
-          
-          <div className="mt-6 space-y-6">
-            {processedMenu.map((category, index) => (
-              <div key={index} className="space-y-4">
-                <h3 className="text-lg font-medium">{category.name}</h3>
-                <div className="grid gap-4">
-                  {category.items.map((item) => (
-                    <MenuItem 
-                      key={item.id} 
-                      item={item}
-                      matchDetails={itemMatchDetails[item.id] || { score: 50 }}
-                    />
-                  ))}
-                </div>
+      <MatchScoreCard categories={categories} />
+      <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
+        <CardContent className="p-0">
+          <div className="relative">
+            <MenuHeader menuUrl={menuUrl} />
+            <div className="p-4 md:p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {processedMenu[0].items.map((item) => (
+                  <MenuItem
+                    key={item.id}
+                    item={item}
+                    matchDetails={itemMatchDetails[item.id] || { score: 75 }}
+                  />
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </CardContent>
       </Card>

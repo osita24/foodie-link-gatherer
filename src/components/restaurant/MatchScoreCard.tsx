@@ -12,18 +12,11 @@ interface MatchCategory {
   icon: string;
 }
 
-interface TopMenuItem {
-  name: string;
-  score: number;
-  reason: string;
-}
-
 interface MatchScoreCardProps {
   categories: MatchCategory[];
-  topItems?: TopMenuItem[];
 }
 
-const MatchScoreCard = ({ categories, topItems = [] }: MatchScoreCardProps) => {
+const MatchScoreCard = ({ categories }: MatchScoreCardProps) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [session, setSession] = useState(null);
 
@@ -69,63 +62,35 @@ const MatchScoreCard = ({ categories, topItems = [] }: MatchScoreCardProps) => {
   );
 
   const AuthenticatedContent = () => (
-    <div className="space-y-6 md:space-y-8">
-      <div className="space-y-4 md:space-y-6">
-        {categories.map((item, index) => (
-          <div
-            key={item.category}
-            className="space-y-1.5 md:space-y-2 animate-fade-up"
-            style={{ animationDelay: `${index * 150}ms` }}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 md:gap-2">
-                <span className="text-lg md:text-xl">{item.icon}</span>
-                <span className="font-medium text-secondary text-sm md:text-base">
-                  {item.category}
-                </span>
-              </div>
-              <span className="text-primary font-bold text-sm md:text-base">
-                {item.score}%
+    <div className="space-y-4 md:space-y-6">
+      {categories.map((item, index) => (
+        <div
+          key={item.category}
+          className="space-y-1.5 md:space-y-2 animate-fade-up"
+          style={{ animationDelay: `${index * 150}ms` }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 md:gap-2">
+              <span className="text-lg md:text-xl">{item.icon}</span>
+              <span className="font-medium text-secondary text-sm md:text-base">
+                {item.category}
               </span>
             </div>
-            <div className="relative pt-0.5 md:pt-1">
-              <div className="overflow-hidden h-1.5 md:h-2 text-xs flex rounded-full bg-gray-100">
-                <div
-                  style={{ width: `${item.score}%` }}
-                  className="animate-[slideRight_1s_ease-out] shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary"
-                />
-              </div>
+            <span className="text-primary font-bold text-sm md:text-base">
+              {item.score}%
+            </span>
+          </div>
+          <div className="relative pt-0.5 md:pt-1">
+            <div className="overflow-hidden h-1.5 md:h-2 text-xs flex rounded-full bg-gray-100">
+              <div
+                style={{ width: `${item.score}%` }}
+                className="animate-[slideRight_1s_ease-out] shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary"
+              />
             </div>
-            <p className="text-xs md:text-sm text-gray-600">{item.description}</p>
           </div>
-        ))}
-      </div>
-
-      {topItems.length > 0 && (
-        <div className="space-y-4">
-          <h4 className="font-semibold text-lg text-secondary">
-            Top Menu Recommendations
-          </h4>
-          <div className="space-y-3">
-            {topItems.map((item, index) => (
-              <div 
-                key={index}
-                className="p-3 bg-gradient-to-r from-emerald-50 to-transparent rounded-lg
-                  border-l-4 border-emerald-400 animate-fade-up"
-                style={{ animationDelay: `${index * 150}ms` }}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h5 className="font-medium text-gray-900">{item.name}</h5>
-                    <p className="text-sm text-emerald-700">{item.reason}</p>
-                  </div>
-                  <span className="text-primary font-bold">{item.score}%</span>
-                </div>
-              </div>
-            ))}
-          </div>
+          <p className="text-xs md:text-sm text-gray-600">{item.description}</p>
         </div>
-      )}
+      ))}
     </div>
   );
 
