@@ -1,7 +1,13 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, ThumbsUp, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface MenuItemProps {
   item: {
@@ -38,6 +44,12 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
     return "hover:bg-gray-50/50";
   };
 
+  const getScoreColor = (score: number) => {
+    if (score >= 85) return "text-emerald-700 bg-emerald-50";
+    if (score <= 40) return "text-red-700 bg-red-50";
+    return "text-orange-700 bg-orange-50";
+  };
+
   return (
     <div 
       className={cn(
@@ -52,22 +64,30 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
             <h3 className="text-base font-medium text-gray-900">
               {cleanName}
             </h3>
-            {matchDetails.score >= 85 && (
-              <Badge 
-                className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-0
-                  animate-fade-in-up"
-              >
-                Perfect Match! 🎯
-              </Badge>
-            )}
-            {matchDetails.score <= 40 && (
-              <Badge 
-                className="bg-red-100 text-red-700 hover:bg-red-200 border-0
-                  animate-fade-in-up"
-              >
-                Heads Up! ⚠️
-              </Badge>
-            )}
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge 
+                    className={cn(
+                      "cursor-help transition-colors",
+                      getScoreColor(matchDetails.score)
+                    )}
+                  >
+                    {matchDetails.score >= 85 && <ThumbsUp className="w-3 h-3 mr-1" />}
+                    {matchDetails.score <= 40 && <AlertTriangle className="w-3 h-3 mr-1" />}
+                    Match Score: {matchDetails.score}%
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    {matchDetails.score >= 85 && "Perfect match based on your preferences! 🎯"}
+                    {matchDetails.score <= 40 && "May not align with your preferences ⚠️"}
+                    {matchDetails.score > 40 && matchDetails.score < 85 && "Moderate match with your preferences"}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           
           {description && (
@@ -94,13 +114,15 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
           {(matchDetails.reason || matchDetails.warning) && (
             <div className="flex items-center gap-2 flex-wrap animate-fade-in-up">
               {matchDetails.score >= 85 && matchDetails.reason && (
-                <p className="text-sm text-emerald-700 font-medium">
-                  {matchDetails.reason} ✨
+                <p className="text-sm text-emerald-700 font-medium flex items-center gap-1">
+                  <ThumbsUp className="w-3 h-3" />
+                  {matchDetails.reason}
                 </p>
               )}
               {matchDetails.score <= 40 && matchDetails.warning && (
-                <p className="text-sm text-red-700 font-medium">
-                  {matchDetails.warning} ⚠️
+                <p className="text-sm text-red-700 font-medium flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  {matchDetails.warning}
                 </p>
               )}
             </div>
