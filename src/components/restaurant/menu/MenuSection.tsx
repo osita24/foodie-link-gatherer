@@ -12,11 +12,26 @@ interface MenuSectionProps {
 
 const MenuSection = ({ menu = [] }: MenuSectionProps) => {
   const [userPreferences, setUserPreferences] = useState<any>(null);
+  const [session, setSession] = useState<any>(null);
+
+  useEffect(() => {
+    const loadSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+    };
+
+    loadSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     const loadUserPreferences = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return;
 
         const { data } = await supabase
@@ -33,7 +48,7 @@ const MenuSection = ({ menu = [] }: MenuSectionProps) => {
     };
 
     loadUserPreferences();
-  }, []);
+  }, [session]);
 
   const getItemMatchDetails = (item: any) => {
     if (!userPreferences) return { score: 50 };
@@ -120,6 +135,7 @@ const MenuSection = ({ menu = [] }: MenuSectionProps) => {
                 key={item.id}
                 item={item}
                 matchDetails={getItemMatchDetails(item)}
+                isAuthenticated={!!session}
               />
             ))}
           </TabsContent>

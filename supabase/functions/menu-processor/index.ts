@@ -15,17 +15,25 @@ serve(async (req) => {
   }
 
   try {
-    const { action, menuUrl, photos, reviews, item, preferences, restaurant } = await req.json();
+    const { action, menuUrl, photos, reviews, item, preferences } = await req.json();
     console.log("Input data:", { action, menuUrl, photosCount: photos?.length, reviewsCount: reviews?.length });
 
     // Handle analyze-item action
     if (action === 'analyze-item') {
-      console.log("Analyzing menu item:", item.name);
+      console.log("Analyzing menu item:", item?.name);
       console.log("User preferences:", preferences);
-      console.log("Restaurant context:", restaurant);
 
       if (!item || !preferences) {
-        throw new Error("Missing required data for item analysis");
+        console.log("Missing required data for item analysis");
+        return new Response(
+          JSON.stringify({ score: 50 }),
+          {
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'application/json',
+            },
+          },
+        );
       }
 
       const analysis = await analyzeMenuItem(item, preferences, Deno.env.get("OPENAI_API_KEY") || "");
@@ -50,12 +58,6 @@ serve(async (req) => {
       const reviewText = reviews.map((review: any) => review.text).join('\n');
       const extractedItems = await cleanMenuText(reviewText);
       menuItems = [...menuItems, ...extractedItems];
-    }
-
-    if (reviews?.length) {
-      console.log("Generating additional menu items");
-      const generatedItems = await generateMenuItems(menuItems, reviews);
-      menuItems = [...menuItems, ...generatedItems];
     }
 
     if (menuItems.length === 0) {
