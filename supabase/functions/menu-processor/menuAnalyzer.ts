@@ -7,25 +7,30 @@ export async function analyzeMenuItem(
   score: number;
   reason?: string;
   warning?: string;
-  matchType?: 'perfect' | 'good' | 'neutral' | 'warning';
+  matchType: 'perfect' | 'good' | 'neutral' | 'warning';
+  highlights?: string[];
 }> {
   try {
     console.log('🔍 Analyzing menu item:', item.name);
     console.log('👤 User preferences:', preferences);
     
     const itemContent = `${item.name} ${item.description || ''}`.toLowerCase();
-    let score = 50; // Start with neutral score
+    let score = 50;
     let reasons: string[] = [];
+    let warnings: string[] = [];
+    let highlights: string[] = [];
     let matchType: 'perfect' | 'good' | 'neutral' | 'warning' = 'neutral';
 
     // Critical checks (dietary restrictions) - Major negative impact
-    if (preferences.dietary_restrictions?.some(
+    const dietaryConflict = preferences.dietary_restrictions?.find(
       (restriction: string) => itemContent.includes(restriction.toLowerCase())
-    )) {
+    );
+    if (dietaryConflict) {
       return {
         score: 20,
-        warning: "Contains ingredients you typically avoid",
-        matchType: 'warning'
+        warning: `Contains ${dietaryConflict} (dietary restriction)`,
+        matchType: 'warning',
+        highlights: [`Contains ${dietaryConflict}`]
       };
     }
 
@@ -35,7 +40,8 @@ export async function analyzeMenuItem(
     );
     if (proteinMatch) {
       score += 35;
-      reasons.push(`Contains ${proteinMatch}`);
+      reasons.push(`Features ${proteinMatch}`);
+      highlights.push(`Contains ${proteinMatch}`);
     }
 
     // Cuisine preferences - Significant positive impact
@@ -44,16 +50,33 @@ export async function analyzeMenuItem(
     );
     if (cuisineMatch) {
       score += 25;
-      reasons.push(`Matches ${cuisineMatch} cuisine`);
+      reasons.push(`${cuisineMatch} style`);
+      highlights.push(cuisineMatch);
     }
 
-    // Favorite ingredients - Moderate positive impact
-    const ingredientMatch = preferences.favorite_ingredients?.find(
+    // Foods to avoid - Moderate negative impact
+    const avoidMatch = preferences.favorite_ingredients?.find(
       (ingredient: string) => itemContent.includes(ingredient.toLowerCase())
     );
-    if (ingredientMatch) {
+    if (avoidMatch) {
+      score -= 30;
+      warnings.push(`Contains ${avoidMatch} (listed in foods to avoid)`);
+      highlights.push(`Contains ${avoidMatch}`);
+    }
+
+    // Atmosphere preferences - Minor positive impact
+    if (preferences.atmosphere_preferences?.some(
+      (pref: string) => itemContent.includes(pref.toLowerCase())
+    )) {
+      score += 10;
+      reasons.push("Matches dining style");
+    }
+
+    // Special considerations
+    if (preferences.special_considerations &&
+        itemContent.includes(preferences.special_considerations.toLowerCase())) {
       score += 15;
-      reasons.push(`Contains ${ingredientMatch}`);
+      reasons.push("Meets special considerations");
     }
 
     // Determine match type based on final score
@@ -66,25 +89,28 @@ export async function analyzeMenuItem(
     }
 
     // Cap the score at 100
-    score = Math.min(100, score);
+    score = Math.min(100, Math.max(0, score));
 
     console.log(`✨ Analysis result for ${item.name}:`, {
       score,
       reasons,
-      matchType
+      warnings,
+      matchType,
+      highlights
     });
 
     return {
       score,
       reason: reasons.length > 0 ? reasons.join(" • ") : undefined,
-      matchType
+      warning: warnings.length > 0 ? warnings.join(" • ") : undefined,
+      matchType,
+      highlights: highlights.length > 0 ? highlights : undefined
     };
   } catch (error) {
     console.error('❌ Error analyzing menu item:', error);
     return { 
       score: 50,
-      matchType: 'neutral',
-      reason: "Could not analyze this item"
+      matchType: 'neutral'
     };
   }
 }

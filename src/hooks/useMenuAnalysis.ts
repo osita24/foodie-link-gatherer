@@ -2,17 +2,26 @@ import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { MenuCategory } from "@/types/restaurant";
 
+export type MatchType = 'perfect' | 'good' | 'neutral' | 'warning';
+
+interface ItemMatchDetails {
+  score: number;
+  reason?: string;
+  warning?: string;
+  matchType: MatchType;
+  highlights?: string[];
+}
+
 export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
-  const [itemMatchDetails, setItemMatchDetails] = useState<Record<string, any>>({});
+  const [itemMatchDetails, setItemMatchDetails] = useState<Record<string, ItemMatchDetails>>({});
   const [analyzedMenu, setAnalyzedMenu] = useState<MenuCategory[] | null>(null);
 
   useEffect(() => {
     const loadMatchDetails = async () => {
       if (!processedMenu?.[0]?.items) return;
 
-      const details: Record<string, any> = {};
+      const details: Record<string, ItemMatchDetails> = {};
       
-      // First get the current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.log("No authenticated user found");
@@ -34,11 +43,7 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
         }
 
         if (!preferences) {
-          console.log("No preferences found for user, using default scores");
-          processedMenu[0].items.forEach(item => {
-            details[item.id] = { score: 50, matchType: 'neutral' };
-          });
-          setItemMatchDetails(details);
+          console.log("No preferences found for user");
           return;
         }
 
@@ -46,7 +51,7 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
 
         for (const item of processedMenu[0].items) {
           try {
-            console.log("Analyzing item with preferences:", item.name);
+            console.log("Analyzing item:", item.name);
             const { data, error } = await supabase.functions.invoke('menu-processor', {
               body: { 
                 action: 'analyze-item',
@@ -57,15 +62,13 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
 
             if (error || !data) {
               console.error("Error analyzing item:", error);
-              details[item.id] = { score: 50, matchType: 'neutral' };
               continue;
             }
 
             console.log("Analysis result for", item.name, ":", data);
             details[item.id] = data;
           } catch (error) {
-            console.error("Error getting match details:", error);
-            details[item.id] = { score: 50, matchType: 'neutral' };
+            console.error("Error analyzing item:", error);
           }
         }
 
@@ -80,7 +83,6 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
         setItemMatchDetails(details);
       } catch (error) {
         console.error("Error in loadMatchDetails:", error);
-        setItemMatchDetails(details);
       }
     };
 
