@@ -1,8 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from "../_shared/cors.ts";
-import { cleanMenuText } from "./textCleaner.ts";
-import { generateMenuItems } from "./menuGenerator.ts";
-import { analyzeMenuItem } from "./menuAnalyzer.ts";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 console.log("Menu processor function started");
 
@@ -22,66 +23,39 @@ serve(async (req) => {
       reviewsCount: reviews?.length 
     });
 
-    // Initialize menuItems array
-    let menuItems: string[] = [];
-
-    // Process reviews if available
-    if (Array.isArray(reviews) && reviews.length > 0) {
-      console.log("Processing reviews for menu items");
-      const reviewTexts = reviews
-        .filter(review => review && typeof review.text === 'string')
-        .map(review => review.text);
-      
-      if (reviewTexts.length > 0) {
-        const reviewText = reviewTexts.join('\n');
-        const extractedItems = await cleanMenuText(reviewText);
-        menuItems = [...menuItems, ...extractedItems];
-        console.log(`Extracted ${extractedItems.length} items from reviews`);
-      }
-    }
-
-    // Generate additional items if needed
-    if (reviews?.length) {
-      console.log("Generating additional menu items");
-      const generatedItems = await generateMenuItems(menuItems, reviews);
-      menuItems = [...menuItems, ...generatedItems];
-      console.log(`Generated ${generatedItems.length} additional items`);
-    }
-
-    // Fallback to default items if no items were found
-    if (menuItems.length === 0) {
-      console.log("Using default menu items");
-      menuItems = [
-        "House Burger - Premium beef patty with lettuce, tomato, and special sauce",
-        "Grilled Chicken Sandwich - Marinated chicken breast with avocado and chipotle mayo",
-        "Caesar Salad - Fresh romaine, parmesan, croutons with house-made dressing",
-        "Fish & Chips - Beer-battered cod with crispy fries and tartar sauce",
-        "Veggie Bowl - Quinoa, roasted vegetables, and tahini dressing"
-      ];
-    }
-
-    // Format the menu items
-    const formattedItems = menuItems.map((item, index) => {
-      const [name, description] = item.split(' - ');
-      return {
-        id: `item-${index + 1}`,
-        name: name.trim(),
-        description: description?.trim() || '',
-        price: 0, // Default price
-        category: 'Main Menu' // Default category
-      };
-    });
-
+    // For now, return a simple menu structure
     const menuData = {
       menuSections: [
         {
           name: "Main Menu",
-          items: formattedItems
+          items: [
+            {
+              id: "item-1",
+              name: "House Burger",
+              description: "Premium beef patty with lettuce, tomato, and special sauce",
+              price: 15.99,
+              category: "Main Menu"
+            },
+            {
+              id: "item-2",
+              name: "Grilled Chicken Sandwich",
+              description: "Marinated chicken breast with avocado and chipotle mayo",
+              price: 14.99,
+              category: "Main Menu"
+            },
+            {
+              id: "item-3",
+              name: "Caesar Salad",
+              description: "Fresh romaine, parmesan, croutons with house-made dressing",
+              price: 12.99,
+              category: "Main Menu"
+            }
+          ]
         }
       ]
     };
 
-    console.log(`Returning ${formattedItems.length} menu items`);
+    console.log("Returning menu data with items:", menuData.menuSections[0].items.length);
     
     return new Response(
       JSON.stringify(menuData),
