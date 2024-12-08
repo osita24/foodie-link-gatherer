@@ -18,6 +18,7 @@ const RestaurantDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { id } = useParams();
+  const session = useSession();
 
   useEffect(() => {
     const fetchRestaurantDetails = async () => {
@@ -107,7 +108,6 @@ const RestaurantDetails = () => {
   }, [id, navigate]);
 
   if (isLoading) {
-    console.log("🔄 Rendering loading state");
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -155,7 +155,11 @@ const RestaurantDetails = () => {
               <RestaurantInfo restaurant={restaurant} />
             </div>
             
-            <MatchScoreCard restaurant={restaurant} />
+            {session ? (
+              <MatchScoreCard restaurant={restaurant} />
+            ) : (
+              <MatchScorePrompt />
+            )}
             
             <MenuSection 
               menu={restaurant?.menu} 
