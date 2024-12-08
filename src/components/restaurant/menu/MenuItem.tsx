@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Star, Lock, Sparkles, ThumbsUp } from "lucide-react";
+import { Star, ChevronDown, ChevronUp, Lock, ThumbsUp, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import AuthModal from "@/components/auth/AuthModal";
@@ -17,9 +17,11 @@ interface MenuItemProps {
 }
 
 const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [session, setSession] = useState(null);
 
+  // Listen for auth state changes
   supabase.auth.getSession().then(({ data: { session } }) => {
     setSession(session);
   });
@@ -28,6 +30,7 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
     setSession(session);
   });
 
+  // Clean up the name by removing markdown and numbers
   const cleanName = item.name
     .replace(/^\d+\.\s*/, '')
     .replace(/\*\*/g, '')
@@ -37,77 +40,129 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
     ? item.name.split(' - ')[1].replace(/\*\*/g, '').trim()
     : item.description;
 
-  const getRecommendationStyle = (score: number) => {
+  const isLongDescription = description && description.length > 100;
+  const displayDescription = isExpanded ? description : description?.substring(0, 100);
+
+  const getMatchColor = (score: number) => {
+    if (score >= 90) return "bg-success/10 text-success border-success/20";
+    if (score >= 75) return "bg-primary/10 text-primary border-primary/20";
+    if (score >= 60) return "bg-warning/10 text-warning border-warning/20";
+    return "bg-gray-100 text-gray-600 border-gray-200";
+  };
+
+  const getRecommendationDetails = (score: number) => {
     if (score >= 90) {
       return {
-        container: "bg-success/10 hover:bg-success/20 border-l-4 border-l-success",
-        badge: "Perfect Match! ✨",
-        icon: <Sparkles className="w-4 h-4 text-success" />,
-        message: "Based on your love for spicy food and Thai cuisine!"
+        icon: <ThumbsUp className="w-4 h-4" />,
+        label: "Perfect Match!",
+        description: "This dish aligns perfectly with your preferences and dietary needs."
       };
     }
     if (score >= 75) {
       return {
-        container: "bg-primary/5 hover:bg-primary/10 border-l-4 border-l-primary",
-        badge: "Great Choice 👌",
-        icon: <ThumbsUp className="w-4 h-4 text-primary" />,
-        message: "Matches your dietary preferences"
+        icon: <Star className="w-4 h-4" />,
+        label: "Great Choice",
+        description: "This dish matches most of your preferences."
+      };
+    }
+    if (score >= 60) {
+      return {
+        icon: <Star className="w-4 h-4" />,
+        label: "Good Option",
+        description: "This dish matches some of your preferences."
       };
     }
     return {
-      container: "hover:bg-accent/5",
-      badge: null,
-      icon: null,
-      message: null
+      icon: <AlertCircle className="w-4 h-4" />,
+      label: "Consider Alternatives",
+      description: "This dish may not align with your preferences."
     };
   };
 
-  const recommendation = getRecommendationStyle(recommendationScore);
+  const recommendation = getRecommendationDetails(recommendationScore);
 
   return (
     <div className={cn(
       "group relative p-4 rounded-lg transition-all duration-300",
-      recommendation.container
+      recommendationScore >= 90 ? "bg-success/5" : 
+      recommendationScore >= 75 ? "bg-primary/5" : 
+      "hover:bg-accent/10"
     )}>
-      <div className="space-y-2">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="text-base font-medium text-secondary">
-            {cleanName}
-          </h3>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 space-y-2">
+          <div className="flex items-start gap-3">
+            <h3 className="text-base font-medium text-secondary group-hover:text-primary transition-colors">
+              {cleanName}
+            </h3>
+          </div>
           
-          {session ? (
-            recommendation.badge && (
-              <div className="flex items-center gap-1.5">
-                {recommendation.icon}
-                <span className="text-sm font-medium text-primary">
-                  {recommendation.badge}
-                </span>
-              </div>
-            )
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 px-3 text-xs gap-1.5 hover:bg-primary/10"
-              onClick={() => setShowAuthModal(true)}
-            >
-              <Star className="w-3.5 h-3.5 text-yellow-400" />
-              <Lock className="w-3 h-3 text-primary/70" />
-            </Button>
+          {description && (
+            <div className="mt-1">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {displayDescription}
+                {isLongDescription && !isExpanded && "..."}
+              </p>
+              {isLongDescription && (
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="mt-1 text-xs text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
+                >
+                  {isExpanded ? (
+                    <>
+                      Show less
+                      <ChevronUp className="w-3 h-3" />
+                    </>
+                  ) : (
+                    <>
+                      Show more
+                      <ChevronDown className="w-3 h-3" />
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           )}
+          
+          <div className="flex items-center gap-2 flex-wrap">
+            {item.category && (
+              <Badge 
+                variant="outline" 
+                className="text-xs bg-transparent border-primary/20 text-primary/70"
+              >
+                {item.category}
+              </Badge>
+            )}
+            {!session ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-3 text-xs gap-1.5 hover:bg-primary/10 group/match relative overflow-hidden
+                  border border-primary/20 rounded-full transition-all duration-300"
+                onClick={() => setShowAuthModal(true)}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/10 opacity-0 group-hover/match:opacity-100 transition-opacity" />
+                <Star className="w-3.5 h-3.5 text-yellow-400" strokeWidth={2} />
+                <span className="relative z-10 font-medium">View match score</span>
+                <Lock className="w-3 h-3 text-primary/70" strokeWidth={2} />
+              </Button>
+            ) : (
+              <div className={cn(
+                "flex flex-col gap-1.5 w-full sm:w-auto rounded-lg p-3 border animate-fade-up transition-all duration-300",
+                getMatchColor(recommendationScore)
+              )}>
+                <div className="flex items-center gap-2">
+                  {recommendation.icon}
+                  <span className="text-sm font-medium">
+                    {recommendation.label} ({recommendationScore}% Match)
+                  </span>
+                </div>
+                <p className="text-xs opacity-90">
+                  {recommendation.description}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
-        
-        {description && (
-          <p className="text-sm text-muted-foreground">
-            {description}
-          </p>
-        )}
-        
-        {session && recommendation.message && (
-          <p className="text-sm font-medium text-primary">
-            {recommendation.message}
-          </p>
-        )}
       </div>
 
       <AuthModal 
