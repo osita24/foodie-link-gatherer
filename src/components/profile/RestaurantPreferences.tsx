@@ -54,7 +54,7 @@ const RestaurantPreferences = () => {
             setPreferences({
               cuisinePreferences: data.cuisine_preferences || [],
               dietaryRestrictions: data.dietary_restrictions || [],
-              foodsToAvoid: data.favorite_ingredients || [], // Using this field for foods to avoid
+              foodsToAvoid: data.favorite_ingredients || [],
               atmospherePreferences: data.atmosphere_preferences || [],
               favoriteIngredients: [],
               spiceLevel: data.spice_level || 3,
@@ -77,9 +77,8 @@ const RestaurantPreferences = () => {
   }, [toast]);
 
   useEffect(() => {
-    // Calculate completion percentage
     let completed = 0;
-    let total = 4; // Updated to match the four main sections
+    let total = 4;
 
     if (preferences.cuisinePreferences.length > 0) completed++;
     if (preferences.dietaryRestrictions.length > 0) completed++;
@@ -92,21 +91,53 @@ const RestaurantPreferences = () => {
   const handleSave = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.error("No authenticated user found");
+        return;
+      }
 
-      const { error } = await supabase
+      console.log("Saving preferences for user:", user.id);
+
+      // First check if a record exists
+      const { data: existingPrefs } = await supabase
         .from('user_preferences')
-        .upsert({
-          user_id: user.id,
-          cuisine_preferences: preferences.cuisinePreferences,
-          dietary_restrictions: preferences.dietaryRestrictions,
-          favorite_ingredients: preferences.foodsToAvoid, // Using this field for foods to avoid
-          atmosphere_preferences: preferences.atmospherePreferences,
-          special_considerations: preferences.specialConsiderations,
-        });
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (error) throw error;
+      let result;
+      
+      if (existingPrefs) {
+        // Update existing record
+        console.log("Updating existing preferences");
+        result = await supabase
+          .from('user_preferences')
+          .update({
+            cuisine_preferences: preferences.cuisinePreferences,
+            dietary_restrictions: preferences.dietaryRestrictions,
+            favorite_ingredients: preferences.foodsToAvoid,
+            atmosphere_preferences: preferences.atmospherePreferences,
+            special_considerations: preferences.specialConsiderations,
+          })
+          .eq('user_id', user.id);
+      } else {
+        // Insert new record
+        console.log("Creating new preferences record");
+        result = await supabase
+          .from('user_preferences')
+          .insert({
+            user_id: user.id,
+            cuisine_preferences: preferences.cuisinePreferences,
+            dietary_restrictions: preferences.dietaryRestrictions,
+            favorite_ingredients: preferences.foodsToAvoid,
+            atmosphere_preferences: preferences.atmospherePreferences,
+            special_considerations: preferences.specialConsiderations,
+          });
+      }
 
+      if (result.error) throw result.error;
+
+      console.log("Preferences saved successfully");
       toast({
         title: "Preferences saved",
         description: "Your restaurant preferences have been updated.",
