@@ -8,12 +8,11 @@ export async function generateMenuItems(existingItems: string[], reviews: any[])
       throw new Error('OpenAI API key is not configured');
     }
 
-    // Limit the number of existing items to avoid token limits
-    const limitedItems = existingItems.slice(0, 20);
-    
     // Extract cuisine types and context from reviews (limit to first 5 reviews)
-    const limitedReviews = reviews.slice(0, 5);
-    const reviewText = limitedReviews.map(review => review.text).join('\n');
+    const limitedReviews = reviews?.slice(0, 5) || [];
+    const reviewText = limitedReviews.map(review => review.text || '').join('\n');
+
+    const prompt = `Generate a list of menu items based on these reviews:\n${reviewText}\n\nFormat each item as:\nDish Name - Description\n\nGenerate 5-10 items.`;
 
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -26,25 +25,11 @@ export async function generateMenuItems(existingItems: string[], reviews: any[])
         messages: [
           {
             role: 'system',
-            content: `You are a restaurant menu expert. Based on the existing menu items and reviews, 
-            generate additional likely menu items that would fit this restaurant's style and cuisine.
-            Rules:
-            - Generate items in the format: "Item Name - Detailed Description"
-            - Each item must have a proper description
-            - Ensure items fit the restaurant's cuisine type and style
-            - Make descriptions detailed and appetizing
-            - Include key ingredients and preparation methods
-            - Minimum 5 words per item including description
-            - Generate no more than 10 additional items
-            - Do not duplicate existing items
-            - If you can't confidently generate items, return an empty list`
+            content: 'You are a restaurant menu expert. Generate menu items in the format "Item Name - Description". Each item must have a proper description. Make descriptions detailed and appetizing.'
           },
-          {
-            role: 'user',
-            content: `Existing menu items:\n${limitedItems.join('\n')}\n\nReviews:\n${reviewText}`
-          }
+          { role: 'user', content: prompt }
         ],
-        temperature: 0.3,
+        temperature: 0.7,
         max_tokens: 1000
       }),
     });
@@ -58,30 +43,22 @@ export async function generateMenuItems(existingItems: string[], reviews: any[])
     const data = await openAIResponse.json();
     const generatedText = data.choices[0].message.content;
     
-    // Filter and validate generated items
-    const generatedItems = generatedText
+    // Split into array and filter out any empty lines or invalid items
+    const menuItems = generatedText
       .split('\n')
       .map(item => item.trim())
       .filter(item => {
-        // Ensure item has both name and description
         const hasNameAndDescription = item.includes('-') && 
           item.split('-').length === 2 &&
           item.split('-')[0].trim().length > 0 &&
           item.split('-')[1].trim().length > 0;
         
-        // Ensure minimum word count
         const wordCount = item.split(' ').length;
-        
-        // Ensure item is not a duplicate
-        const isDuplicate = existingItems.some(existing => 
-          existing.toLowerCase().includes(item.split('-')[0].trim().toLowerCase())
-        );
-        
-        return hasNameAndDescription && wordCount >= 5 && !isDuplicate;
+        return hasNameAndDescription && wordCount >= 5;
       });
 
-    console.log('✨ Generated valid menu items:', generatedItems.length);
-    return generatedItems;
+    console.log('✨ Generated valid menu items:', menuItems.length);
+    return menuItems;
 
   } catch (error) {
     console.error('❌ Error generating menu items:', error);

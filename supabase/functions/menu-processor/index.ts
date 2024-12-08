@@ -1,8 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { cleanMenuText } from "./textCleaner.ts";
 import { generateMenuItems } from "./menuGenerator.ts";
-import { analyzeMenuItem } from "./menuAnalyzer.ts";
 
 console.log("Menu processor function started");
 
@@ -22,42 +20,18 @@ serve(async (req) => {
       reviewsCount: reviews?.length 
     });
 
-    // Initialize menuItems array
-    let menuItems: string[] = [];
+    // Generate menu items from reviews
+    const menuItems = await generateMenuItems([], reviews || []);
 
-    // Process reviews if available
-    if (Array.isArray(reviews) && reviews.length > 0) {
-      console.log("Processing reviews for menu items");
-      const reviewTexts = reviews
-        .filter(review => review && typeof review.text === 'string')
-        .map(review => review.text);
-      
-      if (reviewTexts.length > 0) {
-        const reviewText = reviewTexts.join('\n');
-        const extractedItems = await cleanMenuText(reviewText);
-        menuItems = [...menuItems, ...extractedItems];
-        console.log(`Extracted ${extractedItems.length} items from reviews`);
-      }
-    }
-
-    // Generate additional items if needed
-    if (reviews?.length) {
-      console.log("Generating additional menu items");
-      const generatedItems = await generateMenuItems(menuItems, reviews);
-      menuItems = [...menuItems, ...generatedItems];
-      console.log(`Generated ${generatedItems.length} additional items`);
-    }
-
-    // Fallback to default items if no items were found
-    if (menuItems.length === 0) {
-      console.log("Using default menu items");
-      menuItems = [
-        "House Burger - Premium beef patty with lettuce, tomato, and special sauce",
-        "Grilled Chicken Sandwich - Marinated chicken breast with avocado and chipotle mayo",
-        "Caesar Salad - Fresh romaine, parmesan, croutons with house-made dressing",
-        "Fish & Chips - Beer-battered cod with crispy fries and tartar sauce",
-        "Veggie Bowl - Quinoa, roasted vegetables, and tahini dressing"
-      ];
+    if (!menuItems.length) {
+      console.log("No menu items generated, using default items");
+      menuItems.push(
+        "House Special Sushi Roll - Fresh fish and vegetables wrapped in seasoned rice and nori",
+        "Teriyaki Chicken - Grilled chicken glazed with house-made teriyaki sauce",
+        "Miso Soup - Traditional Japanese soup with tofu and seaweed",
+        "Vegetable Tempura - Assorted vegetables in light, crispy batter",
+        "Green Tea Ice Cream - Creamy matcha flavored dessert"
+      );
     }
 
     // Format the menu items
@@ -67,8 +41,8 @@ serve(async (req) => {
         id: `item-${index + 1}`,
         name: name.trim(),
         description: description?.trim() || '',
-        price: 0, // Default price
-        category: 'Main Menu' // Default category
+        price: 0,
+        category: 'Main Menu'
       };
     });
 
