@@ -60,13 +60,13 @@ const RestaurantSummary = ({ restaurant }: RestaurantSummaryProps) => {
   const getVerdictStyles = (verdict: string) => {
     switch (verdict) {
       case "MUST VISIT":
-        return "bg-success/10 text-success border-success/20";
+        return "bg-success/10 text-success border-success/20 shadow-[0_0_15px_rgba(104,160,99,0.15)]";
       case "WORTH A TRY":
-        return "bg-warning/10 text-warning border-warning/20";
+        return "bg-warning/10 text-warning border-warning/20 shadow-[0_0_15px_rgba(197,165,114,0.15)]";
       case "SKIP IT":
-        return "bg-error/10 text-error border-error/20";
+        return "bg-error/10 text-error border-error/20 shadow-[0_0_15px_rgba(181,65,65,0.15)]";
       default:
-        return "bg-primary/10 text-primary border-primary/20";
+        return "bg-primary/10 text-primary border-primary/20 shadow-[0_0_15px_rgba(74,103,65,0.15)]";
     }
   };
 
@@ -101,7 +101,7 @@ const RestaurantSummary = ({ restaurant }: RestaurantSummaryProps) => {
       <div className="space-y-6">
         <div 
           className={`inline-block px-4 py-2 rounded-full border ${getVerdictStyles(summary.verdict)} 
-            font-semibold text-lg md:text-xl animate-fade-up`}
+            font-semibold text-lg md:text-xl animate-fade-up transition-all duration-300 hover:scale-105`}
         >
           {summary.verdict}
         </div>
