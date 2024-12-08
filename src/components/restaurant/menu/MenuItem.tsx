@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp, ThumbsUp, AlertTriangle, Sparkles, ArrowRight, Crown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Tooltip,
   TooltipContent,
@@ -28,6 +29,40 @@ interface MenuItemProps {
 
 const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [matchMessage, setMatchMessage] = useState<string>("");
+
+  useEffect(() => {
+    const generateMatchMessage = async () => {
+      if (!matchDetails) return;
+
+      try {
+        console.log('🎯 Generating match message for:', item.name);
+        const { data, error } = await supabase.functions.invoke('generate-match-message', {
+          body: {
+            matchType: matchDetails.matchType,
+            score: matchDetails.score,
+            itemDetails: {
+              name: item.name,
+              description: item.description
+            },
+            preferences: {} // We'll get this from context in a future update
+          }
+        });
+
+        if (error) throw error;
+        
+        console.log('✨ Generated match message:', data.message);
+        setMatchMessage(data.message);
+      } catch (error) {
+        console.error('❌ Error generating match message:', error);
+        setMatchMessage(matchDetails.matchType === 'warning' ? 'Check ingredients ⚠️' : 'Possible match 🤔');
+      }
+    };
+
+    if (matchDetails) {
+      generateMatchMessage();
+    }
+  }, [matchDetails, item.name, item.description]);
 
   const cleanName = item.name
     .replace(/^\d+\.\s*/, '')
@@ -68,20 +103,6 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
         return "text-red-700 bg-red-100";
       default:
         return "text-gray-700 bg-gray-100";
-    }
-  };
-
-  const getMatchLabel = (matchType: string = 'neutral') => {
-    if (isTopMatch) return "TOP MATCH! 👑";
-    switch (matchType) {
-      case 'perfect':
-        return "PERFECT MATCH! 🎯";
-      case 'good':
-        return "GREAT CHOICE 👍";
-      case 'warning':
-        return "HEADS UP ⚠️";
-      default:
-        return "POSSIBLE MATCH 🤔";
     }
   };
 
@@ -129,7 +150,7 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
                         getScoreColor(matchDetails.matchType)
                       )}
                     >
-                      {getMatchLabel(matchDetails.matchType)}
+                      {matchMessage}
                       {getMatchIcon(matchDetails.matchType)}
                     </Badge>
                   </TooltipTrigger>
