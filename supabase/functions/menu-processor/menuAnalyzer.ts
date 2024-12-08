@@ -20,33 +20,52 @@ export async function analyzeMenuItem(
     let reasons: string[] = [];
     let warnings: string[] = [];
     let matchType: 'perfect' | 'good' | 'neutral' | 'warning' = 'neutral';
+    let matchStrength = '';
 
     // Check dietary restrictions first (critical)
     const dietaryConflicts = preferences.dietary_restrictions?.filter(
       (restriction: string) => {
         const r = restriction.toLowerCase();
+        // Vegetarian check
         if (r === "vegetarian" && 
             (itemContent.includes("meat") || 
              itemContent.includes("chicken") || 
              itemContent.includes("beef") || 
              itemContent.includes("pork") ||
-             itemContent.includes("fish"))) {
+             itemContent.includes("fish") ||
+             itemContent.includes("seafood"))) {
           return true;
         }
+        // Vegan check
         if (r === "vegan" && 
             (itemContent.includes("meat") || 
              itemContent.includes("cheese") || 
              itemContent.includes("cream") || 
              itemContent.includes("milk") ||
-             itemContent.includes("egg"))) {
+             itemContent.includes("egg") ||
+             itemContent.includes("honey") ||
+             itemContent.includes("butter"))) {
           return true;
         }
+        // Gluten-free check
         if (r === "gluten-free" && 
             (itemContent.includes("bread") || 
              itemContent.includes("pasta") || 
              itemContent.includes("flour") ||
              itemContent.includes("breaded") ||
-             itemContent.includes("fried"))) {
+             itemContent.includes("crusted") ||
+             itemContent.includes("fried") ||
+             itemContent.includes("wheat") ||
+             itemContent.includes("soy sauce"))) {
+          return true;
+        }
+        // Dairy-free check
+        if (r === "dairy-free" && 
+            (itemContent.includes("milk") || 
+             itemContent.includes("cheese") || 
+             itemContent.includes("cream") ||
+             itemContent.includes("butter") ||
+             itemContent.includes("yogurt"))) {
           return true;
         }
         return itemContent.includes(r);
@@ -56,7 +75,7 @@ export async function analyzeMenuItem(
     if (dietaryConflicts?.length > 0) {
       return {
         score: 20,
-        warning: `Not suitable for ${dietaryConflicts[0]} diet`,
+        warning: `Not suitable for your ${dietaryConflicts[0]} dietary requirement`,
         matchType: 'warning'
       };
     }
@@ -67,8 +86,9 @@ export async function analyzeMenuItem(
     );
     
     if (proteinMatches?.length > 0) {
-      score += 30;
-      reasons.push(`Features your favorite protein: ${proteinMatches[0]}`);
+      score += 35;
+      matchStrength = 'strongly';
+      reasons.push(`Features ${proteinMatches[0]}, one of your favorite proteins`);
     }
 
     // Check cuisine preferences (significant positive)
@@ -77,22 +97,29 @@ export async function analyzeMenuItem(
     );
     
     if (cuisineMatches?.length > 0) {
-      score += 25;
-      reasons.push(`Authentic ${cuisineMatches[0]} cuisine style`);
+      score += 30;
+      matchStrength = matchStrength || 'highly';
+      reasons.push(`Authentic ${cuisineMatches[0]} dish, matching your cuisine preferences`);
     }
 
     // Check spice level preferences
     if (preferences.spice_level) {
-      if (itemContent.includes("spicy") || 
-          itemContent.includes("hot") || 
-          itemContent.includes("chili") ||
-          itemContent.includes("jalapeño")) {
+      const spiceIndicators = [
+        "spicy", "hot", "chili", "jalapeño", "sriracha", 
+        "wasabi", "curry", "pepper", "szechuan"
+      ];
+      
+      const hasSpice = spiceIndicators.some(indicator => 
+        itemContent.includes(indicator)
+      );
+
+      if (hasSpice) {
         if (preferences.spice_level >= 4) {
-          score += 15;
-          reasons.push("Matches your spice preference");
-        } else {
-          score -= 15;
-          warnings.push("May be too spicy for your taste");
+          score += 20;
+          reasons.push("Spice level aligns with your preference for heat");
+        } else if (preferences.spice_level <= 2) {
+          score -= 25;
+          warnings.push("May be too spicy based on your preferences");
         }
       }
     }
@@ -103,40 +130,92 @@ export async function analyzeMenuItem(
     );
     
     if (ingredientsToAvoid?.length > 0) {
-      score -= 30;
-      warnings.push(`Contains ${ingredientsToAvoid[0]} which you prefer to avoid`);
+      score -= 35;
+      warnings.push(`Contains ${ingredientsToAvoid[0]}, which you prefer to avoid`);
     }
 
-    // Add specific neutral reasons if no matches found
-    if (reasons.length === 0 && warnings.length === 0) {
-      if (itemContent.includes("vegetarian") || itemContent.includes("vegan")) {
-        reasons.push("Plant-based dish available");
-      } else if (itemContent.includes("grilled")) {
-        reasons.push("Healthy grilled preparation");
-      } else if (itemContent.includes("fresh") || itemContent.includes("seasonal")) {
-        reasons.push("Made with fresh, seasonal ingredients");
-      } else if (itemContent.includes("house") || itemContent.includes("signature")) {
-        reasons.push("Chef's signature dish");
-      } else if (itemContent.includes("local") || itemContent.includes("artisan")) {
-        reasons.push("Features local/artisanal ingredients");
-      } else if (itemContent.includes("organic")) {
-        reasons.push("Made with organic ingredients");
-      } else if (itemContent.includes("gluten-free")) {
-        reasons.push("Gluten-free option available");
-      } else if (itemContent.includes("traditional") || itemContent.includes("classic")) {
-        reasons.push("Classic preparation style");
-      } else {
-        reasons.push("Standard menu item");
+    // Analyze cooking methods and ingredients for health-conscious preferences
+    const healthyIndicators = {
+      "grilled": "Healthy grilled preparation",
+      "steamed": "Light steamed preparation",
+      "baked": "Oven-baked preparation",
+      "fresh": "Made with fresh ingredients",
+      "organic": "Uses organic ingredients",
+      "seasonal": "Features seasonal ingredients",
+      "local": "Made with local ingredients",
+      "house-made": "Freshly prepared in-house",
+      "wild-caught": "Wild-caught seafood",
+      "grass-fed": "Quality grass-fed meat",
+      "farm-to-table": "Farm-to-table ingredients"
+    };
+
+    for (const [indicator, reason] of Object.entries(healthyIndicators)) {
+      if (itemContent.includes(indicator)) {
+        score += 10;
+        reasons.push(reason);
+        break; // Only add one health indicator reason
       }
     }
 
-    // Determine match type based on final score
+    // Special dish indicators
+    const specialIndicators = {
+      "signature": "Chef's signature creation",
+      "award-winning": "Award-winning dish",
+      "house specialty": "Restaurant specialty",
+      "traditional": "Authentic traditional recipe",
+      "popular": "Customer favorite"
+    };
+
+    for (const [indicator, reason] of Object.entries(specialIndicators)) {
+      if (itemContent.includes(indicator)) {
+        score += 5;
+        reasons.push(reason);
+        break; // Only add one special indicator reason
+      }
+    }
+
+    // If still no specific reasons, analyze the dish type
+    if (reasons.length === 0 && warnings.length === 0) {
+      const dishTypes = {
+        "appetizer": "Light starter option",
+        "salad": "Fresh salad selection",
+        "soup": "Warming soup option",
+        "main": "Main course selection",
+        "dessert": "Sweet dessert option",
+        "side": "Complementary side dish"
+      };
+
+      for (const [type, reason] of Object.entries(dishTypes)) {
+        if (itemContent.includes(type)) {
+          reasons.push(reason);
+          break;
+        }
+      }
+
+      // If still no reason, provide a generic but informative reason
+      if (reasons.length === 0) {
+        reasons.push("Standard menu item - neutral match with your preferences");
+      }
+    }
+
+    // Determine match type based on final score and context
     if (score >= 90) {
       matchType = 'perfect';
+      if (!reasons[0].includes('perfect')) {
+        reasons[0] = `Perfect match: ${reasons[0]}`;
+      }
     } else if (score >= 75) {
       matchType = 'good';
+      if (!reasons[0].includes('great')) {
+        reasons[0] = `Great choice: ${reasons[0]}`;
+      }
     } else if (score < 40 && warnings.length > 0) {
       matchType = 'warning';
+    } else {
+      // Make neutral matches more informative
+      if (reasons[0] && !reasons[0].includes('Consider')) {
+        reasons[0] = `Consider this option: ${reasons[0]}`;
+      }
     }
 
     // Cap the score between 0 and 100
