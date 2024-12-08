@@ -15,67 +15,60 @@ serve(async (req) => {
   }
 
   try {
-    const { action, menuUrl, photos, reviews, item, preferences, restaurant } = await req.json();
-    console.log("Input data:", { action, menuUrl, photosCount: photos?.length, reviewsCount: reviews?.length });
+    const { menuUrl, photos, reviews } = await req.json();
+    console.log("Received input data:", { 
+      menuUrl, 
+      photosCount: photos?.length, 
+      reviewsCount: reviews?.length 
+    });
 
-    // Handle analyze-item action
-    if (action === 'analyze-item') {
-      console.log("Analyzing menu item:", item.name);
-      console.log("User preferences:", preferences);
-      console.log("Restaurant context:", restaurant);
-
-      if (!item || !preferences) {
-        throw new Error("Missing required data for item analysis");
-      }
-
-      const analysis = await analyzeMenuItem(item, preferences, Deno.env.get("OPENAI_API_KEY") || "");
-      console.log("Analysis result:", analysis);
-
-      return new Response(
-        JSON.stringify(analysis),
-        {
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          },
-        },
-      );
-    }
-
-    // Handle menu processing action (default)
+    // Initialize menuItems array
     let menuItems: string[] = [];
 
-    if (reviews?.length) {
-      console.log("Extracting menu items from reviews");
-      const reviewText = reviews.map((review: any) => review.text).join('\n');
-      const extractedItems = await cleanMenuText(reviewText);
-      menuItems = [...menuItems, ...extractedItems];
+    // Process reviews if available
+    if (Array.isArray(reviews) && reviews.length > 0) {
+      console.log("Processing reviews for menu items");
+      const reviewTexts = reviews
+        .filter(review => review && typeof review.text === 'string')
+        .map(review => review.text);
+      
+      if (reviewTexts.length > 0) {
+        const reviewText = reviewTexts.join('\n');
+        const extractedItems = await cleanMenuText(reviewText);
+        menuItems = [...menuItems, ...extractedItems];
+        console.log(`Extracted ${extractedItems.length} items from reviews`);
+      }
     }
 
+    // Generate additional items if needed
     if (reviews?.length) {
       console.log("Generating additional menu items");
       const generatedItems = await generateMenuItems(menuItems, reviews);
       menuItems = [...menuItems, ...generatedItems];
+      console.log(`Generated ${generatedItems.length} additional items`);
     }
 
+    // Fallback to default items if no items were found
     if (menuItems.length === 0) {
-      console.log("No menu items found, generating default items");
-      const defaultItems = [
+      console.log("Using default menu items");
+      menuItems = [
         "House Burger - Premium beef patty with lettuce, tomato, and special sauce",
         "Grilled Chicken Sandwich - Marinated chicken breast with avocado and chipotle mayo",
         "Caesar Salad - Fresh romaine, parmesan, croutons with house-made dressing",
         "Fish & Chips - Beer-battered cod with crispy fries and tartar sauce",
         "Veggie Bowl - Quinoa, roasted vegetables, and tahini dressing"
       ];
-      menuItems = defaultItems;
     }
 
+    // Format the menu items
     const formattedItems = menuItems.map((item, index) => {
       const [name, description] = item.split(' - ');
       return {
         id: `item-${index + 1}`,
         name: name.trim(),
         description: description?.trim() || '',
+        price: 0, // Default price
+        category: 'Main Menu' // Default category
       };
     });
 
@@ -103,13 +96,16 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error processing menu:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: "Failed to process menu data",
+        details: error.message 
+      }),
       {
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/json',
         },
-        status: 400,
+        status: 500,
       },
     );
   }

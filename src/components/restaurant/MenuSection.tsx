@@ -54,14 +54,26 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
   const processRestaurantData = async () => {
     setIsProcessing(true);
     try {
-      console.log("Starting menu processing");
+      console.log("Starting menu processing with data:", {
+        menuUrl,
+        photosCount: photos?.length,
+        reviewsCount: reviews?.length
+      });
+      
+      // Validate and prepare the request payload
+      const payload = {
+        menuUrl: menuUrl || null,
+        photos: photos || [],
+        reviews: reviews?.map(review => ({
+          text: review.text || '',
+          rating: review.rating || 0
+        })) || []
+      };
+
+      console.log("Sending payload to menu processor:", payload);
       
       const { data, error } = await supabase.functions.invoke('menu-processor', {
-        body: { 
-          menuUrl,
-          photos,
-          reviews
-        }
+        body: payload
       });
 
       if (error) {
@@ -101,7 +113,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
 
   return (
     <div className="space-y-6">
-      {session && <MatchScoreCard categories={categories} restaurant={restaurant} />}
+      {session && restaurant && <MatchScoreCard categories={categories} restaurant={restaurant} />}
       <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
         <CardContent className="p-0">
           <div className="relative">
