@@ -14,7 +14,7 @@ interface MenuSectionProps {
     priceLevel?: number;
     rating?: number;
     servesVegetarianFood?: boolean;
-    types?: string[];  // Added this to fix the TypeScript error
+    types?: string[];
   };
 }
 
@@ -44,76 +44,37 @@ const MenuSection = ({ menu = [], restaurant }: MenuSectionProps) => {
     loadUserPreferences();
   }, []);
 
-  const getItemMatchDetails = (item: any) => {
-    if (!userPreferences) return { score: 50 };
-
-    const itemName = item.name.toLowerCase();
-    const description = item.description?.toLowerCase() || '';
-    const content = `${itemName} ${description}`;
-
-    // Check for favorite proteins
-    const hasPreferredProtein = userPreferences.favorite_proteins?.some(
-      (protein: string) => content.includes(protein.toLowerCase())
-    );
-    if (hasPreferredProtein) {
-      return {
-        score: 95,
-        reason: "Contains your favorite protein!"
-      };
-    }
-
-    // Check for dietary restrictions
-    const hasDietaryRestriction = userPreferences.dietary_restrictions?.some(
-      (restriction: string) => content.includes(restriction.toLowerCase())
-    );
-    if (hasDietaryRestriction) {
-      return {
-        score: 20,
-        warning: "Contains ingredients you avoid"
-      };
-    }
-
-    // Check for cuisine preferences
-    const hasFavoriteCuisine = userPreferences.cuisine_preferences?.some(
-      (cuisine: string) => content.includes(cuisine.toLowerCase())
-    );
-    if (hasFavoriteCuisine) {
-      return {
-        score: 90,
-        reason: "Matches your favorite cuisine!"
-      };
-    }
-
-    // Check for foods to avoid
-    const hasAllergen = userPreferences.favorite_ingredients?.some(
-      (ingredient: string) => content.includes(ingredient.toLowerCase())
-    );
-    if (hasAllergen) {
-      return {
-        score: 20,
-        warning: "Contains ingredients you prefer to avoid"
-      };
-    }
-
-    // Default score if no strong matches/mismatches
-    return { score: 50 };
-  };
-
   // Group menu items by category
   const menuByCategory = menu.reduce((acc: any, item: any) => {
+    console.log("Processing menu item:", item); // Debug log
     const category = item.category || 'Other';
     if (!acc[category]) acc[category] = [];
     acc[category].push(item);
     return acc;
   }, {});
 
+  console.log("Menu by category:", menuByCategory); // Debug log
+  console.log("Menu categories:", Object.keys(menuByCategory)); // Debug log
+
   useEffect(() => {
     const loadMatchDetails = async () => {
-      if (!menu?.[0]?.items) return;
+      console.log("Starting loadMatchDetails with menu:", menu); // Debug log
+      
+      if (!menu || menu.length === 0) {
+        console.log("No menu items to process");
+        return;
+      }
 
       const details: Record<string, any> = {};
       
-      for (const item of menu[0].items) {
+      // Flatten menu items if they're nested
+      const menuItems = menu.flatMap(section => 
+        Array.isArray(section.items) ? section.items : [section]
+      );
+
+      console.log("Processing menu items:", menuItems); // Debug log
+
+      for (const item of menuItems) {
         try {
           const { data: preferences } = await supabase
             .from('user_preferences')
@@ -153,11 +114,21 @@ const MenuSection = ({ menu = [], restaurant }: MenuSectionProps) => {
         }
       }
 
+      console.log("Final item match details:", details); // Debug log
       setItemMatchDetails(details);
     };
 
     loadMatchDetails();
   }, [menu, restaurant]);
+
+  if (!menu || menu.length === 0) {
+    console.log("No menu data available");
+    return (
+      <div className="bg-white rounded-xl shadow-sm p-6 text-center text-gray-500">
+        No menu items available
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-xl shadow-sm">
