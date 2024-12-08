@@ -18,7 +18,7 @@ interface SavedRestaurantCardProps {
 
 const SavedRestaurantCard = ({ restaurant, onRemove }: SavedRestaurantCardProps) => {
   const navigate = useNavigate();
-  console.log("Rendering SavedRestaurantCard with data:", restaurant);
+  console.log("SavedRestaurantCard - Rendering with restaurant data:", restaurant);
 
   return (
     <Card 
