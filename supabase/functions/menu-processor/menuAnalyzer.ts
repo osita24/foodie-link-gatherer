@@ -38,53 +38,54 @@ export async function analyzeMenuItem(
     let considerations: string[] = [];
 
     // Critical Check: Dietary Restrictions (Deal breaker)
-    const dietaryConflict = preferences.dietary_restrictions?.find(
+    const dietaryConflicts = preferences.dietary_restrictions?.filter(
       restriction => itemContent.includes(restriction.toLowerCase())
     );
-    if (dietaryConflict) {
-      console.log('⚠️ Found dietary conflict:', dietaryConflict);
+    
+    if (dietaryConflicts?.length > 0) {
+      console.log('⚠️ Found dietary conflicts:', dietaryConflicts);
       return {
         score: 20,
         matchType: 'avoid',
-        considerations: [`Contains ${dietaryConflict} (dietary restriction)`],
+        considerations: dietaryConflicts.map(conflict => `Contains ${conflict} (dietary restriction)`),
         highlights: [],
         rankDescription: 'Not Recommended'
       };
     }
 
-    // Protein Match Analysis (Major boost: +25)
+    // Protein Match Analysis (Major boost: +30)
     const proteinMatches = preferences.favorite_proteins?.filter(
       protein => itemContent.includes(protein.toLowerCase())
     );
-    if (proteinMatches.length > 0) {
-      const boost = Math.min(proteinMatches.length * 25, 35);
+    if (proteinMatches?.length > 0) {
+      const boost = Math.min(proteinMatches.length * 30, 40);
       score += boost;
-      highlights.push(`Features ${proteinMatches.length > 1 ? 'multiple' : 'your'} favorite protein${proteinMatches.length > 1 ? 's' : ''}`);
+      highlights.push(`Features ${proteinMatches.join(', ')}`);
       console.log('🥩 Protein matches found:', proteinMatches);
     }
 
-    // Cuisine Preference Analysis (Significant boost: +20)
+    // Cuisine Preference Analysis (Significant boost: +25)
     const cuisineMatches = preferences.cuisine_preferences?.filter(
       cuisine => itemContent.includes(cuisine.toLowerCase())
     );
-    if (cuisineMatches.length > 0) {
-      const boost = Math.min(cuisineMatches.length * 20, 30);
+    if (cuisineMatches?.length > 0) {
+      const boost = Math.min(cuisineMatches.length * 25, 35);
       score += boost;
-      highlights.push(`Matches your preferred cuisine style`);
+      highlights.push(`Matches ${cuisineMatches.join(', ')} cuisine`);
       console.log('🍽️ Cuisine matches found:', cuisineMatches);
     }
 
-    // Ingredient Analysis
-    const favoriteIngredients = preferences.favorite_ingredients?.filter(
+    // Ingredient Avoidance Analysis (Major penalty: -25 per item)
+    const avoidedIngredients = preferences.favorite_ingredients?.filter(
       ingredient => itemContent.includes(ingredient.toLowerCase())
     );
-    if (favoriteIngredients.length > 0) {
-      const warning = favoriteIngredients.map(ingredient => 
-        `Contains ${ingredient.toLowerCase()}`
-      );
-      considerations.push(...warning);
-      score -= 15 * favoriteIngredients.length;
-      console.log('⚠️ Found ingredients to avoid:', favoriteIngredients);
+    if (avoidedIngredients?.length > 0) {
+      const penalty = Math.min(avoidedIngredients.length * 25, 50);
+      score -= penalty;
+      considerations.push(...avoidedIngredients.map(ingredient => 
+        `Contains ${ingredient} (listed in foods to avoid)`
+      ));
+      console.log('⚠️ Found ingredients to avoid:', avoidedIngredients);
     }
 
     // Calculate relative ranking among all items
@@ -96,10 +97,12 @@ export async function analyzeMenuItem(
       const hasProtein = preferences.favorite_proteins?.some(p => content.includes(p.toLowerCase()));
       const hasCuisine = preferences.cuisine_preferences?.some(c => content.includes(c.toLowerCase()));
       const hasRestriction = preferences.dietary_restrictions?.some(r => content.includes(r.toLowerCase()));
+      const hasAvoided = preferences.favorite_ingredients?.some(i => content.includes(i.toLowerCase()));
       
-      if (hasProtein) itemScore += 25;
-      if (hasCuisine) itemScore += 20;
+      if (hasProtein) itemScore += 30;
+      if (hasCuisine) itemScore += 25;
       if (hasRestriction) itemScore = 20;
+      if (hasAvoided) itemScore -= 25;
       
       return { id: menuItem.id, score: itemScore };
     }));
@@ -112,26 +115,27 @@ export async function analyzeMenuItem(
 
     console.log(`📊 Item "${item.name}" ranked ${rank} out of ${totalItems} (${percentileRank.toFixed(1)}th percentile)`);
 
-    // Determine match type and rank description
+    // Determine match type and rank description based on final score and ranking
     let matchType: MatchDetails['matchType'];
     let rankDescription: string;
 
-    if (score >= 90) {
+    if (score >= 90 && rank <= Math.ceil(totalItems * 0.2)) {
       matchType = 'perfect';
       rankDescription = rank <= 3 ? `#${rank} Top Pick! 🌟` : 'Perfect Match';
-    } else if (score >= 75) {
+    } else if (score >= 75 && rank <= Math.ceil(totalItems * 0.4)) {
       matchType = 'good';
-      rankDescription = rank <= Math.ceil(totalItems * 0.3) 
-        ? 'Highly Recommended' 
-        : 'Good Match';
-    } else if (score >= 40) {
+      rankDescription = 'Highly Recommended';
+    } else if (score >= 50 && rank <= Math.ceil(totalItems * 0.7)) {
       matchType = 'neutral';
       rankDescription = 'Worth Trying';
-    } else {
+    } else if (score < 50 || rank > Math.ceil(totalItems * 0.7)) {
       matchType = 'warning';
       rankDescription = considerations.length > 0 
         ? 'May Not Match Preferences' 
-        : 'Try Something New';
+        : 'Different from Your Usual';
+    } else {
+      matchType = 'neutral';
+      rankDescription = 'Standard Option';
     }
 
     // Add ranking context for top items
@@ -140,7 +144,7 @@ export async function analyzeMenuItem(
     }
 
     // Final score adjustments based on ranking
-    const rankingBonus = Math.max(0, (totalItems - rank) / totalItems * 10);
+    const rankingBonus = Math.max(0, (totalItems - rank) / totalItems * 15);
     score = Math.min(100, score + rankingBonus);
 
     console.log(`✨ Final analysis for ${item.name}:`, {
@@ -153,7 +157,7 @@ export async function analyzeMenuItem(
     });
 
     return {
-      score: Math.min(100, Math.max(0, score)),
+      score: Math.round(Math.min(100, Math.max(0, score))),
       matchType,
       highlights: highlights.length > 0 ? highlights : undefined,
       considerations: considerations.length > 0 ? considerations : undefined,
