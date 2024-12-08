@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, ThumbsUp, AlertTriangle, Sparkles, ArrowRight } from "lucide-react";
+import { ChevronDown, ChevronUp, ThumbsUp, AlertTriangle, Sparkles, ArrowRight, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
@@ -21,6 +21,8 @@ interface MenuItemProps {
     reason?: string;
     warning?: string;
     matchType?: 'perfect' | 'good' | 'neutral' | 'warning';
+    highlights?: string[];
+    considerations?: string[];
   };
 }
 
@@ -74,7 +76,20 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
       case 'warning':
         return <AlertTriangle className="w-3 h-3 ml-1" />;
       default:
-        return <ArrowRight className="w-3 h-3 ml-1" />;
+        return <Info className="w-3 h-3 ml-1" />;
+    }
+  };
+
+  const getMatchDescription = (matchType: string = 'neutral') => {
+    switch (matchType) {
+      case 'perfect':
+        return "Perfect match for your preferences!";
+      case 'good':
+        return "Good match with your tastes";
+      case 'warning':
+        return "May not align with your preferences";
+      default:
+        return "New dish to explore";
     }
   };
 
@@ -102,16 +117,20 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
                       getScoreColor(matchDetails.matchType)
                     )}
                   >
-                    {matchDetails.score}% Match
+                    {getMatchDescription(matchDetails.matchType)}
                     {getMatchIcon(matchDetails.matchType)}
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>
-                    {matchDetails.matchType === 'perfect' ? "Perfect match for your preferences!" :
-                     matchDetails.matchType === 'good' ? "Good match based on your preferences" :
-                     matchDetails.matchType === 'warning' ? "May not match your preferences" :
-                     "Something new to try"}
+                  <p className="text-sm">
+                    {matchDetails.highlights?.map((highlight, index) => (
+                      <span key={index} className="block">• {highlight}</span>
+                    ))}
+                    {matchDetails.considerations?.map((consideration, index) => (
+                      <span key={index} className="block text-red-600">• {consideration}</span>
+                    ))}
+                    {!matchDetails.highlights && !matchDetails.considerations && 
+                      "Try something new! This dish might surprise you."}
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -139,18 +158,20 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
             </div>
           )}
           
-          {(matchDetails.reason || matchDetails.warning) && (
+          {(matchDetails.highlights?.length || matchDetails.considerations?.length) && (
             <div className="flex items-center gap-2 flex-wrap animate-fade-in-up">
-              {matchDetails.matchType !== 'warning' && matchDetails.reason && (
-                <p className="text-sm text-emerald-700 font-medium">
-                  {matchDetails.reason} ✨
-                </p>
-              )}
-              {matchDetails.matchType === 'warning' && matchDetails.warning && (
-                <p className="text-sm text-red-700 font-medium">
-                  {matchDetails.warning} ⚠️
-                </p>
-              )}
+              {matchDetails.highlights?.map((highlight, index) => (
+                <span key={index} className="text-sm text-emerald-700 font-medium flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  {highlight}
+                </span>
+              ))}
+              {matchDetails.considerations?.map((consideration, index) => (
+                <span key={index} className="text-sm text-red-700 font-medium flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  {consideration}
+                </span>
+              ))}
             </div>
           )}
         </div>
