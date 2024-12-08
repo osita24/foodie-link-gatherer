@@ -16,7 +16,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (email: string, password: string) => {
+  const handleSubmit = async (email: string, password: string, name?: string) => {
     setIsLoading(true);
     console.log("🔑 Attempting authentication...");
 
@@ -28,6 +28,9 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
           email,
           password,
           options: {
+            data: {
+              full_name: name
+            },
             emailRedirectTo: window.location.origin
           }
         });
