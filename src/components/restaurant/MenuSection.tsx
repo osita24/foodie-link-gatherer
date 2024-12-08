@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { MenuCategory } from "@/types/restaurant";
+import { MenuCategory, RestaurantDetails } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import MenuItem from "./menu/MenuItem";
@@ -15,12 +15,13 @@ interface MenuSectionProps {
   photos?: string[];
   reviews?: any[];
   menuUrl?: string;
+  restaurant?: RestaurantDetails;
 }
 
-const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
+const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSectionProps) => {
   const [processedMenu, setProcessedMenu] = useState<MenuCategory[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const { categories } = useRestaurantMatch(null);
+  const { categories } = useRestaurantMatch(restaurant);
   const { itemMatchDetails, analyzedMenu } = useMenuAnalysis(processedMenu);
   const [session, setSession] = useState<any>(null);
 
@@ -100,7 +101,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
 
   return (
     <div className="space-y-6">
-      {session && <MatchScoreCard categories={categories} />}
+      {session && <MatchScoreCard categories={categories} restaurant={restaurant} />}
       <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
         <CardContent className="p-0">
           <div className="relative">

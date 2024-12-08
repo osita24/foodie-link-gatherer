@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
 import { corsHeaders } from "../_shared/cors.ts";
 import { OpenAI } from "https://deno.land/x/openai@v4.24.0/mod.ts";
 
@@ -14,37 +13,42 @@ serve(async (req) => {
 
   try {
     const { restaurant, preferences } = await req.json();
-
-    console.log("🔍 Analyzing restaurant:", restaurant.name);
+    
+    console.log("🔍 Analyzing restaurant:", restaurant);
     console.log("👤 User preferences:", preferences);
+
+    if (!restaurant) {
+      console.error("❌ No restaurant data provided");
+      throw new Error("Restaurant data is required");
+    }
 
     const prompt = `As a friendly AI restaurant expert, analyze this restaurant and the user's preferences to generate a personalized match score and explanation.
 
 Restaurant Details:
-- Name: ${restaurant.name}
-- Cuisine Types: ${restaurant.types?.join(', ')}
-- Price Level: ${restaurant.priceLevel}
+- Name: ${restaurant.name || 'Unknown'}
+- Cuisine Types: ${restaurant.types?.join(', ') || 'Not specified'}
+- Price Level: ${restaurant.priceLevel || 'Not specified'}
 - Features: ${Object.entries(restaurant)
   .filter(([key, value]) => key.startsWith('serves') && value === true)
   .map(([key]) => key.replace('serves', ''))
-  .join(', ')}
+  .join(', ') || 'None specified'}
 
 User Preferences:
-- Cuisine Preferences: ${preferences.cuisinePreferences?.join(', ')}
-- Dietary Restrictions: ${preferences.dietaryRestrictions?.join(', ')}
-- Favorite Ingredients: ${preferences.favoriteIngredients?.join(', ')}
-- Spice Level (1-5): ${preferences.spiceLevel}
-- Price Range: ${preferences.priceRange}
-- Atmosphere Preferences: ${preferences.atmospherePreferences?.join(', ')}
+- Cuisine Preferences: ${preferences.cuisinePreferences?.join(', ') || 'None specified'}
+- Dietary Restrictions: ${preferences.dietaryRestrictions?.join(', ') || 'None specified'}
+- Favorite Ingredients: ${preferences.favoriteIngredients?.join(', ') || 'None specified'}
+- Spice Level (1-5): ${preferences.spiceLevel || 'Not specified'}
+- Price Range: ${preferences.priceRange || 'Not specified'}
+- Atmosphere Preferences: ${preferences.atmospherePreferences?.join(', ') || 'None specified'}
 
 Generate:
-1. A match score (0-100)
-2. Three clear, specific reasons explaining the score that will help the user decide whether to visit this restaurant.
+1. A match score (0-100) based on how well this restaurant aligns with the user's preferences
+2. Three clear, specific reasons explaining why this score was given. Be direct and honest about both positive and negative aspects.
 
 Format the response as a JSON object with 'matchScore' and 'reasons' fields. Be specific and personalized in the reasons.`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
@@ -74,7 +78,15 @@ Format the response as a JSON object with 'matchScore' and 'reasons' fields. Be 
   } catch (error) {
     console.error("Error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        matchScore: 50,
+        reasons: [
+          "We're having trouble analyzing this restaurant right now",
+          "Please try again later",
+          "Our AI is taking a quick break"
+        ]
+      }),
       { 
         status: 500,
         headers: { 
