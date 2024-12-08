@@ -1,80 +1,88 @@
 import { useState, useEffect } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import MenuItem from "./menu/MenuItem";
+import { Card, CardContent } from "@/components/ui/card";
+import { List, Loader2 } from "lucide-react";
+import { MenuCategory } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import MenuItem from "./menu/MenuItem";
+import MenuHeader from "./menu/MenuHeader";
+import MatchScoreCard from "./MatchScoreCard";
+import { useRestaurantMatch } from "@/hooks/useRestaurantMatch";
 
 interface MenuSectionProps {
-  menu?: any[];
+  menu?: MenuCategory[];
   photos?: string[];
   reviews?: any[];
   menuUrl?: string;
-  restaurant?: {
-    name: string;
-    cuisine?: string;
-    priceLevel?: number;
-    rating?: number;
-    servesVegetarianFood?: boolean;
-    types?: string[];
-  };
 }
 
-const MenuSection = ({ menu = [], restaurant }: MenuSectionProps) => {
-  const [userPreferences, setUserPreferences] = useState<any>(null);
+const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
+  const [processedMenu, setProcessedMenu] = useState<MenuCategory[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [itemMatchDetails, setItemMatchDetails] = useState<Record<string, any>>({});
+  const { categories } = useRestaurantMatch(null);
 
   useEffect(() => {
-    const loadUserPreferences = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) return;
+    if (menu) {
+      console.log("Using provided menu data:", menu);
+      setProcessedMenu(menu);
+    } else if (menuUrl || photos?.length || reviews?.length) {
+      console.log("Processing available data:", {
+        menuUrl: menuUrl || 'none',
+        photos: photos?.length || 0,
+        reviews: reviews?.length || 0
+      });
+      processRestaurantData();
+    } else {
+      console.log("No data available to process");
+    }
+  }, [menu, photos, reviews, menuUrl]);
 
-        const { data } = await supabase
-          .from('user_preferences')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single();
-
-        console.log("Loaded user preferences:", data);
-        setUserPreferences(data);
-      } catch (error) {
-        console.error('Error loading preferences:', error);
-      }
-    };
-
-    loadUserPreferences();
-  }, []);
-
-  // Group menu items by category
-  const menuByCategory = menu.reduce((acc: any, item: any) => {
-    console.log("Processing menu item:", item); // Debug log
-    const category = item.category || 'Other';
-    if (!acc[category]) acc[category] = [];
-    acc[category].push(item);
-    return acc;
-  }, {});
-
-  console.log("Menu by category:", menuByCategory); // Debug log
-  console.log("Menu categories:", Object.keys(menuByCategory)); // Debug log
-
-  useEffect(() => {
-    const loadMatchDetails = async () => {
-      console.log("Starting loadMatchDetails with menu:", menu); // Debug log
+  const processRestaurantData = async () => {
+    setIsProcessing(true);
+    try {
+      console.log("Starting menu processing");
       
-      if (!menu || menu.length === 0) {
-        console.log("No menu items to process");
+      const { data, error } = await supabase.functions.invoke('menu-processor', {
+        body: { 
+          menuUrl,
+          photos,
+          reviews
+        }
+      });
+
+      if (error) {
+        console.error("Error processing data:", error);
+        throw error;
+      }
+
+      console.log("Response from menu processor:", data);
+      
+      if (!data?.menuSections?.length) {
+        console.log("No menu sections generated");
+        toast.info("Could not generate menu information");
         return;
       }
 
+      console.log("Menu sections generated:", data.menuSections);
+      setProcessedMenu(data.menuSections);
+      toast.success(`Found ${data.menuSections[0].items.length} menu items`);
+      
+    } catch (error) {
+      console.error("Error processing restaurant data:", error);
+      toast.error("Failed to generate menu information");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  useEffect(() => {
+    const loadMatchDetails = async () => {
+      if (!processedMenu?.[0]?.items) return;
+
       const details: Record<string, any> = {};
       
-      // Flatten menu items if they're nested
-      const menuItems = menu.flatMap(section => 
-        Array.isArray(section.items) ? section.items : [section]
-      );
-
-      console.log("Processing menu items:", menuItems); // Debug log
-
-      for (const item of menuItems) {
+      for (const item of processedMenu[0].items) {
         try {
           const { data: preferences } = await supabase
             .from('user_preferences')
@@ -90,14 +98,7 @@ const MenuSection = ({ menu = [], restaurant }: MenuSectionProps) => {
             body: { 
               action: 'analyze-item',
               item,
-              preferences,
-              restaurant: {
-                name: restaurant?.name,
-                cuisine: restaurant?.types?.find(t => t.includes('cuisine')),
-                priceLevel: restaurant?.priceLevel,
-                rating: restaurant?.rating,
-                servesVegetarianFood: restaurant?.servesVegetarianFood
-              }
+              preferences
             }
           });
 
@@ -114,49 +115,65 @@ const MenuSection = ({ menu = [], restaurant }: MenuSectionProps) => {
         }
       }
 
-      console.log("Final item match details:", details); // Debug log
       setItemMatchDetails(details);
     };
 
     loadMatchDetails();
-  }, [menu, restaurant]);
+  }, [processedMenu]);
 
-  if (!menu || menu.length === 0) {
-    console.log("No menu data available");
+  if (isProcessing) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-6 text-center text-gray-500">
-        No menu items available
-      </div>
+      <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
+        <CardContent className="p-8 flex flex-col items-center justify-center min-h-[300px]">
+          <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
+          <p className="text-secondary text-lg font-medium">
+            Processing Menu...
+          </p>
+          <p className="text-muted-foreground text-sm mt-2">
+            Analyzing available information to create your digital menu
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!processedMenu || processedMenu.length === 0) {
+    return (
+      <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
+        <CardContent className="p-8 flex flex-col items-center justify-center min-h-[300px]">
+          <List className="w-8 h-8 text-muted-foreground mb-4" />
+          <p className="text-secondary text-lg font-medium">
+            Menu Not Available
+          </p>
+          <p className="text-muted-foreground text-sm mt-2">
+            We're working on getting the latest menu information.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm">
-      <Tabs defaultValue={Object.keys(menuByCategory)[0]} className="w-full">
-        <TabsList className="w-full justify-start overflow-x-auto flex-nowrap">
-          {Object.keys(menuByCategory).map((category) => (
-            <TabsTrigger
-              key={category}
-              value={category}
-              className="whitespace-nowrap"
-            >
-              {category}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        {Object.entries(menuByCategory).map(([category, items]: [string, any]) => (
-          <TabsContent key={category} value={category} className="p-4 space-y-4">
-            {items.map((item: any) => (
-              <MenuItem
-                key={item.id}
-                item={item}
-                matchDetails={itemMatchDetails[item.id] || { score: 75 }}
-              />
-            ))}
-          </TabsContent>
-        ))}
-      </Tabs>
+    <div className="space-y-6">
+      <MatchScoreCard categories={categories} />
+      <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
+        <CardContent className="p-0">
+          <div className="relative">
+            <MenuHeader menuUrl={menuUrl} />
+            <div className="p-4 md:p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {processedMenu[0].items.map((item) => (
+                  <MenuItem
+                    key={item.id}
+                    item={item}
+                    matchDetails={itemMatchDetails[item.id] || { score: 75 }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
