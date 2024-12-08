@@ -19,14 +19,14 @@ const MatchScoreCard = ({ restaurant }: MatchScoreCardProps) => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    console.log("🔍 Initializing MatchScoreCard with restaurant:", restaurant?.name);
+    console.log("🎯 MatchScoreCard mounted with restaurant:", restaurant?.name);
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("🔐 Auth session loaded:", session?.user?.id);
+      console.log("🔐 Auth session in MatchScoreCard:", session?.user?.id);
       setSession(session);
     });
 
     supabase.auth.onAuthStateChange((_event, session) => {
-      console.log("🔄 Auth state changed:", session?.user?.id);
+      console.log("🔄 Auth state changed in MatchScoreCard:", session?.user?.id);
       setSession(session);
       if (session) setShowAuthModal(false);
     });

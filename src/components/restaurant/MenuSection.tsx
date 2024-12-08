@@ -28,10 +28,12 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
   useEffect(() => {
     console.log("🔍 Initializing MenuSection with restaurant:", restaurant?.name);
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("🔐 Auth session loaded:", session?.user?.id);
       setSession(session);
     });
 
     supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("🔄 Auth state changed:", session?.user?.id);
       setSession(session);
     });
   }, []);
