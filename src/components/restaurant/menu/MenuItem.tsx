@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Star, AlertTriangle, Check, Info } from "lucide-react";
+import { ChevronDown, ChevronUp, Star, AlertTriangle, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -34,11 +34,16 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
   const isLongDescription = description && description.length > 100;
   const displayDescription = isExpanded ? description : description?.substring(0, 100);
 
+  // Only show special styling for very good (85+) or concerning (40-) matches
   const getMatchStyle = (score: number) => {
     if (score >= 85) return "border-l-4 border-emerald-400 bg-gradient-to-r from-emerald-50/50 to-transparent";
     if (score <= 40) return "border-l-4 border-red-400 bg-gradient-to-r from-red-50/50 to-transparent";
-    if (score >= 70) return "border-l-4 border-blue-400 bg-gradient-to-r from-blue-50/50 to-transparent";
     return "hover:bg-gray-50/50";
+  };
+
+  // Only show badges for significant matches
+  const shouldShowBadge = (score: number) => {
+    return score >= 85 || score <= 40;
   };
 
   const getMatchBadge = (score: number) => {
@@ -56,21 +61,10 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
         className: "bg-red-100 text-red-700 hover:bg-red-200 border-0"
       };
     }
-    if (score >= 70) {
-      return {
-        icon: <Check className="w-3 h-3" />,
-        text: "Good Choice",
-        className: "bg-blue-100 text-blue-700 hover:bg-blue-200 border-0"
-      };
-    }
-    return {
-      icon: <Info className="w-3 h-3" />,
-      text: "Consider This",
-      className: "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"
-    };
+    return null;
   };
 
-  const badge = getMatchBadge(matchDetails.score);
+  const badge = shouldShowBadge(matchDetails.score) ? getMatchBadge(matchDetails.score) : null;
 
   return (
     <div 
@@ -86,15 +80,17 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
             <h3 className="text-base font-medium text-gray-900">
               {cleanName}
             </h3>
-            <Badge 
-              className={cn(
-                "flex items-center gap-1 animate-fade-in-up",
-                badge.className
-              )}
-            >
-              {badge.icon}
-              {badge.text}
-            </Badge>
+            {badge && (
+              <Badge 
+                className={cn(
+                  "flex items-center gap-1 animate-fade-in-up",
+                  badge.className
+                )}
+              >
+                {badge.icon}
+                {badge.text}
+              </Badge>
+            )}
           </div>
           
           {description && (
@@ -118,15 +114,17 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
             </div>
           )}
           
-          {(matchDetails.allReasons?.length > 0 || matchDetails.allWarnings?.length > 0) && (
+          {/* Only show reasons for high matches or warnings */}
+          {((matchDetails.score >= 85 && matchDetails.allReasons?.length > 0) || 
+            (matchDetails.score <= 40 && matchDetails.allWarnings?.length > 0)) && (
             <div className="flex flex-col gap-2 mt-2 animate-fade-in-up">
-              {matchDetails.allReasons?.map((reason, index) => (
+              {matchDetails.score >= 85 && matchDetails.allReasons?.map((reason, index) => (
                 <p key={index} className="text-sm text-emerald-700 font-medium flex items-center gap-1">
                   <Check className="w-4 h-4 flex-shrink-0" />
                   {reason}
                 </p>
               ))}
-              {matchDetails.allWarnings?.map((warning, index) => (
+              {matchDetails.score <= 40 && matchDetails.allWarnings?.map((warning, index) => (
                 <p key={index} className="text-sm text-red-700 font-medium flex items-center gap-1">
                   <AlertTriangle className="w-4 h-4 flex-shrink-0" />
                   {warning}
