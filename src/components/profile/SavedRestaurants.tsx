@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, UtensilsCrossed, Star } from "lucide-react";
+import { Heart, UtensilsCrossed, Star, MapPin, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface SavedRestaurant {
   id: string;
@@ -12,6 +13,7 @@ interface SavedRestaurant {
   cuisine: string | null;
   rating: number | null;
   place_id: string;
+  created_at: string;
 }
 
 const SavedRestaurants = () => {
@@ -19,6 +21,7 @@ const SavedRestaurants = () => {
   const [loading, setLoading] = useState(true);
   const session = useSession();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchSavedRestaurants = async () => {
@@ -29,10 +32,16 @@ const SavedRestaurants = () => {
         const { data: restaurants, error } = await supabase
           .from("saved_restaurants")
           .select("*")
-          .eq("user_id", session.user.id);
+          .eq("user_id", session.user.id)
+          .order('created_at', { ascending: false });
 
         if (error) {
           console.error("Error fetching saved restaurants:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load your saved restaurants. Please try again.",
+            variant: "destructive",
+          });
           return;
         }
 
@@ -40,23 +49,53 @@ const SavedRestaurants = () => {
         setSavedRestaurants(restaurants);
       } catch (error) {
         console.error("Error in fetchSavedRestaurants:", error);
+        toast({
+          title: "Error",
+          description: "Something went wrong. Please try again later.",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
     };
 
     fetchSavedRestaurants();
-  }, [session?.user?.id]);
+  }, [session?.user?.id, toast]);
+
+  const handleRemoveRestaurant = async (e: React.MouseEvent, restaurantId: string) => {
+    e.stopPropagation();
+    try {
+      const { error } = await supabase
+        .from("saved_restaurants")
+        .delete()
+        .eq("id", restaurantId);
+
+      if (error) throw error;
+
+      setSavedRestaurants(prev => prev.filter(r => r.id !== restaurantId));
+      toast({
+        title: "Restaurant removed",
+        description: "The restaurant has been removed from your saved list.",
+      });
+    } catch (error) {
+      console.error("Error removing restaurant:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove the restaurant. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[1, 2, 3].map((i) => (
           <Card key={i} className="overflow-hidden animate-pulse">
-            <div className="h-48 bg-gray-200" />
+            <div className="h-48 bg-accent/50" />
             <CardContent className="p-4">
-              <div className="h-6 bg-gray-200 rounded w-3/4 mb-2" />
-              <div className="h-4 bg-gray-200 rounded w-1/2" />
+              <div className="h-6 bg-accent/50 rounded w-3/4 mb-2" />
+              <div className="h-4 bg-accent/50 rounded w-1/2" />
             </CardContent>
           </Card>
         ))}
@@ -67,19 +106,19 @@ const SavedRestaurants = () => {
   if (savedRestaurants.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="rounded-full bg-muted p-6 mb-4">
+        <div className="rounded-full bg-accent p-6 mb-4">
           <UtensilsCrossed className="w-12 h-12 text-muted-foreground" />
         </div>
         <h3 className="text-xl font-semibold mb-2">No saved restaurants yet</h3>
         <p className="text-muted-foreground max-w-sm mb-6">
           When you find restaurants you love, save them here to keep track of your favorite spots.
         </p>
-        <a 
-          href="/"
-          className="inline-flex items-center justify-center rounded-md bg-primary px-8 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        <button 
+          onClick={() => navigate('/')}
+          className="inline-flex items-center justify-center rounded-md bg-primary px-8 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
         >
           Discover Restaurants
-        </a>
+        </button>
       </div>
     );
   }
@@ -89,52 +128,54 @@ const SavedRestaurants = () => {
       {savedRestaurants.map((restaurant) => (
         <Card 
           key={restaurant.id} 
-          className="overflow-hidden group hover:shadow-lg transition-shadow cursor-pointer"
+          className="overflow-hidden group hover:shadow-lg transition-all duration-300 cursor-pointer bg-card"
           onClick={() => navigate(`/restaurant/${restaurant.place_id}`)}
         >
-          <div className="relative">
-            <div className="absolute top-2 right-2 z-10 flex gap-2">
-              {restaurant.rating && (
-                <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-sm">
-                  <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                    <span className="text-sm font-medium">{restaurant.rating.toFixed(1)}</span>
-                  </div>
-                </div>
-              )}
-              <button 
-                className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-gray-100 transition-colors"
-                onClick={async (e) => {
-                  e.stopPropagation(); // Prevent navigation when clicking the remove button
-                  try {
-                    await supabase
-                      .from("saved_restaurants")
-                      .delete()
-                      .eq("id", restaurant.id);
-                    setSavedRestaurants(prev => 
-                      prev.filter(r => r.id !== restaurant.id)
-                    );
-                  } catch (error) {
-                    console.error("Error removing restaurant:", error);
-                  }
-                }}
-              >
-                <Heart className="h-4 w-4 text-red-500" fill="currentColor" />
-              </button>
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-              <h3 className="font-semibold text-lg text-white mb-1">{restaurant.name}</h3>
-              {restaurant.cuisine && (
-                <p className="text-white/90 text-sm">{restaurant.cuisine}</p>
-              )}
-            </div>
+          <div className="relative h-48">
             <img
-              src={restaurant.image_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4"}
+              src={restaurant.image_url || "/placeholder.svg"}
               alt={restaurant.name}
-              className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            <button 
+              className="absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-red-50 transition-colors z-10 group/btn"
+              onClick={(e) => handleRemoveRestaurant(e, restaurant.id)}
+              aria-label="Remove from saved"
+            >
+              <Heart 
+                className="w-5 h-5 text-red-500 transition-transform group-hover/btn:scale-110" 
+                fill="currentColor" 
+              />
+            </button>
           </div>
-          <CardContent className="p-4" />
+          <CardContent className="p-4">
+            <div className="space-y-2">
+              <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors">
+                {restaurant.name}
+              </h3>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                {restaurant.rating && (
+                  <div className="flex items-center gap-1">
+                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                    <span>{restaurant.rating.toFixed(1)}</span>
+                  </div>
+                )}
+                {restaurant.cuisine && (
+                  <>
+                    <span className="text-muted-foreground">•</span>
+                    <span>{restaurant.cuisine}</span>
+                  </>
+                )}
+              </div>
+              <div className="pt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                <Clock className="w-3.5 h-3.5" />
+                <span>
+                  Saved {new Date(restaurant.created_at).toLocaleDateString()}
+                </span>
+              </div>
+            </div>
+          </CardContent>
         </Card>
       ))}
     </div>
