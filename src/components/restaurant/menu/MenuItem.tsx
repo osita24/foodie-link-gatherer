@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Star, AlertTriangle, Check } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -14,8 +14,6 @@ interface MenuItemProps {
     score: number;
     reason?: string;
     warning?: string;
-    allReasons?: string[];
-    allWarnings?: string[];
   };
 }
 
@@ -34,37 +32,11 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
   const isLongDescription = description && description.length > 100;
   const displayDescription = isExpanded ? description : description?.substring(0, 100);
 
-  // Only show special styling for very good (85+) or concerning (40-) matches
   const getMatchStyle = (score: number) => {
-    if (score >= 85) return "border-l-4 border-emerald-400 bg-gradient-to-r from-emerald-50/50 to-transparent";
-    if (score <= 40) return "border-l-4 border-red-400 bg-gradient-to-r from-red-50/50 to-transparent";
+    if (score >= 85) return "border-l-4 border-emerald-400 bg-gradient-to-r from-emerald-50 to-transparent";
+    if (score <= 40) return "border-l-4 border-red-400 bg-gradient-to-r from-red-50 to-transparent";
     return "hover:bg-gray-50/50";
   };
-
-  // Only show badges for significant matches
-  const shouldShowBadge = (score: number) => {
-    return score >= 85 || score <= 40;
-  };
-
-  const getMatchBadge = (score: number) => {
-    if (score >= 85) {
-      return {
-        icon: <Star className="w-3 h-3" />,
-        text: "Perfect Match!",
-        className: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-0"
-      };
-    }
-    if (score <= 40) {
-      return {
-        icon: <AlertTriangle className="w-3 h-3" />,
-        text: "Heads Up!",
-        className: "bg-red-100 text-red-700 hover:bg-red-200 border-0"
-      };
-    }
-    return null;
-  };
-
-  const badge = shouldShowBadge(matchDetails.score) ? getMatchBadge(matchDetails.score) : null;
 
   return (
     <div 
@@ -80,15 +52,20 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
             <h3 className="text-base font-medium text-gray-900">
               {cleanName}
             </h3>
-            {badge && (
+            {matchDetails.score >= 85 && (
               <Badge 
-                className={cn(
-                  "flex items-center gap-1 animate-fade-in-up",
-                  badge.className
-                )}
+                className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-0
+                  animate-fade-in-up"
               >
-                {badge.icon}
-                {badge.text}
+                Perfect Match! 🎯
+              </Badge>
+            )}
+            {matchDetails.score <= 40 && (
+              <Badge 
+                className="bg-red-100 text-red-700 hover:bg-red-200 border-0
+                  animate-fade-in-up"
+              >
+                Heads Up! ⚠️
               </Badge>
             )}
           </div>
@@ -114,22 +91,18 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
             </div>
           )}
           
-          {/* Only show reasons for high matches or warnings */}
-          {((matchDetails.score >= 85 && matchDetails.allReasons?.length > 0) || 
-            (matchDetails.score <= 40 && matchDetails.allWarnings?.length > 0)) && (
-            <div className="flex flex-col gap-2 mt-2 animate-fade-in-up">
-              {matchDetails.score >= 85 && matchDetails.allReasons?.map((reason, index) => (
-                <p key={index} className="text-sm text-emerald-700 font-medium flex items-center gap-1">
-                  <Check className="w-4 h-4 flex-shrink-0" />
-                  {reason}
+          {(matchDetails.reason || matchDetails.warning) && (
+            <div className="flex items-center gap-2 flex-wrap animate-fade-in-up">
+              {matchDetails.score >= 85 && matchDetails.reason && (
+                <p className="text-sm text-emerald-700 font-medium">
+                  {matchDetails.reason} ✨
                 </p>
-              ))}
-              {matchDetails.score <= 40 && matchDetails.allWarnings?.map((warning, index) => (
-                <p key={index} className="text-sm text-red-700 font-medium flex items-center gap-1">
-                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                  {warning}
+              )}
+              {matchDetails.score <= 40 && matchDetails.warning && (
+                <p className="text-sm text-red-700 font-medium">
+                  {matchDetails.warning} ⚠️
                 </p>
-              ))}
+              )}
             </div>
           )}
         </div>

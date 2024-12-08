@@ -1,114 +1,94 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { corsHeaders } from "../_shared/cors.ts";
+import { cleanMenuText } from "./textCleaner.ts";
+import { generateMenuItems } from "./menuGenerator.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-interface MenuItem {
-  id: string;
-  name: string;
-  description?: string;
-  category?: string;
-}
-
-interface MenuCategory {
-  name: string;
-  items: MenuItem[];
-}
+console.log("Menu processor function started");
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, {
+      headers: corsHeaders
+    });
   }
 
   try {
-    const { action, item, preferences, menuUrl, photos, reviews } = await req.json();
-    console.log('Request payload:', { action, menuUrl, photos, reviews });
+    const { menuUrl, photos, reviews } = await req.json();
+    console.log("Input data:", { menuUrl, photosCount: photos?.length, reviewsCount: reviews?.length });
 
-    // Handle menu item analysis
-    if (action === 'analyze-item') {
-      console.log('Analyzing menu item:', item);
-      console.log('User preferences:', preferences);
+    let menuItems: string[] = [];
 
-      const itemText = `${item.name} ${item.description || ''}`.toLowerCase();
-      let score = 75; // Default score
-      const reasons: string[] = [];
-      const warnings: string[] = [];
-
-      // Check favorite proteins (highest priority)
-      if (preferences.favorite_proteins) {
-        for (const protein of preferences.favorite_proteins) {
-          if (itemText.includes(protein.toLowerCase())) {
-            score += 20;
-            reasons.push(`Contains ${protein} (your favorite protein)`);
-          }
-        }
-      }
-
-      // Check dietary restrictions (highest negative priority)
-      if (preferences.dietary_restrictions) {
-        for (const restriction of preferences.dietary_restrictions) {
-          if (itemText.includes(restriction.toLowerCase())) {
-            score -= 40;
-            warnings.push(`Contains ${restriction} (dietary restriction)`);
-          }
-        }
-      }
-
-      // Normalize score
-      score = Math.min(Math.max(score, 0), 100);
-
-      const response = {
-        score,
-        allReasons: score >= 85 ? reasons : [],
-        allWarnings: score <= 40 ? warnings : [],
-      };
-
-      return new Response(JSON.stringify(response), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    // Try to extract menu items from reviews first
+    if (reviews?.length) {
+      console.log("Extracting menu items from reviews");
+      const reviewText = reviews.map((review: any) => review.text).join('\n');
+      const extractedItems = await cleanMenuText(reviewText);
+      menuItems = [...menuItems, ...extractedItems];
     }
 
-    // Handle menu processing
-    console.log('Processing menu data');
-    
-    // For testing, return a sample menu structure
-    const sampleMenu: MenuCategory[] = [{
-      name: "Main Menu",
-      items: [
+    // Generate additional menu items based on existing items and reviews
+    if (reviews?.length) {
+      console.log("Generating additional menu items");
+      const generatedItems = await generateMenuItems(menuItems, reviews);
+      menuItems = [...menuItems, ...generatedItems];
+    }
+
+    // If we still don't have menu items, generate some based on the restaurant type
+    if (menuItems.length === 0) {
+      console.log("No menu items found, generating default items");
+      const defaultItems = [
+        "House Burger - Premium beef patty with lettuce, tomato, and special sauce",
+        "Grilled Chicken Sandwich - Marinated chicken breast with avocado and chipotle mayo",
+        "Caesar Salad - Fresh romaine, parmesan, croutons with house-made dressing",
+        "Fish & Chips - Beer-battered cod with crispy fries and tartar sauce",
+        "Veggie Bowl - Quinoa, roasted vegetables, and tahini dressing"
+      ];
+      menuItems = defaultItems;
+    }
+
+    // Transform the items into the expected format
+    const formattedItems = menuItems.map((item, index) => {
+      const [name, description] = item.split(' - ');
+      return {
+        id: `item-${index + 1}`,
+        name: name.trim(),
+        description: description?.trim() || '',
+      };
+    });
+
+    const menuData = {
+      menuSections: [
         {
-          id: "1",
-          name: "Grilled Chicken Breast",
-          description: "Tender chicken breast with herbs",
-          category: "Mains"
-        },
-        {
-          id: "2",
-          name: "Vegetable Stir Fry",
-          description: "Fresh vegetables in garlic sauce",
-          category: "Mains"
+          name: "Main Menu",
+          items: formattedItems
         }
       ]
-    }];
+    };
 
+    console.log(`Returning ${formattedItems.length} menu items`);
+    
     return new Response(
-      JSON.stringify({ menuSections: sampleMenu }),
+      JSON.stringify(menuData),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
+      },
     );
 
   } catch (error) {
-    console.error('Error in menu-processor:', error);
+    console.error("Error processing menu:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
+        status: 400,
+      },
     );
   }
 });
