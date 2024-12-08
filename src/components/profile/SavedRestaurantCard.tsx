@@ -18,6 +18,7 @@ interface SavedRestaurantCardProps {
 
 const SavedRestaurantCard = ({ restaurant, onRemove }: SavedRestaurantCardProps) => {
   const navigate = useNavigate();
+  console.log("Rendering SavedRestaurantCard with data:", restaurant);
 
   return (
     <Card 
@@ -25,7 +26,7 @@ const SavedRestaurantCard = ({ restaurant, onRemove }: SavedRestaurantCardProps)
       className="overflow-hidden group hover:shadow-lg transition-all duration-300 cursor-pointer bg-card"
       onClick={() => navigate(`/restaurant/${restaurant.place_id}`)}
     >
-      <div className="relative h-48">
+      <div className="relative h-48 sm:h-56">
         <img
           src={restaurant.image_url || "/placeholder.svg"}
           alt={restaurant.name}
