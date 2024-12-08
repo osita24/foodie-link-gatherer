@@ -54,7 +54,8 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
       }
     } catch (error) {
       console.error('❌ Error parsing URL:', error);
-      throw new Error('Invalid Google Maps URL format');
+      // Don't throw here, continue with text search
+      console.log('⚠️ Continuing with text search...');
     }
 
     // Extract search text and try text search
