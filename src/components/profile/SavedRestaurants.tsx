@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart, UtensilsCrossed, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useSession } from "@supabase/auth-helpers-react";
 
 interface SavedRestaurant {
   id: string;
@@ -15,14 +17,19 @@ interface SavedRestaurant {
 const SavedRestaurants = () => {
   const [savedRestaurants, setSavedRestaurants] = useState<SavedRestaurant[]>([]);
   const [loading, setLoading] = useState(true);
+  const session = useSession();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSavedRestaurants = async () => {
+      if (!session?.user?.id) return;
+
       try {
-        console.log("Fetching saved restaurants...");
+        console.log("Fetching saved restaurants for user:", session.user.id);
         const { data: restaurants, error } = await supabase
           .from("saved_restaurants")
-          .select("*");
+          .select("*")
+          .eq("user_id", session.user.id);
 
         if (error) {
           console.error("Error fetching saved restaurants:", error);
@@ -39,7 +46,7 @@ const SavedRestaurants = () => {
     };
 
     fetchSavedRestaurants();
-  }, []);
+  }, [session?.user?.id]);
 
   if (loading) {
     return (
@@ -80,7 +87,11 @@ const SavedRestaurants = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {savedRestaurants.map((restaurant) => (
-        <Card key={restaurant.id} className="overflow-hidden group hover:shadow-lg transition-shadow">
+        <Card 
+          key={restaurant.id} 
+          className="overflow-hidden group hover:shadow-lg transition-shadow cursor-pointer"
+          onClick={() => navigate(`/restaurant/${restaurant.place_id}`)}
+        >
           <div className="relative">
             <div className="absolute top-2 right-2 z-10 flex gap-2">
               {restaurant.rating && (
@@ -93,7 +104,8 @@ const SavedRestaurants = () => {
               )}
               <button 
                 className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-gray-100 transition-colors"
-                onClick={async () => {
+                onClick={async (e) => {
+                  e.stopPropagation(); // Prevent navigation when clicking the remove button
                   try {
                     await supabase
                       .from("saved_restaurants")
