@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart, UtensilsCrossed, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useRestaurantMatch } from "@/hooks/useRestaurantMatch";
 
 interface SavedRestaurant {
   id: string;
@@ -80,73 +79,52 @@ const SavedRestaurants = () => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {savedRestaurants.map((restaurant) => {
-        const { overallScore } = useRestaurantMatch(null);
-
-        return (
-          <Card key={restaurant.id} className="overflow-hidden group hover:shadow-lg transition-shadow">
-            <div className="relative">
-              <div className="absolute top-2 right-2 z-10 flex gap-2">
-                {restaurant.rating && (
-                  <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-sm">
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                      <span className="text-sm font-medium">{restaurant.rating.toFixed(1)}</span>
-                    </div>
-                  </div>
-                )}
-                <button 
-                  className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-gray-100 transition-colors"
-                  onClick={async () => {
-                    try {
-                      await supabase
-                        .from("saved_restaurants")
-                        .delete()
-                        .eq("id", restaurant.id);
-                      setSavedRestaurants(prev => 
-                        prev.filter(r => r.id !== restaurant.id)
-                      );
-                    } catch (error) {
-                      console.error("Error removing restaurant:", error);
-                    }
-                  }}
-                >
-                  <Heart className="h-4 w-4 text-red-500" fill="currentColor" />
-                </button>
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                <h3 className="font-semibold text-lg text-white mb-1">{restaurant.name}</h3>
-                {restaurant.cuisine && (
-                  <p className="text-white/90 text-sm">{restaurant.cuisine}</p>
-                )}
-              </div>
-              <img
-                src={restaurant.image_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4"}
-                alt={restaurant.name}
-                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-            </div>
-            <CardContent className="p-4">
-              {overallScore > 0 && (
-                <div className="mt-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Match Score</span>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-24 bg-gray-200 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-primary transition-all duration-500 ease-out"
-                          style={{ width: `${overallScore}%` }}
-                        />
-                      </div>
-                      <span className="text-sm font-medium">{overallScore}%</span>
-                    </div>
+      {savedRestaurants.map((restaurant) => (
+        <Card key={restaurant.id} className="overflow-hidden group hover:shadow-lg transition-shadow">
+          <div className="relative">
+            <div className="absolute top-2 right-2 z-10 flex gap-2">
+              {restaurant.rating && (
+                <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-sm">
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                    <span className="text-sm font-medium">{restaurant.rating.toFixed(1)}</span>
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
-        );
-      })}
+              <button 
+                className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-gray-100 transition-colors"
+                onClick={async () => {
+                  try {
+                    await supabase
+                      .from("saved_restaurants")
+                      .delete()
+                      .eq("id", restaurant.id);
+                    setSavedRestaurants(prev => 
+                      prev.filter(r => r.id !== restaurant.id)
+                    );
+                  } catch (error) {
+                    console.error("Error removing restaurant:", error);
+                  }
+                }}
+              >
+                <Heart className="h-4 w-4 text-red-500" fill="currentColor" />
+              </button>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+              <h3 className="font-semibold text-lg text-white mb-1">{restaurant.name}</h3>
+              {restaurant.cuisine && (
+                <p className="text-white/90 text-sm">{restaurant.cuisine}</p>
+              )}
+            </div>
+            <img
+              src={restaurant.image_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4"}
+              alt={restaurant.name}
+              className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          </div>
+          <CardContent className="p-4" />
+        </Card>
+      ))}
     </div>
   );
 };
