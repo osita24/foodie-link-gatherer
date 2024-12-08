@@ -40,7 +40,7 @@ export interface Reason {
   priority: number;
 }
 
-export type Verdict = "MUST VISIT" | "WORTH A TRY" | "SKIP IT";
+export type Verdict = "PERFECT MATCH" | "WORTH EXPLORING" | "CONSIDER WITH CARE";
 
 export interface SummaryResponse {
   verdict: Verdict;

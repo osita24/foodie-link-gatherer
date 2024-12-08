@@ -149,24 +149,24 @@ export function generateVerdict(
   const meetsRestrictions = scores.dietaryScore >= 70;
 
   if (hasDietaryRestrictions && !meetsRestrictions) {
-    verdict = "SKIP IT";
+    verdict = "CONSIDER WITH CARE";
   } else if (weightedScore >= 85) {
-    verdict = "MUST VISIT";
+    verdict = "PERFECT MATCH";
   } else if (weightedScore >= 65) {
-    verdict = "WORTH A TRY";
+    verdict = "WORTH EXPLORING";
   } else {
-    verdict = "SKIP IT";
+    verdict = "CONSIDER WITH CARE";
   }
 
-  // If we don't have enough personalized reasons and it's not a "SKIP IT",
+  // If we don't have enough personalized reasons and it's worth exploring or better,
   // we can add a rating-based reason
   if (validReasons.length < 3 && 
-      verdict !== "SKIP IT" && 
+      verdict !== "CONSIDER WITH CARE" && 
       restaurant.rating && 
       restaurant.rating >= 4.5) {
     validReasons.push({
       emoji: "⭐",
-      text: `Highly rated (${restaurant.rating}/5) by other diners`,
+      text: `Well-loved by the community with ${restaurant.rating}/5 stars`,
       priority: 5
     });
   }
