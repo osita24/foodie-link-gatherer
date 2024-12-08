@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, ThumbsUp, AlertTriangle, Sparkles, ArrowRight, Info, Crown, Star } from "lucide-react";
+import { ChevronDown, ChevronUp, ThumbsUp, AlertTriangle, Sparkles, Info, Crown, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
@@ -83,7 +83,6 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
       case 'good':
         return <ThumbsUp className="w-3 h-3 ml-1" />;
       case 'warning':
-        return <AlertTriangle className="w-3 h-3 ml-1" />;
       case 'avoid':
         return <AlertTriangle className="w-3 h-3 ml-1" />;
       default:

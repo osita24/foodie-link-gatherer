@@ -39,7 +39,19 @@ export async function analyzeMenuItem(
 
     // Critical Check: Dietary Restrictions (Deal breaker)
     const dietaryConflicts = preferences.dietary_restrictions?.filter(
-      restriction => itemContent.includes(restriction.toLowerCase())
+      restriction => {
+        const restrictionLower = restriction.toLowerCase();
+        // Map common dietary terms
+        const dietaryTerms: Record<string, string[]> = {
+          'vegetarian': ['meat', 'chicken', 'beef', 'pork', 'fish'],
+          'vegan': ['meat', 'chicken', 'beef', 'pork', 'fish', 'egg', 'dairy', 'milk', 'cheese', 'cream'],
+          'gluten-free': ['wheat', 'gluten', 'bread', 'pasta', 'flour'],
+          'dairy-free': ['milk', 'cheese', 'cream', 'dairy', 'butter', 'yogurt'],
+        };
+
+        const termsToCheck = dietaryTerms[restrictionLower] || [restrictionLower];
+        return termsToCheck.some(term => itemContent.includes(term));
+      }
     );
     
     if (dietaryConflicts?.length > 0) {
@@ -47,38 +59,65 @@ export async function analyzeMenuItem(
       return {
         score: 20,
         matchType: 'avoid',
-        considerations: dietaryConflicts.map(conflict => `Contains ${conflict} (dietary restriction)`),
+        considerations: dietaryConflicts.map(conflict => `Contains ingredients not suitable for ${conflict} diet`),
         highlights: [],
         rankDescription: 'Not Recommended'
       };
     }
 
     // Protein Match Analysis (Major boost: +30)
-    const proteinMatches = preferences.favorite_proteins?.filter(
-      protein => itemContent.includes(protein.toLowerCase())
-    );
+    const proteinMatches = preferences.favorite_proteins?.filter(protein => {
+      const proteinLower = protein.toLowerCase();
+      // Map common protein terms
+      const proteinTerms: Record<string, string[]> = {
+        'chicken': ['chicken', 'poultry'],
+        'beef': ['beef', 'steak', 'burger'],
+        'fish': ['fish', 'salmon', 'tuna', 'seafood'],
+        'pork': ['pork', 'ham', 'bacon'],
+        'tofu': ['tofu', 'soy'],
+      };
+
+      const termsToCheck = proteinTerms[proteinLower] || [proteinLower];
+      return termsToCheck.some(term => itemContent.includes(term));
+    });
+
     if (proteinMatches?.length > 0) {
       const boost = Math.min(proteinMatches.length * 30, 40);
       score += boost;
-      highlights.push(`Features ${proteinMatches.join(', ')}`);
+      highlights.push(`Features your preferred protein: ${proteinMatches.join(', ')}`);
       console.log('🥩 Protein matches found:', proteinMatches);
     }
 
     // Cuisine Preference Analysis (Significant boost: +25)
-    const cuisineMatches = preferences.cuisine_preferences?.filter(
-      cuisine => itemContent.includes(cuisine.toLowerCase())
-    );
+    const cuisineMatches = preferences.cuisine_preferences?.filter(cuisine => {
+      const cuisineLower = cuisine.toLowerCase();
+      // Map cuisine terms to common ingredients and dishes
+      const cuisineTerms: Record<string, string[]> = {
+        'italian': ['pasta', 'pizza', 'risotto', 'parmigiana', 'marinara'],
+        'mexican': ['taco', 'burrito', 'quesadilla', 'enchilada', 'salsa'],
+        'chinese': ['wonton', 'dumpling', 'noodle', 'stir-fry', 'soy sauce'],
+        'japanese': ['sushi', 'ramen', 'tempura', 'udon', 'teriyaki'],
+        'indian': ['curry', 'masala', 'tandoori', 'naan', 'biryani'],
+        'thai': ['curry', 'pad thai', 'satay', 'coconut', 'basil'],
+      };
+
+      const termsToCheck = cuisineTerms[cuisineLower] || [cuisineLower];
+      return termsToCheck.some(term => itemContent.includes(term));
+    });
+
     if (cuisineMatches?.length > 0) {
       const boost = Math.min(cuisineMatches.length * 25, 35);
       score += boost;
-      highlights.push(`Matches ${cuisineMatches.join(', ')} cuisine`);
+      highlights.push(`Matches ${cuisineMatches.join(', ')} cuisine style`);
       console.log('🍽️ Cuisine matches found:', cuisineMatches);
     }
 
     // Ingredient Avoidance Analysis (Major penalty: -25 per item)
-    const avoidedIngredients = preferences.favorite_ingredients?.filter(
-      ingredient => itemContent.includes(ingredient.toLowerCase())
-    );
+    const avoidedIngredients = preferences.favorite_ingredients?.filter(ingredient => {
+      const ingredientLower = ingredient.toLowerCase();
+      return itemContent.includes(ingredientLower);
+    });
+
     if (avoidedIngredients?.length > 0) {
       const penalty = Math.min(avoidedIngredients.length * 25, 50);
       score -= penalty;
@@ -90,6 +129,10 @@ export async function analyzeMenuItem(
 
     // Calculate relative ranking among all items
     const allScores = await Promise.all(allItems.map(async (menuItem) => {
+      if (menuItem.id === item.id) {
+        return { id: menuItem.id, score };
+      }
+      
       const content = `${menuItem.name} ${menuItem.description || ''}`.toLowerCase();
       let itemScore = 50;
       
@@ -121,7 +164,7 @@ export async function analyzeMenuItem(
 
     if (score >= 90 && rank <= Math.ceil(totalItems * 0.2)) {
       matchType = 'perfect';
-      rankDescription = rank <= 3 ? `#${rank} Top Pick! 🌟` : 'Perfect Match';
+      rankDescription = rank <= 3 ? `Top ${rank} Pick! 🌟` : 'Perfect Match';
     } else if (score >= 75 && rank <= Math.ceil(totalItems * 0.4)) {
       matchType = 'good';
       rankDescription = 'Highly Recommended';
@@ -140,7 +183,7 @@ export async function analyzeMenuItem(
 
     // Add ranking context for top items
     if (rank <= 3) {
-      highlights.unshift(`Ranked #${rank} based on your preferences`);
+      highlights.unshift(`One of our top picks for you!`);
     }
 
     // Final score adjustments based on ranking
