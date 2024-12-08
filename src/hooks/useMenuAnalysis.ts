@@ -19,14 +19,16 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
 
       // Check dietary restrictions (vegetarian specific logic)
       if (preferences.dietary_restrictions?.includes('vegetarian')) {
-        const hasMeat = [
-          'chicken', 'beef', 'pork', 'fish', 'seafood', 'lamb', 'turkey', 'meat',
-          'bacon', 'ham', 'sausage', 'prosciutto', 'salami'
-        ].some(meat => itemContent.includes(meat));
+        const meatKeywords = [
+          'chicken', 'beef', 'pork', 'fish', 'seafood', 'lamb', 'turkey',
+          'bacon', 'ham', 'sausage', 'prosciutto', 'salami', 'pepperoni'
+        ];
+        
+        const hasMeat = meatKeywords.some(meat => itemContent.includes(meat));
 
         if (hasMeat) {
           score = 20;
-          warnings.push("Contains meat (not vegetarian-friendly)");
+          warnings.push("Contains meat - not suitable for vegetarians");
         } else {
           // Likely vegetarian-friendly
           score += 30;
@@ -34,29 +36,29 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
         }
       }
 
-      // Check other dietary restrictions
-      const otherRestrictions = preferences.dietary_restrictions?.filter(r => r !== 'vegetarian') || [];
-      const restrictionConflicts = otherRestrictions.filter(restriction => {
-        const r = restriction.toLowerCase();
-        if (r === "vegan" && 
-            (itemContent.includes("cheese") || 
-             itemContent.includes("cream") || 
-             itemContent.includes("milk") ||
-             itemContent.includes("egg"))) {
-          return true;
-        }
-        if (r === "gluten-free" && 
-            (itemContent.includes("bread") || 
-             itemContent.includes("pasta") || 
-             itemContent.includes("flour"))) {
-          return true;
-        }
-        return false;
-      });
+      // Check vegan restrictions
+      if (preferences.dietary_restrictions?.includes('vegan')) {
+        const nonVeganKeywords = ['cheese', 'cream', 'milk', 'egg', 'butter', 'yogurt', 'mayo'];
+        const hasNonVegan = nonVeganKeywords.some(ingredient => itemContent.includes(ingredient));
 
-      if (restrictionConflicts.length > 0) {
-        score = 20;
-        warnings.push(`Not suitable for ${restrictionConflicts[0]} diet`);
+        if (hasNonVegan) {
+          score = 20;
+          warnings.push("Contains dairy/eggs - not suitable for vegans");
+        } else {
+          score += 30;
+          reasons.push("Potentially vegan-friendly");
+        }
+      }
+
+      // Check gluten-free requirements
+      if (preferences.dietary_restrictions?.includes('gluten-free')) {
+        const glutenKeywords = ['bread', 'pasta', 'flour', 'wheat', 'breaded', 'battered'];
+        const hasGluten = glutenKeywords.some(ingredient => itemContent.includes(ingredient));
+
+        if (hasGluten) {
+          score = 20;
+          warnings.push("Contains gluten - not gluten-free");
+        }
       }
 
       // Check favorite proteins
@@ -69,7 +71,7 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
         if (!warnings.length) {
           score += 35;
           bonusPoints += 10;
-          reasons.push(`Features ${proteinMatches[0]}`);
+          reasons.push(`Features your preferred protein: ${proteinMatches[0]}`);
         }
       }
 
@@ -92,7 +94,7 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
       if (ingredientMatches?.length > 0 && !warnings.length) {
         score += 20;
         bonusPoints += 5;
-        reasons.push(`Contains ${ingredientMatches[0]} that you love`);
+        reasons.push(`Contains ${ingredientMatches[0]} that you enjoy`);
       }
 
       // Determine match type based on final score + bonus points
