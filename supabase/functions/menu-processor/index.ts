@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { cleanMenuText } from "./textCleaner.ts";
 import { generateMenuItems } from "./menuGenerator.ts";
+import { analyzeMenuItem } from "./menuAnalyzer.ts";
 
 console.log("Menu processor function started");
 
@@ -14,12 +15,36 @@ serve(async (req) => {
   }
 
   try {
-    const { menuUrl, photos, reviews } = await req.json();
-    console.log("Input data:", { menuUrl, photosCount: photos?.length, reviewsCount: reviews?.length });
+    const { action, menuUrl, photos, reviews, item, preferences, restaurant } = await req.json();
+    console.log("Input data:", { action, menuUrl, photosCount: photos?.length, reviewsCount: reviews?.length });
 
+    // Handle analyze-item action
+    if (action === 'analyze-item') {
+      console.log("Analyzing menu item:", item.name);
+      console.log("User preferences:", preferences);
+      console.log("Restaurant context:", restaurant);
+
+      if (!item || !preferences) {
+        throw new Error("Missing required data for item analysis");
+      }
+
+      const analysis = await analyzeMenuItem(item, preferences, Deno.env.get("OPENAI_API_KEY") || "");
+      console.log("Analysis result:", analysis);
+
+      return new Response(
+        JSON.stringify(analysis),
+        {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+    }
+
+    // Handle menu processing action (default)
     let menuItems: string[] = [];
 
-    // Try to extract menu items from reviews first
     if (reviews?.length) {
       console.log("Extracting menu items from reviews");
       const reviewText = reviews.map((review: any) => review.text).join('\n');
@@ -27,14 +52,12 @@ serve(async (req) => {
       menuItems = [...menuItems, ...extractedItems];
     }
 
-    // Generate additional menu items based on existing items and reviews
     if (reviews?.length) {
       console.log("Generating additional menu items");
       const generatedItems = await generateMenuItems(menuItems, reviews);
       menuItems = [...menuItems, ...generatedItems];
     }
 
-    // If we still don't have menu items, generate some based on the restaurant type
     if (menuItems.length === 0) {
       console.log("No menu items found, generating default items");
       const defaultItems = [
@@ -47,7 +70,6 @@ serve(async (req) => {
       menuItems = defaultItems;
     }
 
-    // Transform the items into the expected format
     const formattedItems = menuItems.map((item, index) => {
       const [name, description] = item.split(' - ');
       return {
