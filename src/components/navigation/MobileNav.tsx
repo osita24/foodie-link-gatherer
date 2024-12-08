@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { navigationItems } from "./NavigationItems";
 import { useNavigate } from "react-router-dom";
+import { useProfile } from "@/hooks/useProfile";
 
 interface MobileNavProps {
   session: any;
@@ -12,6 +13,7 @@ interface MobileNavProps {
 
 const MobileNav = ({ session, onAuthClick, onSignOutClick, isActive, onClose }: MobileNavProps) => {
   const navigate = useNavigate();
+  const { userName } = useProfile();
 
   return (
     <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-100 md:hidden">
@@ -38,7 +40,7 @@ const MobileNav = ({ session, onAuthClick, onSignOutClick, isActive, onClose }: 
               }}
             >
               <Icon className="h-4 w-4" />
-              {item.label}
+              {item.isProfile && session ? userName : item.label}
             </Button>
           );
         })}
