@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useRestaurantMatch } from "@/hooks/useRestaurantMatch";
 import { RestaurantDetails } from "@/types/restaurant";
-import { Sparkles } from "lucide-react";
+import { Sparkles, ThumbsUp, AlertCircle } from "lucide-react";
 
 interface MatchScoreCardProps {
   restaurant: RestaurantDetails;
@@ -24,6 +24,25 @@ const MatchScoreCard = ({ restaurant }: MatchScoreCardProps) => {
   if (error) {
     return null;
   }
+
+  // Placeholder match reasons (these would come from the backend in production)
+  const matchReasons = [
+    {
+      type: "positive",
+      text: "Perfect match for your favorite cuisine preferences",
+      icon: <ThumbsUp className="w-5 h-5 text-success" />
+    },
+    {
+      type: "positive",
+      text: "Offers plenty of vegetarian options you'll love",
+      icon: <Sparkles className="w-5 h-5 text-primary" />
+    },
+    {
+      type: "warning",
+      text: "Slightly above your preferred price range",
+      icon: <AlertCircle className="w-5 h-5 text-warning" />
+    }
+  ];
 
   return (
     <Card className="overflow-hidden bg-gradient-to-br from-primary/5 to-accent/10 border-accent/20">
