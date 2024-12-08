@@ -42,13 +42,14 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
     if (menu) {
       console.log("📋 Using provided menu data:", menu);
       setProcessedMenu(menu);
-    } else if (restaurant || menuUrl || photos?.length || reviews?.length) {
+    } else if (menuUrl || photos?.length || reviews?.length) {
       console.log("🔄 Processing available data sources");
       processRestaurantData();
     }
-  }, [menu, photos, reviews, menuUrl, restaurant]);
+  }, [menu, photos, reviews, menuUrl]);
 
   useEffect(() => {
+    // Find the item with the highest match score
     if (session && itemMatchDetails) {
       const scores = Object.entries(itemMatchDetails).map(([id, details]) => ({
         id,
@@ -69,8 +70,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
         reviews: reviews?.map(review => ({
           text: review.text || '',
           rating: review.rating || 0
-        })) || [],
-        restaurant // Pass the entire restaurant object
+        })) || []
       };
 
       console.log("📤 Sending payload to menu processor:", payload);

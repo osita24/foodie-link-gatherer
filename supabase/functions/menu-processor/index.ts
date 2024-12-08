@@ -1,109 +1,90 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from "../_shared/cors.ts";
+import { cleanMenuText } from "./textCleaner.ts";
+import { generateMenuItems } from "./menuGenerator.ts";
+import { analyzeMenuItem } from "./menuAnalyzer.ts";
 
 console.log("Menu processor function started");
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, {
+      headers: corsHeaders
+    });
   }
 
   try {
-    const { menuUrl, photos, reviews, restaurant } = await req.json();
-    console.log("📥 Received input data:", { 
-      menuUrl,
+    const { menuUrl, photos, reviews } = await req.json();
+    console.log("Received input data:", { 
+      menuUrl, 
       photosCount: photos?.length, 
-      reviewsCount: reviews?.length,
-      restaurant: restaurant?.name
+      reviewsCount: reviews?.length 
     });
 
-    // Initialize OpenAI
-    const openAiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAiKey) {
-      throw new Error('OpenAI API key not configured');
+    // Initialize menuItems array
+    let menuItems: string[] = [];
+
+    // Process reviews if available
+    if (Array.isArray(reviews) && reviews.length > 0) {
+      console.log("Processing reviews for menu items");
+      const reviewTexts = reviews
+        .filter(review => review && typeof review.text === 'string')
+        .map(review => review.text);
+      
+      if (reviewTexts.length > 0) {
+        const reviewText = reviewTexts.join('\n');
+        const extractedItems = await cleanMenuText(reviewText);
+        menuItems = [...menuItems, ...extractedItems];
+        console.log(`Extracted ${extractedItems.length} items from reviews`);
+      }
     }
 
-    // Combine all available data for analysis
-    const analysisContent = {
-      restaurantName: restaurant?.name || '',
-      cuisine: restaurant?.types?.join(', ') || '',
-      reviews: reviews?.map((r: any) => r.text).join('\n') || '',
-      description: `${restaurant?.types?.join(', ')} restaurant`
+    // Generate additional items if needed
+    if (reviews?.length) {
+      console.log("Generating additional menu items");
+      const generatedItems = await generateMenuItems(menuItems, reviews);
+      menuItems = [...menuItems, ...generatedItems];
+      console.log(`Generated ${generatedItems.length} additional items`);
+    }
+
+    // Fallback to default items if no items were found
+    if (menuItems.length === 0) {
+      console.log("Using default menu items");
+      menuItems = [
+        "House Burger - Premium beef patty with lettuce, tomato, and special sauce",
+        "Grilled Chicken Sandwich - Marinated chicken breast with avocado and chipotle mayo",
+        "Caesar Salad - Fresh romaine, parmesan, croutons with house-made dressing",
+        "Fish & Chips - Beer-battered cod with crispy fries and tartar sauce",
+        "Veggie Bowl - Quinoa, roasted vegetables, and tahini dressing"
+      ];
+    }
+
+    // Format the menu items
+    const formattedItems = menuItems.map((item, index) => {
+      const [name, description] = item.split(' - ');
+      return {
+        id: `item-${index + 1}`,
+        name: name.trim(),
+        description: description?.trim() || '',
+        price: 0, // Default price
+        category: 'Main Menu' // Default category
+      };
+    });
+
+    const menuData = {
+      menuSections: [
+        {
+          name: "Main Menu",
+          items: formattedItems
+        }
+      ]
     };
 
-    console.log("🔍 Analyzing restaurant data:", analysisContent);
-
-    // Use OpenAI to generate menu items based on restaurant data
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a restaurant menu expert. Generate a realistic menu for this restaurant based on its type, reviews, and characteristics. Format each item as:
-            {
-              "id": "unique-id",
-              "name": "Item Name",
-              "description": "Detailed description with ingredients",
-              "category": "Category Name",
-              "dietaryInfo": ["vegetarian", "gluten-free", etc],
-              "spiceLevel": 1-5,
-              "popular": boolean
-            }`
-          },
-          {
-            role: 'user',
-            content: `Generate a menu for: ${JSON.stringify(analysisContent, null, 2)}`
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`);
-    }
-
-    const aiResponse = await response.json();
-    console.log("✨ Generated AI response");
-
-    // Parse the AI response and structure the menu
-    const menuItems = JSON.parse(
-      aiResponse.choices[0].message.content
-        .replace(/```json\n?/, '')
-        .replace(/```/, '')
-    );
-
-    // Group items by category
-    const menuByCategory = menuItems.reduce((acc: any, item: any) => {
-      if (!acc[item.category]) {
-        acc[item.category] = [];
-      }
-      acc[item.category].push(item);
-      return acc;
-    }, {});
-
-    // Format the final menu structure
-    const menuSections = Object.entries(menuByCategory).map(([category, items]) => ({
-      name: category,
-      items: items
-    }));
-
-    console.log(`✅ Generated menu with ${menuItems.length} items across ${menuSections.length} categories`);
-
+    console.log(`Returning ${formattedItems.length} menu items`);
+    
     return new Response(
-      JSON.stringify({ menuSections }),
+      JSON.stringify(menuData),
       {
         headers: {
           ...corsHeaders,
@@ -113,7 +94,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("❌ Error processing menu:", error);
+    console.error("Error processing menu:", error);
     return new Response(
       JSON.stringify({ 
         error: "Failed to process menu data",

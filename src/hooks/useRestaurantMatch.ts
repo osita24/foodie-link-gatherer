@@ -7,6 +7,7 @@ import {
   calculateDietaryMatch, 
   calculateAtmosphereMatch, 
   calculatePriceMatch,
+  MatchResult as CategoryMatchResult 
 } from './restaurant-match/matchCalculators';
 
 interface MatchCategory {
@@ -39,7 +40,7 @@ export const useRestaurantMatch = (restaurant: RestaurantDetails | null): MatchR
       }
 
       try {
-        console.log('🔍 Starting match calculation for restaurant:', restaurant.name);
+        console.log('🔍 Fetching user preferences for match calculation');
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session?.user) {
@@ -63,18 +64,11 @@ export const useRestaurantMatch = (restaurant: RestaurantDetails | null): MatchR
         
         const preferences = mapSupabaseToUserPreferences(preferencesData);
 
-        // Calculate individual matches
+        // Calculate matches using the utility functions
         const cuisineMatch = calculateCuisineMatch(restaurant, preferences);
         const dietaryMatch = calculateDietaryMatch(restaurant, preferences);
         const atmosphereMatch = calculateAtmosphereMatch(restaurant, preferences);
         const priceMatch = calculatePriceMatch(restaurant, preferences);
-
-        console.log('Match scores calculated:', {
-          cuisine: cuisineMatch.score,
-          dietary: dietaryMatch.score,
-          atmosphere: atmosphereMatch.score,
-          price: priceMatch.score
-        });
 
         const categories: MatchCategory[] = [
           {
@@ -103,30 +97,11 @@ export const useRestaurantMatch = (restaurant: RestaurantDetails | null): MatchR
           }
         ];
 
-        // Calculate weighted average with more emphasis on cuisine and dietary matches
-        const weights = {
-          cuisine: 0.35,    // 35% weight for cuisine match
-          dietary: 0.30,    // 30% weight for dietary restrictions
-          atmosphere: 0.20, // 20% weight for atmosphere
-          price: 0.15      // 15% weight for price match
-        };
-
         const overallScore = Math.round(
-          (cuisineMatch.score * weights.cuisine) +
-          (dietaryMatch.score * weights.dietary) +
-          (atmosphereMatch.score * weights.atmosphere) +
-          (priceMatch.score * weights.price)
+          categories.reduce((acc, cat) => acc + cat.score, 0) / categories.length
         );
 
-        console.log('Final calculation:', { 
-          overallScore,
-          weightedScores: {
-            cuisine: cuisineMatch.score * weights.cuisine,
-            dietary: dietaryMatch.score * weights.dietary,
-            atmosphere: atmosphereMatch.score * weights.atmosphere,
-            price: priceMatch.score * weights.price
-          }
-        });
+        console.log('✨ Match calculation complete:', { overallScore, categories });
 
         setMatchResult({
           overallScore,
