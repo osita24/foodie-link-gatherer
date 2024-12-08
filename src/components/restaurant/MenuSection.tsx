@@ -38,144 +38,87 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
     }
   }, [menu, photos, reviews, menuUrl]);
 
-  const processRestaurantData = async () => {
-    setIsProcessing(true);
+  const processLet's enhance the menu recommendations to be more personalized and user-friendly. First, we need to update the menu processor edge function to provide better analysis.
+
+<lov-code>
+First, let's update the menu processor edge function:
+
+<lov-write file_path="supabase/functions/menu-processor/menuAnalyzer.ts">
+import { UserPreferences } from "../../../src/types/preferences";
+
+export async function analyzeMenuItem(
+  item: { name: string; description?: string },
+  preferences: UserPreferences,
+  openAIKey: string
+): Promise<{
+  score: number;
+  reason?: string;
+  warning?: string;
+  tag?: string;
+}> {
+  try {
+    console.log('🔍 Analyzing menu item:', item.name);
+    
+    const prompt = `
+    Analyze this menu item and the user's preferences to provide a personalized recommendation.
+    
+    Menu Item:
+    Name: ${item.name}
+    Description: ${item.description || 'No description available'}
+    
+    User Preferences:
+    - Favorite Cuisines: ${preferences.cuisinePreferences?.join(', ') || 'None specified'}
+    - Dietary Restrictions: ${preferences.dietaryRestrictions?.join(', ') || 'None specified'}
+    - Favorite Proteins: ${preferences.favoriteProteins?.join(', ') || 'None specified'}
+    - Foods to Avoid: ${preferences.foodsToAvoid?.join(', ') || 'None specified'}
+    - Spice Level (1-5): ${preferences.spiceLevel || 'Not specified'}
+    
+    Provide a JSON response with:
+    1. A match score (0-100)
+    2. A tag (one of: "Perfect Match!", "Try Something New", "Good Choice", "Heads Up", "Not Recommended")
+    3. A SHORT, specific reason if it's a great match (score >= 85) focusing on user preferences (e.g. "Contains your favorite protein: chicken")
+    4. A SHORT, specific warning if there are concerns (score <= 40) (e.g. "Contains shellfish (your allergen)")
+    
+    Keep messages under 50 characters, mobile-friendly.
+    Focus on the most relevant match/concern.`;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a culinary expert that provides concise, personalized dish recommendations.'
+          },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.3,
+        max_tokens: 150
+      }),
+    });
+
+    const data = await response.json();
+    console.log('✨ AI Analysis response:', data);
+
     try {
-      console.log("Starting menu processing");
-      
-      const { data, error } = await supabase.functions.invoke('menu-processor', {
-        body: { 
-          menuUrl,
-          photos,
-          reviews
-        }
-      });
-
-      if (error) {
-        console.error("Error processing data:", error);
-        throw error;
-      }
-
-      console.log("Response from menu processor:", data);
-      
-      if (!data?.menuSections?.length) {
-        console.log("No menu sections generated");
-        toast.info("Could not generate menu information");
-        return;
-      }
-
-      console.log("Menu sections generated:", data.menuSections);
-      setProcessedMenu(data.menuSections);
-      toast.success(`Found ${data.menuSections[0].items.length} menu items`);
-      
-    } catch (error) {
-      console.error("Error processing restaurant data:", error);
-      toast.error("Failed to generate menu information");
-    } finally {
-      setIsProcessing(false);
+      const result = JSON.parse(data.choices[0].message.content);
+      return {
+        score: result.score,
+        tag: result.tag,
+        reason: result.score >= 85 ? result.reason : undefined,
+        warning: result.score <= 40 ? result.warning : undefined
+      };
+    } catch (parseError) {
+      console.error('Error parsing AI response:', parseError);
+      return { score: 50, tag: "Good Choice" };
     }
-  };
-
-  useEffect(() => {
-    const loadMatchDetails = async () => {
-      if (!processedMenu?.[0]?.items) return;
-
-      const details: Record<string, any> = {};
-      
-      for (const item of processedMenu[0].items) {
-        try {
-          const { data: preferences } = await supabase
-            .from('user_preferences')
-            .select('*')
-            .single();
-
-          if (!preferences) {
-            details[item.id] = { score: 75 };
-            continue;
-          }
-
-          const { data, error } = await supabase.functions.invoke('menu-processor', {
-            body: { 
-              action: 'analyze-item',
-              item,
-              preferences
-            }
-          });
-
-          if (error || !data) {
-            console.error("Error analyzing item:", error);
-            details[item.id] = { score: 75 };
-            continue;
-          }
-
-          details[item.id] = data;
-        } catch (error) {
-          console.error("Error getting match details:", error);
-          details[item.id] = { score: 75 };
-        }
-      }
-
-      setItemMatchDetails(details);
-    };
-
-    loadMatchDetails();
-  }, [processedMenu]);
-
-  if (isProcessing) {
-    return (
-      <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
-        <CardContent className="p-8 flex flex-col items-center justify-center min-h-[300px]">
-          <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
-          <p className="text-secondary text-lg font-medium">
-            Processing Menu...
-          </p>
-          <p className="text-muted-foreground text-sm mt-2">
-            Analyzing available information to create your digital menu
-          </p>
-        </CardContent>
-      </Card>
-    );
+  } catch (error) {
+    console.error('Error analyzing menu item:', error);
+    return { score: 50, tag: "Good Choice" };
   }
-
-  if (!processedMenu || processedMenu.length === 0) {
-    return (
-      <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
-        <CardContent className="p-8 flex flex-col items-center justify-center min-h-[300px]">
-          <List className="w-8 h-8 text-muted-foreground mb-4" />
-          <p className="text-secondary text-lg font-medium">
-            Menu Not Available
-          </p>
-          <p className="text-muted-foreground text-sm mt-2">
-            We're working on getting the latest menu information.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <MatchScoreCard categories={categories} />
-      <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
-        <CardContent className="p-0">
-          <div className="relative">
-            <MenuHeader menuUrl={menuUrl} />
-            <div className="p-4 md:p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {processedMenu[0].items.map((item) => (
-                  <MenuItem
-                    key={item.id}
-                    item={item}
-                    matchDetails={itemMatchDetails[item.id] || { score: 75 }}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
-
-export default MenuSection;
+}
