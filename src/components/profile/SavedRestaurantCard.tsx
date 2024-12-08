@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { BookMarked, Star, MapPin, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useRestaurantData } from "@/hooks/useRestaurantData";
 
 interface SavedRestaurantCardProps {
   restaurant: {
@@ -18,13 +19,25 @@ interface SavedRestaurantCardProps {
 
 const SavedRestaurantCard = ({ restaurant, onRemove }: SavedRestaurantCardProps) => {
   const navigate = useNavigate();
-  console.log("🏪 SavedRestaurantCard - Restaurant data:", restaurant);
+  const { data: restaurantDetails } = useRestaurantData(restaurant.place_id);
+
+  console.log("🏪 SavedRestaurantCard - Saved data:", restaurant);
+  console.log("🏪 SavedRestaurantCard - Fetched details:", restaurantDetails);
 
   // Early validation to ensure we have the minimum required data
   if (!restaurant || !restaurant.id) {
     console.error("❌ Invalid restaurant data:", restaurant);
     return null;
   }
+
+  // Use fetched details if available, fall back to saved data
+  const displayData = {
+    name: restaurantDetails?.name || restaurant.name,
+    image_url: restaurantDetails?.photos?.[0] || restaurant.image_url,
+    rating: restaurantDetails?.rating || restaurant.rating,
+    cuisine: restaurantDetails?.types?.[0] || restaurant.cuisine,
+    address: restaurantDetails?.address || restaurant.address,
+  };
 
   return (
     <Card 
@@ -34,8 +47,8 @@ const SavedRestaurantCard = ({ restaurant, onRemove }: SavedRestaurantCardProps)
     >
       <div className="relative h-48 sm:h-56">
         <img
-          src={restaurant.image_url || "/placeholder.svg"}
-          alt={restaurant.name}
+          src={displayData.image_url || "/placeholder.svg"}
+          alt={displayData.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -52,26 +65,26 @@ const SavedRestaurantCard = ({ restaurant, onRemove }: SavedRestaurantCardProps)
       <CardContent className="p-4">
         <div className="space-y-2">
           <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors">
-            {restaurant.name}
+            {displayData.name}
           </h3>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {restaurant.rating && (
+            {displayData.rating && (
               <div className="flex items-center gap-1">
                 <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                <span>{restaurant.rating.toFixed(1)}</span>
+                <span>{displayData.rating.toFixed(1)}</span>
               </div>
             )}
-            {restaurant.cuisine && (
+            {displayData.cuisine && (
               <>
                 <span className="text-muted-foreground">•</span>
-                <span>{restaurant.cuisine}</span>
+                <span className="capitalize">{displayData.cuisine.replace(/_/g, ' ')}</span>
               </>
             )}
           </div>
-          {restaurant.address && (
+          {displayData.address && (
             <div className="flex items-start gap-1.5 text-sm text-muted-foreground">
               <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
-              <span className="line-clamp-2">{restaurant.address}</span>
+              <span className="line-clamp-2">{displayData.address}</span>
             </div>
           )}
           <div className="pt-2 flex items-center gap-1 text-xs text-muted-foreground">
