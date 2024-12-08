@@ -14,6 +14,8 @@ interface MenuItemProps {
     score: number;
     reason?: string;
     warning?: string;
+    allReasons?: string[];
+    allWarnings?: string[];
   };
 }
 
@@ -116,20 +118,20 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
             </div>
           )}
           
-          {(matchDetails.reason || matchDetails.warning) && (
-            <div className="flex items-center gap-2 flex-wrap mt-2 animate-fade-in-up">
-              {matchDetails.score >= 85 && matchDetails.reason && (
-                <p className="text-sm text-emerald-700 font-medium flex items-center gap-1">
-                  <Check className="w-4 h-4" />
-                  {matchDetails.reason}
+          {(matchDetails.allReasons?.length > 0 || matchDetails.allWarnings?.length > 0) && (
+            <div className="flex flex-col gap-2 mt-2 animate-fade-in-up">
+              {matchDetails.allReasons?.map((reason, index) => (
+                <p key={index} className="text-sm text-emerald-700 font-medium flex items-center gap-1">
+                  <Check className="w-4 h-4 flex-shrink-0" />
+                  {reason}
                 </p>
-              )}
-              {matchDetails.score <= 40 && matchDetails.warning && (
-                <p className="text-sm text-red-700 font-medium flex items-center gap-1">
-                  <AlertTriangle className="w-4 h-4" />
-                  {matchDetails.warning}
+              ))}
+              {matchDetails.allWarnings?.map((warning, index) => (
+                <p key={index} className="text-sm text-red-700 font-medium flex items-center gap-1">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                  {warning}
                 </p>
-              )}
+              ))}
             </div>
           )}
         </div>

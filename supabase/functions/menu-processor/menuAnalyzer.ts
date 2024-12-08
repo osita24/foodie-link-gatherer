@@ -1,79 +1,100 @@
-import { UserPreferences } from "../../../src/types/preferences";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
-export async function analyzeMenuItem(
-  item: { name: string; description?: string },
-  preferences: UserPreferences,
-  openAIKey: string
-): Promise<{
-  score: number;
-  reason?: string;
-  warning?: string;
-}> {
-  try {
-    console.log('🔍 Analyzing menu item:', item.name);
-    
-    const prompt = `
-    Analyze this menu item and the user's preferences to provide a personalized recommendation.
-    
-    Menu Item:
-    Name: ${item.name}
-    Description: ${item.description || 'No description available'}
-    
-    User Preferences:
-    - Cuisine Preferences: ${preferences.cuisinePreferences?.join(', ') || 'None specified'}
-    - Dietary Restrictions: ${preferences.dietaryRestrictions?.join(', ') || 'None specified'}
-    - Favorite Proteins: ${preferences.favoriteProteins?.join(', ') || 'None specified'}
-    - Foods to Avoid: ${preferences.foodsToAvoid?.join(', ') || 'None specified'}
-    - Spice Level (1-5): ${preferences.spiceLevel || 'Not specified'}
-    - Atmosphere Preferences: ${preferences.atmospherePreferences?.join(', ') || 'None specified'}
-    - Special Considerations: ${preferences.specialConsiderations || 'None specified'}
-    
-    Provide a JSON response with:
-    1. A match score (0-100)
-    2. A SHORT, specific reason if it's a great match (score >= 85) focusing on user preferences
-       Examples: "Contains your favorite protein: chicken", "Perfect for your spice level", "Matches your dietary needs"
-    3. A SHORT, specific warning if there are concerns (score <= 40)
-       Examples: "Contains shellfish (your allergen)", "Very spicy (you prefer mild)", "Contains ingredients you avoid"
-    
-    Keep messages under 50 characters, mobile-friendly.
-    Focus on the most relevant match/concern.`;
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a culinary expert that provides concise, personalized dish recommendations based on detailed user preferences.'
-          },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.3,
-        max_tokens: 150
-      }),
-    });
-
-    const data = await response.json();
-    console.log('✨ AI Analysis response:', data);
-
-    try {
-      const result = JSON.parse(data.choices[0].message.content);
-      return {
-        score: result.score,
-        reason: result.score >= 85 ? result.reason : undefined,
-        warning: result.score <= 40 ? result.warning : undefined
-      };
-    } catch (parseError) {
-      console.error('Error parsing AI response:', parseError);
-      return { score: 50 };
-    }
-  } catch (error) {
-    console.error('Error analyzing menu item:', error);
-    return { score: 50 };
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
   }
-}
+
+  try {
+    const { action, item, preferences } = await req.json();
+    console.log('Analyzing menu item:', item);
+    console.log('User preferences:', preferences);
+
+    if (action !== 'analyze-item') {
+      throw new Error('Invalid action');
+    }
+
+    const itemText = `${item.name} ${item.description || ''}`.toLowerCase();
+    let score = 50;
+    let reasons = [];
+    let warnings = [];
+
+    // Check favorite proteins
+    if (preferences.favorite_proteins) {
+      for (const protein of preferences.favorite_proteins) {
+        if (itemText.includes(protein.toLowerCase())) {
+          score += 25;
+          reasons.push(`Contains ${protein} (your favorite protein)`);
+        }
+      }
+    }
+
+    // Check dietary restrictions
+    if (preferences.dietary_restrictions) {
+      for (const restriction of preferences.dietary_restrictions) {
+        if (itemText.includes(restriction.toLowerCase())) {
+          score -= 40;
+          warnings.push(`Contains ${restriction} (dietary restriction)`);
+        }
+      }
+    }
+
+    // Check favorite ingredients
+    if (preferences.favorite_ingredients) {
+      for (const ingredient of preferences.favorite_ingredients) {
+        if (itemText.includes(ingredient.toLowerCase())) {
+          score += 15;
+          reasons.push(`Includes ${ingredient} (ingredient you love)`);
+        }
+      }
+    }
+
+    // Check cuisine preferences
+    if (preferences.cuisine_preferences) {
+      for (const cuisine of preferences.cuisine_preferences) {
+        const cuisineTerms = cuisine.toLowerCase().split(' ');
+        if (cuisineTerms.some(term => itemText.includes(term))) {
+          score += 20;
+          reasons.push(`Matches ${cuisine} cuisine preference`);
+        }
+      }
+    }
+
+    // Normalize score
+    score = Math.min(Math.max(score, 0), 100);
+
+    // Get primary reason/warning
+    const primaryReason = reasons.length > 0 ? reasons[0] : undefined;
+    const primaryWarning = warnings.length > 0 ? warnings[0] : undefined;
+
+    console.log('Analysis result:', { score, primaryReason, primaryWarning });
+
+    return new Response(
+      JSON.stringify({
+        score,
+        reason: primaryReason,
+        warning: primaryWarning,
+        allReasons: reasons,
+        allWarnings: warnings,
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+  } catch (error) {
+    console.error('Error in menu-processor:', error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+  }
+});
