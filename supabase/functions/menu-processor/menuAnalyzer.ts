@@ -44,7 +44,9 @@ export async function analyzeMenuItem(
         if (r === "gluten-free" && 
             (itemContent.includes("bread") || 
              itemContent.includes("pasta") || 
-             itemContent.includes("flour"))) {
+             itemContent.includes("flour") ||
+             itemContent.includes("breaded") ||
+             itemContent.includes("fried"))) {
           return true;
         }
         return itemContent.includes(r);
@@ -54,7 +56,7 @@ export async function analyzeMenuItem(
     if (dietaryConflicts?.length > 0) {
       return {
         score: 20,
-        warning: `Contains ${dietaryConflicts[0]}`,
+        warning: `Not suitable for ${dietaryConflicts[0]} diet`,
         matchType: 'warning'
       };
     }
@@ -66,7 +68,7 @@ export async function analyzeMenuItem(
     
     if (proteinMatches?.length > 0) {
       score += 30;
-      reasons.push(`Contains ${proteinMatches[0]}`);
+      reasons.push(`Features your favorite protein: ${proteinMatches[0]}`);
     }
 
     // Check cuisine preferences (significant positive)
@@ -76,32 +78,56 @@ export async function analyzeMenuItem(
     
     if (cuisineMatches?.length > 0) {
       score += 25;
-      reasons.push(`Matches ${cuisineMatches[0]} cuisine`);
+      reasons.push(`Authentic ${cuisineMatches[0]} cuisine style`);
     }
 
     // Check spice level preferences
     if (preferences.spice_level) {
       if (itemContent.includes("spicy") || 
           itemContent.includes("hot") || 
-          itemContent.includes("chili")) {
+          itemContent.includes("chili") ||
+          itemContent.includes("jalapeño")) {
         if (preferences.spice_level >= 4) {
           score += 15;
           reasons.push("Matches your spice preference");
         } else {
           score -= 15;
-          warnings.push("Might be too spicy");
+          warnings.push("May be too spicy for your taste");
         }
       }
     }
 
-    // Check favorite ingredients (moderate positive)
-    const ingredientMatches = preferences.favorite_ingredients?.filter(
+    // Check ingredients to avoid
+    const ingredientsToAvoid = preferences.favorite_ingredients?.filter(
       (ingredient: string) => itemContent.includes(ingredient.toLowerCase())
     );
     
-    if (ingredientMatches?.length > 0) {
-      score += 15;
-      reasons.push(`Contains ${ingredientMatches[0]}`);
+    if (ingredientsToAvoid?.length > 0) {
+      score -= 30;
+      warnings.push(`Contains ${ingredientsToAvoid[0]} which you prefer to avoid`);
+    }
+
+    // Add specific neutral reasons if no matches found
+    if (reasons.length === 0 && warnings.length === 0) {
+      if (itemContent.includes("vegetarian") || itemContent.includes("vegan")) {
+        reasons.push("Plant-based dish available");
+      } else if (itemContent.includes("grilled")) {
+        reasons.push("Healthy grilled preparation");
+      } else if (itemContent.includes("fresh") || itemContent.includes("seasonal")) {
+        reasons.push("Made with fresh, seasonal ingredients");
+      } else if (itemContent.includes("house") || itemContent.includes("signature")) {
+        reasons.push("Chef's signature dish");
+      } else if (itemContent.includes("local") || itemContent.includes("artisan")) {
+        reasons.push("Features local/artisanal ingredients");
+      } else if (itemContent.includes("organic")) {
+        reasons.push("Made with organic ingredients");
+      } else if (itemContent.includes("gluten-free")) {
+        reasons.push("Gluten-free option available");
+      } else if (itemContent.includes("traditional") || itemContent.includes("classic")) {
+        reasons.push("Classic preparation style");
+      } else {
+        reasons.push("Standard menu item");
+      }
     }
 
     // Determine match type based on final score
@@ -109,7 +135,7 @@ export async function analyzeMenuItem(
       matchType = 'perfect';
     } else if (score >= 75) {
       matchType = 'good';
-    } else if (score < 40) {
+    } else if (score < 40 && warnings.length > 0) {
       matchType = 'warning';
     }
 
