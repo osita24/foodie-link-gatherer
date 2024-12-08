@@ -3,18 +3,34 @@ import { RestaurantFeatures, UserPreferences, MatchScores, Reason, Verdict } fro
 function generateDietaryReason(restaurant: RestaurantFeatures, preferences: UserPreferences, score: number): Reason | null {
   if (!preferences.dietary_restrictions?.length) return null;
 
-  if (preferences.dietary_restrictions.includes('Vegetarian') && restaurant.servesVegetarianFood) {
-    return {
-      emoji: "🌱",
-      text: "Perfect for your vegetarian diet with dedicated options",
-      priority: 1
-    };
+  // For vegetarians
+  if (preferences.dietary_restrictions.includes('Vegetarian')) {
+    if (restaurant.servesVegetarianFood) {
+      return {
+        emoji: "🌱",
+        text: "Great vegetarian options available",
+        priority: 1
+      };
+    } else {
+      return {
+        emoji: "⚠️",
+        text: "Limited vegetarian options available",
+        priority: 1
+      };
+    }
   }
 
-  if (score < 40) {
+  // For specific diets like keto, low-carb
+  const specialDiets = ['Keto-Friendly', 'Low-Carb'];
+  const matchingDiets = preferences.dietary_restrictions.filter(diet => 
+    specialDiets.includes(diet)
+  );
+
+  if (matchingDiets.length > 0) {
+    const dietText = matchingDiets.join(" and ");
     return {
-      emoji: "⚠️",
-      text: `Limited options for your ${preferences.dietary_restrictions.join(", ")} dietary needs`,
+      emoji: "🥗",
+      text: `Menu can accommodate ${dietText} preferences`,
       priority: 1
     };
   }
@@ -25,48 +41,18 @@ function generateDietaryReason(restaurant: RestaurantFeatures, preferences: User
 function generateCuisineReason(restaurant: RestaurantFeatures, preferences: UserPreferences, score: number): Reason | null {
   if (!preferences.cuisine_preferences?.length) return null;
 
-  const matchingCuisine = restaurant.types?.find(type =>
+  const matchingCuisines = restaurant.types?.filter(type =>
     preferences.cuisine_preferences.some(pref =>
       type.toLowerCase().includes(pref.toLowerCase())
     )
   );
 
-  if (matchingCuisine) {
+  if (matchingCuisines?.length) {
+    const cuisineType = matchingCuisines[0].split('_')[0];
     return {
       emoji: "🎯",
-      text: `Matches your love for ${matchingCuisine.split("_")[0]} cuisine`,
+      text: `Matches your love for ${cuisineType} cuisine`,
       priority: 2
-    };
-  }
-
-  return null;
-}
-
-function generateProteinReason(restaurant: RestaurantFeatures, preferences: UserPreferences, score: number): Reason | null {
-  if (!preferences.favorite_proteins?.length || preferences.favorite_proteins.includes("Doesn't Apply")) return null;
-
-  const proteinMatches = {
-    'Beef': ['steakhouse', 'burger'],
-    'Chicken': ['chicken', 'poultry'],
-    'Fish': ['seafood', 'fish'],
-    'Pork': ['bbq', 'pork'],
-    'Lamb': ['mediterranean', 'greek'],
-    'Tofu': ['vegetarian', 'asian'],
-  };
-
-  const matchingProtein = preferences.favorite_proteins.find(protein =>
-    restaurant.types?.some(type =>
-      proteinMatches[protein]?.some(keyword =>
-        type.toLowerCase().includes(keyword)
-      )
-    )
-  );
-
-  if (matchingProtein) {
-    return {
-      emoji: "🍖",
-      text: `Known for their ${matchingProtein.toLowerCase()} dishes`,
-      priority: 3
     };
   }
 
@@ -76,21 +62,20 @@ function generateProteinReason(restaurant: RestaurantFeatures, preferences: User
 function generateAtmosphereReason(restaurant: RestaurantFeatures, preferences: UserPreferences, score: number): Reason | null {
   if (!preferences.atmosphere_preferences?.length) return null;
 
-  const matchingAtmosphere = preferences.atmosphere_preferences.find(pref => {
-    switch (pref) {
-      case 'Fine Dining': return restaurant.reservable;
-      case 'Casual Dining': return restaurant.dineIn;
-      case 'Quick Bites': return restaurant.takeout;
-      case 'Bar Scene': return restaurant.servesBeer || restaurant.servesWine;
-      default: return false;
-    }
-  });
+  const atmosphereMatches = {
+    'Fine Dining': restaurant.reservable,
+    'Casual Dining': restaurant.dineIn,
+    'Quick Bites': restaurant.takeout,
+    'Bar Scene': restaurant.servesBeer || restaurant.servesWine
+  };
+
+  const matchingAtmosphere = preferences.atmosphere_preferences.find(pref => atmosphereMatches[pref]);
 
   if (matchingAtmosphere) {
     return {
       emoji: "✨",
-      text: `Perfect ${matchingAtmosphere.toLowerCase()} atmosphere as you prefer`,
-      priority: 4
+      text: `Perfect ${matchingAtmosphere.toLowerCase()} spot as you prefer`,
+      priority: 3
     };
   }
 
@@ -100,19 +85,31 @@ function generateAtmosphereReason(restaurant: RestaurantFeatures, preferences: U
 function generatePriceReason(restaurant: RestaurantFeatures, preferences: UserPreferences, score: number): Reason | null {
   if (!preferences.price_range) return null;
 
+  const priceDescriptions = {
+    'budget': 'budget-friendly',
+    'moderate': 'moderately priced',
+    'upscale': 'upscale',
+    'luxury': 'high-end'
+  };
+
   if (score >= 90) {
     return {
       emoji: "💰",
-      text: `Fits your preferred ${preferences.price_range} price range`,
-      priority: 5
+      text: `Perfectly ${priceDescriptions[preferences.price_range]} for your budget`,
+      priority: 4
     };
   }
 
   if (score <= 60) {
+    const isMoreExpensive = (restaurant.priceLevel || 2) > 
+      (['budget', 'moderate'].includes(preferences.price_range) ? 2 : 3);
+    
     return {
       emoji: "💸",
-      text: `Outside your usual ${preferences.price_range} price range`,
-      priority: 5
+      text: isMoreExpensive ? 
+        "More expensive than your usual preference" :
+        "More affordable than your usual preference",
+      priority: 4
     };
   }
 
@@ -124,10 +121,19 @@ export function generateVerdict(
   preferences: UserPreferences,
   scores: MatchScores
 ): { verdict: Verdict; reasons: Array<{ emoji: string; text: string }> } {
+  // Calculate weighted score with higher emphasis on dietary and cuisine matches
+  const weightedScore = (
+    (scores.dietaryScore * 0.35) +
+    (scores.cuisineScore * 0.25) +
+    (scores.proteinScore * 0.20) +
+    (scores.atmosphereScore * 0.10) +
+    (scores.priceScore * 0.10)
+  );
+
+  // Generate all possible reasons
   const potentialReasons: (Reason | null)[] = [
     generateDietaryReason(restaurant, preferences, scores.dietaryScore),
     generateCuisineReason(restaurant, preferences, scores.cuisineScore),
-    generateProteinReason(restaurant, preferences, scores.proteinScore),
     generateAtmosphereReason(restaurant, preferences, scores.atmosphereScore),
     generatePriceReason(restaurant, preferences, scores.priceScore),
   ];
@@ -137,18 +143,14 @@ export function generateVerdict(
     .filter((reason): reason is Reason => reason !== null)
     .sort((a, b) => a.priority - b.priority);
 
-  // Calculate weighted score
-  const weightedScore = (
-    (scores.dietaryScore * 0.35) +
-    (scores.cuisineScore * 0.25) +
-    (scores.proteinScore * 0.20) +
-    (scores.atmosphereScore * 0.10) +
-    (scores.priceScore * 0.10)
-  );
-
-  // Determine verdict based on weighted score
+  // Determine verdict based on weighted score and dietary restrictions
   let verdict: Verdict;
-  if (weightedScore >= 85) {
+  const hasDietaryRestrictions = preferences.dietary_restrictions?.length > 0;
+  const meetsRestrictions = scores.dietaryScore >= 70;
+
+  if (hasDietaryRestrictions && !meetsRestrictions) {
+    verdict = "SKIP IT";
+  } else if (weightedScore >= 85) {
     verdict = "MUST VISIT";
   } else if (weightedScore >= 65) {
     verdict = "WORTH A TRY";
@@ -156,12 +158,16 @@ export function generateVerdict(
     verdict = "SKIP IT";
   }
 
-  // If we don't have enough personalized reasons, add rating-based reason
-  if (validReasons.length < 3 && restaurant.rating && restaurant.rating >= 4.5) {
+  // If we don't have enough personalized reasons and it's not a "SKIP IT",
+  // we can add a rating-based reason
+  if (validReasons.length < 3 && 
+      verdict !== "SKIP IT" && 
+      restaurant.rating && 
+      restaurant.rating >= 4.5) {
     validReasons.push({
       emoji: "⭐",
-      text: "Highly rated by other diners",
-      priority: 6
+      text: `Highly rated (${restaurant.rating}/5) by other diners`,
+      priority: 5
     });
   }
 
