@@ -75,7 +75,10 @@ const RestaurantSummary = ({ restaurant }: RestaurantSummaryProps) => {
       <Card className="p-4 md:p-6 bg-background border-accent">
         <div className="flex items-center gap-2 mb-4">
           <Sparkles className="w-5 h-5 text-primary animate-pulse" />
-          <h3 className="text-lg font-semibold">AI Verdict</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold">Cilantro Says</h3>
+            <span className="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">BETA</span>
+          </div>
         </div>
         <div className="space-y-4">
           <Skeleton className="h-8 w-32" />
@@ -92,10 +95,13 @@ const RestaurantSummary = ({ restaurant }: RestaurantSummaryProps) => {
   if (!summary) return null;
 
   return (
-    <Card className="p-4 md:p-6 bg-background border-accent overflow-hidden">
+    <Card className="p-4 md:p-6 bg-background border-accent overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <div className="flex items-center gap-2 mb-6">
         <Sparkles className="w-5 h-5 text-primary animate-pulse" />
-        <h3 className="text-lg font-semibold">AI Verdict</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-semibold">Cilantro Says</h3>
+          <span className="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full border border-primary/20">BETA</span>
+        </div>
       </div>
       
       <div className="space-y-6">
