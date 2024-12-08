@@ -15,7 +15,7 @@ interface SavedRestaurant {
   rating: number | null;
   place_id: string;
   created_at: string;
-  address: string;
+  address?: string; // Made optional with ?
 }
 
 const SavedRestaurants = () => {
