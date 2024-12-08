@@ -18,7 +18,15 @@ interface SavedRestaurantCardProps {
 
 const SavedRestaurantCard = ({ restaurant, onRemove }: SavedRestaurantCardProps) => {
   const navigate = useNavigate();
-  console.log("SavedRestaurantCard - Rendering with restaurant data:", restaurant);
+  console.log("🏪 SavedRestaurantCard - Full restaurant data:", {
+    id: restaurant.id,
+    name: restaurant.name,
+    image: restaurant.image_url,
+    cuisine: restaurant.cuisine,
+    rating: restaurant.rating,
+    address: restaurant.address,
+    created: restaurant.created_at
+  });
 
   return (
     <Card 
@@ -46,7 +54,7 @@ const SavedRestaurantCard = ({ restaurant, onRemove }: SavedRestaurantCardProps)
       <CardContent className="p-4">
         <div className="space-y-2">
           <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors">
-            {restaurant.name}
+            {restaurant.name || "Unnamed Restaurant"}
           </h3>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             {restaurant.rating && (

@@ -16,7 +16,7 @@ const SavedRestaurants = () => {
       if (!session?.user) return;
 
       try {
-        console.log("🔍 Fetching saved restaurants...");
+        console.log("🔍 Fetching saved restaurants for user:", session.user.id);
         const { data, error } = await supabase
           .from('saved_restaurants')
           .select('*')
@@ -27,7 +27,7 @@ const SavedRestaurants = () => {
           throw error;
         }
 
-        console.log("✅ Fetched saved restaurants:", data);
+        console.log("✅ Fetched saved restaurants data:", data);
         setSavedRestaurants(data || []);
       } catch (error) {
         console.error("Failed to fetch saved restaurants:", error);
@@ -41,9 +41,10 @@ const SavedRestaurants = () => {
   }, [session]);
 
   const handleRemove = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation(); // Prevent navigation when clicking remove button
+    e.stopPropagation();
     
     try {
+      console.log("🗑️ Removing restaurant with ID:", id);
       const { error } = await supabase
         .from('saved_restaurants')
         .delete()
