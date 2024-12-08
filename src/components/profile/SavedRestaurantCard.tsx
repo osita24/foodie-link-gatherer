@@ -1,6 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { BookMarked, Star, MapPin, Clock } from "lucide-react";
+import { BookMarked, Star, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SavedRestaurantCardProps {
   restaurant: {
@@ -18,15 +20,42 @@ interface SavedRestaurantCardProps {
 
 const SavedRestaurantCard = ({ restaurant, onRemove }: SavedRestaurantCardProps) => {
   const navigate = useNavigate();
-  console.log("🏪 SavedRestaurantCard - Full restaurant data:", {
-    id: restaurant.id,
-    name: restaurant.name,
-    image: restaurant.image_url,
-    cuisine: restaurant.cuisine,
-    rating: restaurant.rating,
-    address: restaurant.address,
-    created: restaurant.created_at
-  });
+  const [realData, setRealData] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchRealData = async () => {
+      try {
+        console.log("🔍 Fetching real data for restaurant:", restaurant.place_id);
+        const { data: response, error } = await supabase.functions.invoke('google-maps-proxy', {
+          body: { placeId: restaurant.place_id }
+        });
+
+        if (error) {
+          console.error("❌ Error fetching restaurant details:", error);
+          return;
+        }
+
+        if (response?.result?.result) {
+          console.log("✅ Received real restaurant data:", response.result.result);
+          setRealData(response.result.result);
+        }
+      } catch (error) {
+        console.error("Failed to fetch restaurant details:", error);
+      }
+    };
+
+    fetchRealData();
+  }, [restaurant.place_id]);
+
+  const displayData = {
+    name: realData?.name || restaurant.name,
+    image: realData?.photos?.[0]?.photo_reference 
+      ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${realData.photos[0].photo_reference}&key=${import.meta.env.VITE_GOOGLE_PLACES_API_KEY}`
+      : restaurant.image_url,
+    rating: realData?.rating || restaurant.rating,
+    address: realData?.formatted_address || restaurant.address,
+    cuisine: realData?.types?.[0]?.replace(/_/g, ' ') || restaurant.cuisine
+  };
 
   return (
     <Card 
@@ -36,8 +65,8 @@ const SavedRestaurantCard = ({ restaurant, onRemove }: SavedRestaurantCardProps)
     >
       <div className="relative h-48 sm:h-56">
         <img
-          src={restaurant.image_url || "/placeholder.svg"}
-          alt={restaurant.name}
+          src={displayData.image || "/placeholder.svg"}
+          alt={displayData.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -54,34 +83,28 @@ const SavedRestaurantCard = ({ restaurant, onRemove }: SavedRestaurantCardProps)
       <CardContent className="p-4">
         <div className="space-y-2">
           <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors">
-            {restaurant.name || "Unnamed Restaurant"}
+            {displayData.name}
           </h3>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {restaurant.rating && (
+            {displayData.rating && (
               <div className="flex items-center gap-1">
                 <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                <span>{restaurant.rating.toFixed(1)}</span>
+                <span>{displayData.rating.toFixed(1)}</span>
               </div>
             )}
-            {restaurant.cuisine && (
+            {displayData.cuisine && (
               <>
                 <span className="text-muted-foreground">•</span>
-                <span>{restaurant.cuisine}</span>
+                <span className="capitalize">{displayData.cuisine}</span>
               </>
             )}
           </div>
-          {restaurant.address && (
+          {displayData.address && (
             <div className="flex items-start gap-1.5 text-sm text-muted-foreground">
               <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
-              <span className="line-clamp-2">{restaurant.address}</span>
+              <span className="line-clamp-2">{displayData.address}</span>
             </div>
           )}
-          <div className="pt-2 flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="w-3.5 h-3.5" />
-            <span>
-              Saved {new Date(restaurant.created_at).toLocaleDateString()}
-            </span>
-          </div>
         </div>
       </CardContent>
     </Card>
