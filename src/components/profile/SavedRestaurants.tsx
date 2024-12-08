@@ -15,7 +15,7 @@ interface SavedRestaurant {
   rating: number | null;
   place_id: string;
   created_at: string;
-  address?: string; // Made optional with ?
+  address?: string;
 }
 
 const SavedRestaurants = () => {
@@ -27,7 +27,10 @@ const SavedRestaurants = () => {
 
   useEffect(() => {
     const fetchSavedRestaurants = async () => {
-      if (!session?.user?.id) return;
+      if (!session?.user?.id) {
+        console.log("No user session found");
+        return;
+      }
 
       try {
         console.log("Fetching saved restaurants for user:", session.user.id);
@@ -47,8 +50,29 @@ const SavedRestaurants = () => {
           return;
         }
 
-        console.log("Fetched restaurants:", restaurants);
-        setSavedRestaurants(restaurants);
+        console.log("Raw restaurants data from Supabase:", restaurants);
+
+        if (!restaurants || restaurants.length === 0) {
+          console.log("No saved restaurants found");
+          setSavedRestaurants([]);
+          setLoading(false);
+          return;
+        }
+
+        // Map the restaurants data to ensure all required fields are present
+        const mappedRestaurants = restaurants.map(restaurant => ({
+          id: restaurant.id,
+          name: restaurant.name || 'Unknown Restaurant',
+          image_url: restaurant.image_url,
+          cuisine: restaurant.cuisine,
+          rating: restaurant.rating,
+          place_id: restaurant.place_id,
+          created_at: restaurant.created_at,
+          address: restaurant.address
+        }));
+
+        console.log("Mapped restaurants data:", mappedRestaurants);
+        setSavedRestaurants(mappedRestaurants);
       } catch (error) {
         console.error("Error in fetchSavedRestaurants:", error);
         toast({
@@ -67,6 +91,7 @@ const SavedRestaurants = () => {
   const handleRemoveRestaurant = async (e: React.MouseEvent, restaurantId: string) => {
     e.stopPropagation();
     try {
+      console.log("Removing restaurant with ID:", restaurantId);
       const { error } = await supabase
         .from("saved_restaurants")
         .delete()
