@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, UtensilsCrossed, Star, MapPin, Clock } from "lucide-react";
+import { BookMarked, Star, MapPin, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useRestaurantMatch } from "@/hooks/useRestaurantMatch";
 
 interface SavedRestaurant {
   id: string;
@@ -14,6 +15,7 @@ interface SavedRestaurant {
   rating: number | null;
   place_id: string;
   created_at: string;
+  address: string;
 }
 
 const SavedRestaurants = () => {
@@ -107,7 +109,7 @@ const SavedRestaurants = () => {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <div className="rounded-full bg-accent p-6 mb-4">
-          <UtensilsCrossed className="w-12 h-12 text-muted-foreground" />
+          <BookMarked className="w-12 h-12 text-muted-foreground" />
         </div>
         <h3 className="text-xl font-semibold mb-2">No saved restaurants yet</h3>
         <p className="text-muted-foreground max-w-sm mb-6">
@@ -143,9 +145,8 @@ const SavedRestaurants = () => {
               onClick={(e) => handleRemoveRestaurant(e, restaurant.id)}
               aria-label="Remove from saved"
             >
-              <Heart 
-                className="w-5 h-5 text-red-500 transition-transform group-hover/btn:scale-110" 
-                fill="currentColor" 
+              <BookMarked 
+                className="w-5 h-5 text-primary transition-transform group-hover/btn:scale-110" 
               />
             </button>
           </div>
@@ -168,6 +169,12 @@ const SavedRestaurants = () => {
                   </>
                 )}
               </div>
+              {restaurant.address && (
+                <div className="flex items-start gap-1.5 text-sm text-muted-foreground">
+                  <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span className="line-clamp-2">{restaurant.address}</span>
+                </div>
+              )}
               <div className="pt-2 flex items-center gap-1 text-xs text-muted-foreground">
                 <Clock className="w-3.5 h-3.5" />
                 <span>
