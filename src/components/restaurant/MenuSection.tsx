@@ -21,6 +21,22 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [itemMatchDetails, setItemMatchDetails] = useState<Record<string, any>>({});
   const { categories } = useRestaurantMatch(null);
+  const [session, setSession] = useState<any>(null);
+
+  useEffect(() => {
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("Auth state changed:", _event, session?.user?.id);
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (menu) {
@@ -78,7 +94,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
 
   useEffect(() => {
     const loadMatchDetails = async () => {
-      if (!processedMenu?.[0]?.items) return;
+      if (!processedMenu?.[0]?.items || !session?.user) return;
 
       const details: Record<string, any> = {};
       
@@ -119,7 +135,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
     };
 
     loadMatchDetails();
-  }, [processedMenu]);
+  }, [processedMenu, session]);
 
   if (isProcessing) {
     return (
@@ -166,7 +182,8 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
                   <MenuItem
                     key={item.id}
                     item={item}
-                    matchDetails={itemMatchDetails[item.id] || { score: 75 }}
+                    matchDetails={session ? itemMatchDetails[item.id] : undefined}
+                    isAuthenticated={!!session}
                   />
                 ))}
               </div>

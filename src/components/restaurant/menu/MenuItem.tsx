@@ -8,6 +8,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import AuthModal from "@/components/auth/AuthModal";
 
 interface MenuItemProps {
   item: {
@@ -16,7 +18,7 @@ interface MenuItemProps {
     description?: string;
     category?: string;
   };
-  matchDetails: {
+  matchDetails?: {
     score: number;
     matchType?: 'perfect' | 'good' | 'neutral' | 'warning' | 'avoid';
     reason?: string;
@@ -26,10 +28,12 @@ interface MenuItemProps {
     rank?: number;
     rankDescription?: string;
   };
+  isAuthenticated: boolean;
 }
 
-const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
+const MenuItem = ({ item, matchDetails, isAuthenticated }: MenuItemProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const cleanName = item.name
     .replace(/^\d+\.\s*/, '')
@@ -44,6 +48,8 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
   const displayDescription = isExpanded ? description : description?.substring(0, 100);
 
   const getMatchStyle = (matchType: string = 'neutral') => {
+    if (!isAuthenticated) return "hover:bg-gray-50/50";
+    
     switch (matchType) {
       case 'perfect':
         return "border-l-4 border-emerald-400 bg-gradient-to-r from-emerald-50 to-transparent";
@@ -92,7 +98,7 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
   };
 
   const getRankBadge = (rank?: number) => {
-    if (!rank || rank > 3) return null;
+    if (!isAuthenticated || !rank || rank > 3) return null;
     
     const badges = {
       1: "bg-gradient-to-r from-yellow-400 to-yellow-600 text-white",
@@ -108,91 +114,111 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
   };
 
   return (
-    <div 
-      className={cn(
-        "group relative p-4 rounded-lg transition-all duration-300",
-        "hover:shadow-md",
-        getMatchStyle(matchDetails.matchType)
-      )}
-    >
-      {getRankBadge(matchDetails.rank)}
-      
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 space-y-2">
-          <div className="flex items-start gap-2 flex-wrap">
-            <h3 className="text-base font-medium text-gray-900">
-              {cleanName}
-            </h3>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge 
-                    className={cn(
-                      "animate-fade-in-up cursor-help transition-colors",
-                      getScoreColor(matchDetails.matchType)
-                    )}
-                  >
-                    {matchDetails.rankDescription || "Try something new"}
-                    {getMatchIcon(matchDetails.matchType, matchDetails.rank)}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-sm">
-                    {matchDetails.highlights?.map((highlight, index) => (
-                      <span key={index} className="block">• {highlight}</span>
-                    ))}
-                    {matchDetails.considerations?.map((consideration, index) => (
-                      <span key={index} className="block text-red-600">• {consideration}</span>
-                    ))}
-                    {!matchDetails.highlights && !matchDetails.considerations && 
-                      "Try something new! This dish might surprise you."}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          
-          {description && (
-            <div className="mt-1">
-              <p className="text-sm text-gray-500 leading-relaxed">
-                {displayDescription}
-                {isLongDescription && !isExpanded && "..."}
-              </p>
-              {isLongDescription && (
-                <button
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className="mt-1 text-xs text-primary hover:text-primary/80 flex items-center gap-1"
+    <>
+      <div 
+        className={cn(
+          "group relative p-4 rounded-lg transition-all duration-300",
+          "hover:shadow-md",
+          getMatchStyle(matchDetails?.matchType)
+        )}
+      >
+        {getRankBadge(matchDetails?.rank)}
+        
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 space-y-2">
+            <div className="flex items-start gap-2 flex-wrap">
+              <h3 className="text-base font-medium text-gray-900">
+                {cleanName}
+              </h3>
+              
+              {isAuthenticated ? (
+                matchDetails && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge 
+                          className={cn(
+                            "animate-fade-in-up cursor-help transition-colors",
+                            getScoreColor(matchDetails.matchType)
+                          )}
+                        >
+                          {matchDetails.rankDescription || "Try something new"}
+                          {getMatchIcon(matchDetails.matchType, matchDetails.rank)}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-sm">
+                          {matchDetails.highlights?.map((highlight, index) => (
+                            <span key={index} className="block">• {highlight}</span>
+                          ))}
+                          {matchDetails.considerations?.map((consideration, index) => (
+                            <span key={index} className="block text-red-600">• {consideration}</span>
+                          ))}
+                          {!matchDetails.highlights && !matchDetails.considerations && 
+                            "Try something new! This dish might surprise you."}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )
+              ) : (
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setShowAuthModal(true)}
+                  className="text-primary hover:text-primary/90 p-0 h-auto font-medium"
                 >
-                  {isExpanded ? (
-                    <>Show less <ChevronUp className="w-3 h-3" /></>
-                  ) : (
-                    <>Show more <ChevronDown className="w-3 h-3" /></>
-                  )}
-                </button>
+                  Sign in to see match score
+                </Button>
               )}
             </div>
-          )}
-          
-          {(matchDetails.highlights?.length || matchDetails.considerations?.length) && (
-            <div className="flex items-center gap-2 flex-wrap animate-fade-in-up">
-              {matchDetails.highlights?.map((highlight, index) => (
-                <span key={index} className="text-sm text-emerald-700 font-medium flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" />
-                  {highlight}
-                </span>
-              ))}
-              {matchDetails.considerations?.map((consideration, index) => (
-                <span key={index} className="text-sm text-red-700 font-medium flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" />
-                  {consideration}
-                </span>
-              ))}
-            </div>
-          )}
+            
+            {description && (
+              <div className="mt-1">
+                <p className="text-sm text-gray-500 leading-relaxed">
+                  {displayDescription}
+                  {isLongDescription && !isExpanded && "..."}
+                </p>
+                {isLongDescription && (
+                  <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="mt-1 text-xs text-primary hover:text-primary/80 flex items-center gap-1"
+                  >
+                    {isExpanded ? (
+                      <>Show less <ChevronUp className="w-3 h-3" /></>
+                    ) : (
+                      <>Show more <ChevronDown className="w-3 h-3" /></>
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
+            
+            {isAuthenticated && matchDetails && (matchDetails.highlights?.length || matchDetails.considerations?.length) && (
+              <div className="flex items-center gap-2 flex-wrap animate-fade-in-up">
+                {matchDetails.highlights?.map((highlight, index) => (
+                  <span key={index} className="text-sm text-emerald-700 font-medium flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" />
+                    {highlight}
+                  </span>
+                ))}
+                {matchDetails.considerations?.map((consideration, index) => (
+                  <span key={index} className="text-sm text-red-700 font-medium flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    {consideration}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      <AuthModal 
+        open={showAuthModal}
+        onOpenChange={setShowAuthModal}
+      />
+    </>
   );
 };
 
