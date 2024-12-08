@@ -9,7 +9,6 @@ import ReviewsSection from "@/components/restaurant/ReviewsSection";
 import ActionButtons from "@/components/restaurant/ActionButtons";
 import OrderSection from "@/components/restaurant/OrderSection";
 import AdditionalInfo from "@/components/restaurant/AdditionalInfo";
-import RestaurantSummary from "@/components/restaurant/RestaurantSummary";
 import { RestaurantDetails as RestaurantDetailsType } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -154,8 +153,6 @@ const RestaurantDetails = () => {
             <div className="bg-white rounded-xl shadow-sm p-6">
               <RestaurantInfo restaurant={restaurant} />
             </div>
-            
-            <RestaurantSummary restaurant={restaurant} />
             
             <MenuSection 
               menu={restaurant?.menu} 
