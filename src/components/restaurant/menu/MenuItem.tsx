@@ -21,7 +21,7 @@ interface MenuItemProps {
     reason?: string;
     warning?: string;
     matchType?: 'perfect' | 'good' | 'neutral' | 'warning';
-  };
+  } | null;
 }
 
 const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
@@ -40,6 +40,8 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
   const displayDescription = isExpanded ? description : description?.substring(0, 100);
 
   const getMatchStyle = (matchType: string = 'neutral') => {
+    if (!matchDetails) return "hover:bg-gray-50/50";
+    
     switch (matchType) {
       case 'perfect':
         return "border-l-4 border-emerald-400 bg-gradient-to-r from-emerald-50 to-transparent";
@@ -83,7 +85,7 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
       className={cn(
         "group relative p-4 rounded-lg transition-all duration-300",
         "hover:shadow-md",
-        getMatchStyle(matchDetails.matchType)
+        getMatchStyle(matchDetails?.matchType)
       )}
     >
       <div className="flex items-start justify-between gap-4">
@@ -93,29 +95,31 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
               {cleanName}
             </h3>
             
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge 
-                    className={cn(
-                      "animate-fade-in-up cursor-help transition-colors",
-                      getScoreColor(matchDetails.matchType)
-                    )}
-                  >
-                    {matchDetails.score}% Match
-                    {getMatchIcon(matchDetails.matchType)}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>
-                    {matchDetails.matchType === 'perfect' ? "Perfect match for your preferences!" :
-                     matchDetails.matchType === 'good' ? "Good match based on your preferences" :
-                     matchDetails.matchType === 'warning' ? "May not match your preferences" :
-                     "Something new to try"}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            {matchDetails && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge 
+                      className={cn(
+                        "animate-fade-in-up cursor-help transition-colors",
+                        getScoreColor(matchDetails.matchType)
+                      )}
+                    >
+                      {matchDetails.score}% Match
+                      {getMatchIcon(matchDetails.matchType)}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {matchDetails.matchType === 'perfect' ? "Perfect match for your preferences!" :
+                       matchDetails.matchType === 'good' ? "Good match based on your preferences" :
+                       matchDetails.matchType === 'warning' ? "May not match your preferences" :
+                       "Something new to try"}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
           
           {description && (
@@ -139,7 +143,7 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
             </div>
           )}
           
-          {(matchDetails.reason || matchDetails.warning) && (
+          {matchDetails && (matchDetails.reason || matchDetails.warning) && (
             <div className="flex items-center gap-2 flex-wrap animate-fade-in-up">
               {matchDetails.matchType !== 'warning' && matchDetails.reason && (
                 <p className="text-sm text-emerald-700 font-medium">

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { List, Loader2 } from "lucide-react";
 import { MenuCategory } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -8,6 +7,8 @@ import MenuItem from "./menu/MenuItem";
 import MenuHeader from "./menu/MenuHeader";
 import MatchScoreCard from "./MatchScoreCard";
 import { useRestaurantMatch } from "@/hooks/useRestaurantMatch";
+import { useMenuAnalysis } from "@/hooks/useMenuAnalysis";
+import MenuLoadingState from "./menu/MenuLoadingState";
 
 interface MenuSectionProps {
   menu?: MenuCategory[];
@@ -19,8 +20,19 @@ interface MenuSectionProps {
 const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
   const [processedMenu, setProcessedMenu] = useState<MenuCategory[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [itemMatchDetails, setItemMatchDetails] = useState<Record<string, any>>({});
   const { categories } = useRestaurantMatch(null);
+  const { itemMatchDetails, analyzedMenu } = useMenuAnalysis(processedMenu);
+  const [session, setSession] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+  }, []);
 
   useEffect(() => {
     if (menu) {
@@ -76,138 +88,30 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
     }
   };
 
-  useEffect(() => {
-    const loadMatchDetails = async () => {
-      if (!processedMenu?.[0]?.items) return;
-
-      const details: Record<string, any> = {};
-      
-      // First get the current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log("No authenticated user found");
-        return;
-      }
-
-      console.log("Loading preferences for user:", user.id);
-      
-      try {
-        // Get user preferences with proper filtering
-        const { data: preferences, error: preferencesError } = await supabase
-          .from('user_preferences')
-          .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (preferencesError) {
-          console.error("Error fetching preferences:", preferencesError);
-          throw preferencesError;
-        }
-
-        if (!preferences) {
-          console.log("No preferences found for user, using default scores");
-          processedMenu[0].items.forEach(item => {
-            details[item.id] = { score: 50, matchType: 'neutral' };
-          });
-          setItemMatchDetails(details);
-          return;
-        }
-
-        console.log("Found user preferences:", preferences);
-
-        for (const item of processedMenu[0].items) {
-          try {
-            console.log("Analyzing item with preferences:", item.name);
-            const { data, error } = await supabase.functions.invoke('menu-processor', {
-              body: { 
-                action: 'analyze-item',
-                item,
-                preferences
-              }
-            });
-
-            if (error || !data) {
-              console.error("Error analyzing item:", error);
-              details[item.id] = { score: 50, matchType: 'neutral' };
-              continue;
-            }
-
-            console.log("Analysis result for", item.name, ":", data);
-            details[item.id] = data;
-          } catch (error) {
-            console.error("Error getting match details:", error);
-            details[item.id] = { score: 50, matchType: 'neutral' };
-          }
-        }
-
-        // Sort items by score for better presentation
-        const sortedItems = [...processedMenu[0].items].sort((a, b) => {
-          const scoreA = details[a.id]?.score || 0;
-          const scoreB = details[b.id]?.score || 0;
-          return scoreB - scoreA;
-        });
-
-        setProcessedMenu([{ ...processedMenu[0], items: sortedItems }]);
-        setItemMatchDetails(details);
-      } catch (error) {
-        console.error("Error in loadMatchDetails:", error);
-        // Set default neutral scores for all items
-        processedMenu[0].items.forEach(item => {
-          details[item.id] = { score: 50, matchType: 'neutral' };
-        });
-        setItemMatchDetails(details);
-      }
-    };
-
-    loadMatchDetails();
-  }, [processedMenu]);
-
   if (isProcessing) {
-    return (
-      <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
-        <CardContent className="p-8 flex flex-col items-center justify-center min-h-[300px]">
-          <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
-          <p className="text-secondary text-lg font-medium">
-            Processing Menu...
-          </p>
-          <p className="text-muted-foreground text-sm mt-2">
-            Analyzing available information to create your digital menu
-          </p>
-        </CardContent>
-      </Card>
-    );
+    return <MenuLoadingState isProcessing />;
   }
 
   if (!processedMenu || processedMenu.length === 0) {
-    return (
-      <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
-        <CardContent className="p-8 flex flex-col items-center justify-center min-h-[300px]">
-          <List className="w-8 h-8 text-muted-foreground mb-4" />
-          <p className="text-secondary text-lg font-medium">
-            Menu Not Available
-          </p>
-          <p className="text-muted-foreground text-sm mt-2">
-            We're working on getting the latest menu information.
-          </p>
-        </CardContent>
-      </Card>
-    );
+    return <MenuLoadingState />;
   }
+
+  const menuToDisplay = session ? (analyzedMenu || processedMenu) : processedMenu;
 
   return (
     <div className="space-y-6">
-      <MatchScoreCard categories={categories} />
+      {session && <MatchScoreCard categories={categories} />}
       <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
         <CardContent className="p-0">
           <div className="relative">
             <MenuHeader menuUrl={menuUrl} />
             <div className="p-4 md:p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {processedMenu[0].items.map((item) => (
+                {menuToDisplay[0].items.map((item) => (
                   <MenuItem
                     key={item.id}
                     item={item}
-                    matchDetails={itemMatchDetails[item.id] || { score: 50, matchType: 'neutral' }}
+                    matchDetails={session ? (itemMatchDetails[item.id] || { score: 50, matchType: 'neutral' }) : null}
                   />
                 ))}
               </div>
