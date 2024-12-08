@@ -41,16 +41,17 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
   const processRestaurantData = async () => {
     setIsProcessing(true);
     try {
-      const response = await fetch('/api/process-menu', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ menuUrl, photos, reviews })
+      const { data, error } = await supabase.functions.invoke('menu-processor', {
+        body: { menuUrl, photos, reviews }
       });
       
-      if (!response.ok) throw new Error('Failed to process menu data');
+      if (error) {
+        console.error('Error processing menu:', error);
+        throw error;
+      }
       
-      const data = await response.json();
-      setProcessedMenu(data.menu);
+      console.log('Processed menu data:', data);
+      setProcessedMenu(data.menuSections || []);
     } catch (error) {
       console.error('Error processing menu:', error);
       toast.error("Failed to process menu data");
