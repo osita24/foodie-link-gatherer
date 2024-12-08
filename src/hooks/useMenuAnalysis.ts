@@ -15,9 +15,8 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
       let score = 50;
       let reasons: string[] = [];
       let warnings: string[] = [];
-      let bonusPoints = 0;
 
-      // Check dietary restrictions (vegetarian specific logic)
+      // Check dietary restrictions first (critical)
       if (preferences.dietary_restrictions?.includes('vegetarian')) {
         const meatKeywords = [
           'chicken', 'beef', 'pork', 'fish', 'seafood', 'lamb', 'turkey',
@@ -25,28 +24,32 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
         ];
         
         const hasMeat = meatKeywords.some(meat => itemContent.includes(meat));
-
         if (hasMeat) {
-          score = 20;
-          warnings.push("Contains meat - not suitable for vegetarians");
+          return {
+            score: 20,
+            warning: "Not suitable for vegetarians - contains meat",
+            matchType: 'warning'
+          };
         } else {
-          // Likely vegetarian-friendly
           score += 30;
           reasons.push("Vegetarian-friendly option");
         }
       }
 
-      // Check vegan restrictions
+      // Check vegan preferences
       if (preferences.dietary_restrictions?.includes('vegan')) {
         const nonVeganKeywords = ['cheese', 'cream', 'milk', 'egg', 'butter', 'yogurt', 'mayo'];
         const hasNonVegan = nonVeganKeywords.some(ingredient => itemContent.includes(ingredient));
 
         if (hasNonVegan) {
-          score = 20;
-          warnings.push("Contains dairy/eggs - not suitable for vegans");
+          return {
+            score: 20,
+            warning: "Not suitable for vegans - contains dairy/eggs",
+            matchType: 'warning'
+          };
         } else {
           score += 30;
-          reasons.push("Potentially vegan-friendly");
+          reasons.push("Vegan-friendly option");
         }
       }
 
@@ -56,23 +59,25 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
         const hasGluten = glutenKeywords.some(ingredient => itemContent.includes(ingredient));
 
         if (hasGluten) {
-          score = 20;
-          warnings.push("Contains gluten - not gluten-free");
+          return {
+            score: 20,
+            warning: "Contains gluten - not suitable for gluten-free diet",
+            matchType: 'warning'
+          };
+        } else {
+          score += 25;
+          reasons.push("Gluten-free friendly");
         }
       }
 
-      // Check favorite proteins
+      // Check favorite proteins (if no dietary conflicts)
       const proteinMatches = preferences.favorite_proteins?.filter(
         (protein: string) => itemContent.includes(protein.toLowerCase())
       );
       
-      if (proteinMatches?.length > 0) {
-        // Only add protein bonus if it doesn't conflict with dietary restrictions
-        if (!warnings.length) {
-          score += 35;
-          bonusPoints += 10;
-          reasons.push(`Features your preferred protein: ${proteinMatches[0]}`);
-        }
+      if (proteinMatches?.length > 0 && !warnings.length) {
+        score += 35;
+        reasons.push(`Features ${proteinMatches[0]}, your preferred protein`);
       }
 
       // Check cuisine preferences
@@ -82,43 +87,76 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
       
       if (cuisineMatches?.length > 0) {
         score += 25;
-        bonusPoints += 5;
-        reasons.push(`Matches ${cuisineMatches[0]} cuisine style`);
+        reasons.push(`Matches your favorite ${cuisineMatches[0]} cuisine style`);
       }
 
-      // Check favorite ingredients
-      const ingredientMatches = preferences.favorite_ingredients?.filter(
+      // Check foods to avoid
+      const avoidMatches = preferences.favorite_ingredients?.filter(
         (ingredient: string) => itemContent.includes(ingredient.toLowerCase())
       );
       
-      if (ingredientMatches?.length > 0 && !warnings.length) {
-        score += 20;
-        bonusPoints += 5;
-        reasons.push(`Contains ${ingredientMatches[0]} that you enjoy`);
+      if (avoidMatches?.length > 0) {
+        return {
+          score: 30,
+          warning: `Contains ${avoidMatches[0]} which you prefer to avoid`,
+          matchType: 'warning'
+        };
       }
 
-      // Determine match type based on final score + bonus points
-      let matchType: 'perfect' | 'good' | 'neutral' | 'warning' = 'neutral';
-      const finalScore = Math.min(100, score + bonusPoints);
+      // Analyze specific ingredients and preparation methods
+      const healthyKeywords = {
+        "grilled": "Healthy grilled preparation",
+        "steamed": "Light steamed preparation",
+        "fresh": "Made with fresh ingredients",
+        "organic": "Features organic ingredients",
+        "house-made": "Freshly prepared in-house"
+      };
 
-      if (finalScore >= 90) matchType = 'perfect';
-      else if (finalScore >= 75) matchType = 'good';
-      else if (finalScore < 40) matchType = 'warning';
+      for (const [keyword, reason] of Object.entries(healthyKeywords)) {
+        if (itemContent.includes(keyword)) {
+          score += 15;
+          reasons.push(reason);
+          break;
+        }
+      }
 
-      // If no specific matches or warnings found, add a generic reason
-      if (reasons.length === 0 && !warnings.length) {
+      // Special indicators
+      if (itemContent.includes("signature") || itemContent.includes("special")) {
+        score += 10;
+        reasons.push("Chef's special recommendation");
+      }
+
+      // If no specific matches found
+      if (reasons.length === 0) {
         reasons.push("Standard menu option");
+        score = 50;
+      }
+
+      // Determine match type based on final score
+      let matchType: 'perfect' | 'good' | 'neutral' | 'warning' = 'neutral';
+      
+      // Cap score between 0 and 100
+      score = Math.max(0, Math.min(100, score));
+
+      if (score >= 90) {
+        matchType = 'perfect';
+        reasons[0] = `Perfect match: ${reasons[0]}`;
+      } else if (score >= 75) {
+        matchType = 'good';
+        reasons[0] = `Great choice: ${reasons[0]}`;
+      } else if (score < 40) {
+        matchType = 'warning';
       }
 
       console.log(`✨ Analysis result for ${item.name}:`, {
-        score: finalScore,
+        score,
         reasons,
         warnings,
         matchType
       });
 
       return {
-        score: finalScore,
+        score,
         reason: reasons[0],
         warning: warnings[0],
         matchType
