@@ -7,8 +7,7 @@ export async function analyzeMenuItem(
   score: number;
   reason?: string;
   warning?: string;
-  matchType: 'perfect' | 'good' | 'neutral' | 'warning';
-  highlights?: string[];
+  matchType?: 'perfect' | 'good' | 'neutral' | 'warning';
 }> {
   try {
     console.log('🔍 Analyzing menu item:', item.name);
@@ -18,93 +17,84 @@ export async function analyzeMenuItem(
     let score = 50;
     let reasons: string[] = [];
     let warnings: string[] = [];
-    let highlights: string[] = [];
     let matchType: 'perfect' | 'good' | 'neutral' | 'warning' = 'neutral';
 
-    // Critical checks (dietary restrictions) - Major negative impact
-    const dietaryConflict = preferences.dietary_restrictions?.find(
-      (restriction: string) => itemContent.includes(restriction.toLowerCase())
+    // Check dietary restrictions first (critical)
+    const dietaryConflicts = preferences.dietary_restrictions?.filter(
+      (restriction: string) => {
+        if (restriction === "No Restrictions") return false;
+        return itemContent.includes(restriction.toLowerCase());
+      }
     );
-    if (dietaryConflict) {
+
+    if (dietaryConflicts?.length > 0) {
       return {
         score: 20,
-        warning: `Contains ${dietaryConflict} (dietary restriction)`,
-        matchType: 'warning',
-        highlights: [`Contains ${dietaryConflict}`]
+        warning: `Contains ${dietaryConflicts.join(", ")}`,
+        matchType: 'warning'
       };
     }
 
-    // Favorite proteins - Major positive impact
-    const proteinMatch = preferences.favorite_proteins?.find(
-      (protein: string) => itemContent.includes(protein.toLowerCase())
+    // Check favorite proteins (major positive)
+    const proteinMatches = preferences.favorite_proteins?.filter(
+      (protein: string) => {
+        if (protein === "Doesn't Apply") return false;
+        return itemContent.includes(protein.toLowerCase());
+      }
     );
-    if (proteinMatch) {
-      score += 35;
-      reasons.push(`Features ${proteinMatch}`);
-      highlights.push(`Contains ${proteinMatch}`);
+    
+    if (proteinMatches?.length > 0) {
+      score += 25;
+      reasons.push(`Contains ${proteinMatches.join(", ")}`);
     }
 
-    // Cuisine preferences - Significant positive impact
-    const cuisineMatch = preferences.cuisine_preferences?.find(
+    // Check cuisine preferences (significant positive)
+    const cuisineMatches = preferences.cuisine_preferences?.filter(
       (cuisine: string) => itemContent.includes(cuisine.toLowerCase())
     );
-    if (cuisineMatch) {
-      score += 25;
-      reasons.push(`${cuisineMatch} style`);
-      highlights.push(cuisineMatch);
+    
+    if (cuisineMatches?.length > 0) {
+      score += 20;
+      reasons.push(`Matches ${cuisineMatches[0]} cuisine`);
     }
 
-    // Foods to avoid - Moderate negative impact
-    const avoidMatch = preferences.favorite_ingredients?.find(
-      (ingredient: string) => itemContent.includes(ingredient.toLowerCase())
+    // Check foods to avoid (negative impact)
+    const avoidanceMatches = preferences.favorite_ingredients?.filter(
+      (ingredient: string) => {
+        if (ingredient === "No Restrictions") return false;
+        return itemContent.includes(ingredient.toLowerCase());
+      }
     );
-    if (avoidMatch) {
+    
+    if (avoidanceMatches?.length > 0) {
       score -= 30;
-      warnings.push(`Contains ${avoidMatch} (listed in foods to avoid)`);
-      highlights.push(`Contains ${avoidMatch}`);
-    }
-
-    // Atmosphere preferences - Minor positive impact
-    if (preferences.atmosphere_preferences?.some(
-      (pref: string) => itemContent.includes(pref.toLowerCase())
-    )) {
-      score += 10;
-      reasons.push("Matches dining style");
-    }
-
-    // Special considerations
-    if (preferences.special_considerations &&
-        itemContent.includes(preferences.special_considerations.toLowerCase())) {
-      score += 15;
-      reasons.push("Meets special considerations");
+      warnings.push(`Contains ${avoidanceMatches.join(", ")}`);
     }
 
     // Determine match type based on final score
-    if (score >= 90) {
+    if (score >= 85) {
       matchType = 'perfect';
-    } else if (score >= 75) {
+    } else if (score >= 70) {
       matchType = 'good';
-    } else if (score < 40) {
+    } else if (score < 50) {
       matchType = 'warning';
     }
 
-    // Cap the score at 100
-    score = Math.min(100, Math.max(0, score));
+    // Cap the score between 0 and 100
+    score = Math.max(0, Math.min(100, score));
 
     console.log(`✨ Analysis result for ${item.name}:`, {
       score,
       reasons,
       warnings,
-      matchType,
-      highlights
+      matchType
     });
 
     return {
       score,
       reason: reasons.length > 0 ? reasons.join(" • ") : undefined,
       warning: warnings.length > 0 ? warnings.join(" • ") : undefined,
-      matchType,
-      highlights: highlights.length > 0 ? highlights : undefined
+      matchType
     };
   } catch (error) {
     console.error('❌ Error analyzing menu item:', error);
