@@ -38,87 +38,69 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
     }
   }, [menu, photos, reviews, menuUrl]);
 
-  const processLet's enhance the menu recommendations to be more personalized and user-friendly. First, we need to update the menu processor edge function to provide better analysis.
-
-<lov-code>
-First, let's update the menu processor edge function:
-
-<lov-write file_path="supabase/functions/menu-processor/menuAnalyzer.ts">
-import { UserPreferences } from "../../../src/types/preferences";
-
-export async function analyzeMenuItem(
-  item: { name: string; description?: string },
-  preferences: UserPreferences,
-  openAIKey: string
-): Promise<{
-  score: number;
-  reason?: string;
-  warning?: string;
-  tag?: string;
-}> {
-  try {
-    console.log('🔍 Analyzing menu item:', item.name);
-    
-    const prompt = `
-    Analyze this menu item and the user's preferences to provide a personalized recommendation.
-    
-    Menu Item:
-    Name: ${item.name}
-    Description: ${item.description || 'No description available'}
-    
-    User Preferences:
-    - Favorite Cuisines: ${preferences.cuisinePreferences?.join(', ') || 'None specified'}
-    - Dietary Restrictions: ${preferences.dietaryRestrictions?.join(', ') || 'None specified'}
-    - Favorite Proteins: ${preferences.favoriteProteins?.join(', ') || 'None specified'}
-    - Foods to Avoid: ${preferences.foodsToAvoid?.join(', ') || 'None specified'}
-    - Spice Level (1-5): ${preferences.spiceLevel || 'Not specified'}
-    
-    Provide a JSON response with:
-    1. A match score (0-100)
-    2. A tag (one of: "Perfect Match!", "Try Something New", "Good Choice", "Heads Up", "Not Recommended")
-    3. A SHORT, specific reason if it's a great match (score >= 85) focusing on user preferences (e.g. "Contains your favorite protein: chicken")
-    4. A SHORT, specific warning if there are concerns (score <= 40) (e.g. "Contains shellfish (your allergen)")
-    
-    Keep messages under 50 characters, mobile-friendly.
-    Focus on the most relevant match/concern.`;
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a culinary expert that provides concise, personalized dish recommendations.'
-          },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.3,
-        max_tokens: 150
-      }),
-    });
-
-    const data = await response.json();
-    console.log('✨ AI Analysis response:', data);
-
+  const processRestaurantData = async () => {
+    setIsProcessing(true);
     try {
-      const result = JSON.parse(data.choices[0].message.content);
-      return {
-        score: result.score,
-        tag: result.tag,
-        reason: result.score >= 85 ? result.reason : undefined,
-        warning: result.score <= 40 ? result.warning : undefined
-      };
-    } catch (parseError) {
-      console.error('Error parsing AI response:', parseError);
-      return { score: 50, tag: "Good Choice" };
+      const response = await fetch('/api/process-menu', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ menuUrl, photos, reviews })
+      });
+      
+      if (!response.ok) throw new Error('Failed to process menu data');
+      
+      const data = await response.json();
+      setProcessedMenu(data.menu);
+    } catch (error) {
+      console.error('Error processing menu:', error);
+      toast.error("Failed to process menu data");
+    } finally {
+      setIsProcessing(false);
     }
-  } catch (error) {
-    console.error('Error analyzing menu item:', error);
-    return { score: 50, tag: "Good Choice" };
+  };
+
+  if (isProcessing) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
-}
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-start gap-4">
+            <List className="h-5 w-5 text-primary" />
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold">Menu</h2>
+              <p className="text-sm text-gray-500">
+                Browse through the menu items and see personalized recommendations
+              </p>
+            </div>
+          </div>
+          
+          <div className="mt-6 space-y-6">
+            {processedMenu.map((category, index) => (
+              <div key={index} className="space-y-4">
+                <h3 className="text-lg font-medium">{category.name}</h3>
+                <div className="grid gap-4">
+                  {category.items.map((item) => (
+                    <MenuItem 
+                      key={item.id} 
+                      item={item}
+                      matchDetails={itemMatchDetails[item.id] || { score: 50 }}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default MenuSection;
