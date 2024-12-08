@@ -31,6 +31,9 @@ interface MenuItemProps {
 const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  console.log("🍽️ Rendering menu item:", item.name);
+  console.log("✨ Match details:", matchDetails);
+
   const cleanName = item.name
     .replace(/^\d+\.\s*/, '')
     .replace(/\*\*/g, '')
@@ -132,7 +135,7 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
                       getScoreColor(matchDetails.matchType)
                     )}
                   >
-                    {matchDetails.rankDescription || "Try something new"}
+                    {matchDetails.reason || matchDetails.rankDescription || "Try something new"}
                     {getMatchIcon(matchDetails.matchType, matchDetails.rank)}
                   </Badge>
                 </TooltipTrigger>

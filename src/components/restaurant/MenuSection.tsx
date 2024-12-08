@@ -10,7 +10,6 @@ import MenuEmptyState from "./menu/MenuEmptyState";
 import MatchScoreCard from "./MatchScoreCard";
 import { useRestaurantMatch } from "@/hooks/useRestaurantMatch";
 import UnauthenticatedState from "../auth/UnauthenticatedState";
-import { useLocation } from "react-router-dom";
 
 interface MenuSectionProps {
   menu?: MenuCategory[];
@@ -25,7 +24,6 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
   const [itemMatchDetails, setItemMatchDetails] = useState<Record<string, any>>({});
   const { categories } = useRestaurantMatch(null);
   const [session, setSession] = useState(null);
-  const location = useLocation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -98,10 +96,13 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
     const loadMatchDetails = async () => {
       if (!processedMenu?.[0]?.items || !session?.user) return;
 
+      console.log("🔄 Loading match details for menu items...");
       const details: Record<string, any> = {};
       
       for (const item of processedMenu[0].items) {
         try {
+          console.log(`📊 Analyzing item: ${item.name}`);
+          
           const { data: preferences } = await supabase
             .from('user_preferences')
             .select('*')
@@ -109,9 +110,12 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
             .single();
 
           if (!preferences) {
+            console.log("⚠️ No preferences found for user");
             details[item.id] = { score: 75 };
             continue;
           }
+
+          console.log("👤 User preferences:", preferences);
 
           const { data, error } = await supabase.functions.invoke('menu-processor', {
             body: { 
@@ -121,19 +125,22 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
             }
           });
 
-          if (error || !data) {
-            console.error("Error analyzing item:", error);
+          if (error) {
+            console.error("❌ Error analyzing item:", error);
             details[item.id] = { score: 75 };
             continue;
           }
 
+          console.log(`✅ Analysis complete for ${item.name}:`, data);
           details[item.id] = data;
+
         } catch (error) {
           console.error("Error getting match details:", error);
           details[item.id] = { score: 75 };
         }
       }
 
+      console.log("🎯 Final match details:", details);
       setItemMatchDetails(details);
     };
 
