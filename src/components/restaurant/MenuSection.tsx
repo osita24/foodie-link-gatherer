@@ -92,11 +92,6 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
 
   return (
     <div className="space-y-6">
-      {session && restaurant && (
-        <div className="animate-fade-in">
-          <MatchScoreCard restaurant={restaurant} />
-        </div>
-      )}
       <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
         <CardContent className="p-0">
           <div className="relative">

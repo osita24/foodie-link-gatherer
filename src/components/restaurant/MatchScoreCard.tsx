@@ -4,9 +4,6 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/auth/AuthModal";
-import { generateRestaurantInsights } from "@/utils/restaurantInsights";
-import { mapSupabaseToUserPreferences } from "@/utils/preferencesMapper";
-import { toast } from "sonner";
 
 interface MatchScoreCardProps {
   restaurant: any;
@@ -33,7 +30,8 @@ const MatchScoreCard = ({ restaurant }: MatchScoreCardProps) => {
   }, []);
 
   useEffect(() => {
-    const loadInsights = async () => {
+    // Simulating loading insights with fake data for now
+    const loadFakeInsights = async () => {
       if (!session?.user || !restaurant) {
         console.log("❌ Cannot load insights - missing user or restaurant data");
         return;
@@ -41,35 +39,25 @@ const MatchScoreCard = ({ restaurant }: MatchScoreCardProps) => {
 
       try {
         setIsLoading(true);
-        console.log("🔍 Loading user preferences for insights...");
+        console.log("🔍 Loading fake insights for restaurant:", restaurant.name);
         
-        const { data: preferencesData, error: preferencesError } = await supabase
-          .from('user_preferences')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single();
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
-        if (preferencesError) {
-          console.error("❌ Error loading preferences:", preferencesError);
-          toast.error("Failed to load your preferences");
-          return;
-        }
+        // Fake insights data
+        const fakeInsights = {
+          matchScore: 85,
+          reasons: [
+            "Matches your preferred cuisine style",
+            "Offers several dishes with your favorite proteins",
+            "Atmosphere aligns with your dining preferences"
+          ]
+        };
 
-        if (!preferencesData) {
-          console.log("❌ No preferences found");
-          toast.error("Please set your preferences first");
-          return;
-        }
-
-        const preferences = mapSupabaseToUserPreferences(preferencesData);
-        console.log("✅ User preferences loaded:", preferences);
-
-        const generatedInsights = await generateRestaurantInsights(restaurant, preferences);
-        console.log("✨ Setting insights:", generatedInsights);
-        setInsights(generatedInsights);
+        console.log("✨ Setting fake insights:", fakeInsights);
+        setInsights(fakeInsights);
       } catch (error) {
         console.error("❌ Error loading insights:", error);
-        toast.error("Failed to generate restaurant insights");
       } finally {
         setIsLoading(false);
       }
@@ -77,7 +65,7 @@ const MatchScoreCard = ({ restaurant }: MatchScoreCardProps) => {
 
     if (session && restaurant) {
       console.log("🔄 Loading insights for restaurant:", restaurant.name);
-      loadInsights();
+      loadFakeInsights();
     }
   }, [session, restaurant]);
 
