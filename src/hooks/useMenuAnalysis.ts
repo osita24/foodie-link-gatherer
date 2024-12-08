@@ -14,6 +14,7 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
       let score = 50;
       let reasons: string[] = [];
       let warnings: string[] = [];
+      let bonusPoints = 0;
 
       // Check dietary restrictions first (critical)
       const dietaryConflicts = preferences.dietary_restrictions?.filter(
@@ -56,8 +57,9 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
       );
       
       if (proteinMatches?.length > 0) {
-        score += 30;
-        reasons.push(`Contains ${proteinMatches[0]}`);
+        score += 35;
+        bonusPoints += 10;
+        reasons.push(`Features ${proteinMatches[0]}`);
       }
 
       // Check cuisine preferences (significant positive)
@@ -67,54 +69,65 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
       
       if (cuisineMatches?.length > 0) {
         score += 25;
-        reasons.push(`Matches ${cuisineMatches[0]} cuisine`);
+        bonusPoints += 5;
+        reasons.push(`Matches ${cuisineMatches[0]} cuisine style`);
       }
 
-      // Check ingredients to avoid
-      const ingredientsToAvoid = preferences.favorite_ingredients?.filter(
+      // Check favorite ingredients
+      const favoriteIngredients = preferences.favorite_ingredients?.filter(
         (ingredient: string) => itemContent.includes(ingredient.toLowerCase())
       );
       
-      if (ingredientsToAvoid?.length > 0) {
-        score -= 30;
-        warnings.push(`Contains ${ingredientsToAvoid[0]}`);
+      if (favoriteIngredients?.length > 0) {
+        score += 20;
+        bonusPoints += 5;
+        reasons.push(`Contains ${favoriteIngredients[0]} that you love`);
       }
 
-      // Add neutral reasons if no specific matches found
-      if (reasons.length === 0 && warnings.length === 0) {
-        if (itemContent.includes("vegetarian") || itemContent.includes("vegan")) {
-          reasons.push("Plant-based option available");
-        } else if (itemContent.includes("spicy") || itemContent.includes("hot")) {
-          reasons.push("Spicy dish - adjust to taste");
-        } else if (itemContent.includes("fresh") || itemContent.includes("seasonal")) {
-          reasons.push("Made with fresh ingredients");
-        } else if (itemContent.includes("grilled")) {
-          reasons.push("Grilled preparation");
-        } else if (itemContent.includes("house") || itemContent.includes("signature")) {
-          reasons.push("House specialty");
+      // Add specific dish type bonuses
+      if (itemContent.includes("fresh") || itemContent.includes("seasonal")) {
+        bonusPoints += 3;
+        reasons.push("Made with fresh ingredients");
+      }
+      if (itemContent.includes("house special") || itemContent.includes("signature")) {
+        bonusPoints += 4;
+        reasons.push("Restaurant's signature dish");
+      }
+      if (itemContent.includes("grilled") || itemContent.includes("roasted")) {
+        bonusPoints += 2;
+        reasons.push("Prepared with healthy cooking method");
+      }
+
+      // Determine match type based on final score + bonus points
+      let matchType: 'perfect' | 'good' | 'neutral' | 'warning' = 'neutral';
+      const finalScore = Math.min(100, score + bonusPoints);
+
+      if (finalScore >= 90) matchType = 'perfect';
+      else if (finalScore >= 75) matchType = 'good';
+      else if (finalScore < 40) matchType = 'warning';
+
+      // Ensure we always have a reason
+      if (reasons.length === 0 && !warnings.length) {
+        if (itemContent.includes("spicy")) {
+          reasons.push("Spicy option available");
+        } else if (itemContent.includes("vegetarian")) {
+          reasons.push("Vegetarian-friendly option");
+        } else if (itemContent.includes("classic")) {
+          reasons.push("Classic menu favorite");
         } else {
-          reasons.push("Standard menu item");
+          reasons.push("Traditional preparation");
         }
       }
 
-      // Determine match type based on final score
-      let matchType: 'perfect' | 'good' | 'neutral' | 'warning' = 'neutral';
-      if (score >= 90) matchType = 'perfect';
-      else if (score >= 75) matchType = 'good';
-      else if (score < 40) matchType = 'warning';
-
-      // Cap score between 0 and 100
-      score = Math.max(0, Math.min(100, score));
-
       console.log(`Analysis result for ${item.name}:`, {
-        score,
+        score: finalScore,
         reasons,
         warnings,
         matchType
       });
 
       return {
-        score,
+        score: finalScore,
         reason: reasons[0],
         warning: warnings[0],
         matchType
@@ -126,7 +139,6 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
 
       const details: Record<string, any> = {};
       
-      // First get the current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.log("No authenticated user found");
