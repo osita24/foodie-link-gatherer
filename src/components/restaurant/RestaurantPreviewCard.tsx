@@ -8,9 +8,10 @@ interface RestaurantPreviewProps {
   rating: number;
   address: string;
   imageUrl?: string;
+  cuisine?: string;
 }
 
-const RestaurantPreviewCard = ({ id, name, rating, address, imageUrl }: RestaurantPreviewProps) => {
+const RestaurantPreviewCard = ({ id, name, rating, address, imageUrl, cuisine }: RestaurantPreviewProps) => {
   const navigate = useNavigate();
 
   return (
@@ -29,9 +30,18 @@ const RestaurantPreviewCard = ({ id, name, rating, address, imageUrl }: Restaura
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <h3 className="font-semibold text-lg line-clamp-1">{name}</h3>
-            <div className="flex items-center text-sm text-muted-foreground">
-              <span className="text-yellow-400 mr-1">★</span>
-              <span>{rating.toFixed(1)}</span>
+            <div className="flex flex-col gap-1">
+              {cuisine && (
+                <span className="text-sm text-muted-foreground capitalize">
+                  {cuisine.replace(/_/g, ' ')}
+                </span>
+              )}
+              {typeof rating === 'number' && (
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <span className="text-yellow-400 mr-1">★</span>
+                  <span>{rating.toFixed(1)}</span>
+                </div>
+              )}
             </div>
           </div>
           <ArrowRight className="w-5 h-5 text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
