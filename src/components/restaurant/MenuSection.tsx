@@ -82,51 +82,81 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
 
       const details: Record<string, any> = {};
       
-      for (const item of processedMenu[0].items) {
-        try {
-          const { data: preferences } = await supabase
-            .from('user_preferences')
-            .select('*')
-            .single();
-
-          if (!preferences) {
-            console.log("No preferences found for user, using default score");
-            details[item.id] = { score: 50, matchType: 'neutral' };
-            continue;
-          }
-
-          console.log("Analyzing item with preferences:", item.name);
-          const { data, error } = await supabase.functions.invoke('menu-processor', {
-            body: { 
-              action: 'analyze-item',
-              item,
-              preferences
-            }
-          });
-
-          if (error || !data) {
-            console.error("Error analyzing item:", error);
-            details[item.id] = { score: 50, matchType: 'neutral' };
-            continue;
-          }
-
-          console.log("Analysis result for", item.name, ":", data);
-          details[item.id] = data;
-        } catch (error) {
-          console.error("Error getting match details:", error);
-          details[item.id] = { score: 50, matchType: 'neutral' };
-        }
+      // First get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log("No authenticated user found");
+        return;
       }
 
-      // Sort items by score for better presentation
-      const sortedItems = [...processedMenu[0].items].sort((a, b) => {
-        const scoreA = details[a.id]?.score || 0;
-        const scoreB = details[b.id]?.score || 0;
-        return scoreB - scoreA;
-      });
+      console.log("Loading preferences for user:", user.id);
+      
+      try {
+        // Get user preferences with proper filtering
+        const { data: preferences, error: preferencesError } = await supabase
+          .from('user_preferences')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-      setProcessedMenu([{ ...processedMenu[0], items: sortedItems }]);
-      setItemMatchDetails(details);
+        if (preferencesError) {
+          console.error("Error fetching preferences:", preferencesError);
+          throw preferencesError;
+        }
+
+        if (!preferences) {
+          console.log("No preferences found for user, using default scores");
+          processedMenu[0].items.forEach(item => {
+            details[item.id] = { score: 50, matchType: 'neutral' };
+          });
+          setItemMatchDetails(details);
+          return;
+        }
+
+        console.log("Found user preferences:", preferences);
+
+        for (const item of processedMenu[0].items) {
+          try {
+            console.log("Analyzing item with preferences:", item.name);
+            const { data, error } = await supabase.functions.invoke('menu-processor', {
+              body: { 
+                action: 'analyze-item',
+                item,
+                preferences
+              }
+            });
+
+            if (error || !data) {
+              console.error("Error analyzing item:", error);
+              details[item.id] = { score: 50, matchType: 'neutral' };
+              continue;
+            }
+
+            console.log("Analysis result for", item.name, ":", data);
+            details[item.id] = data;
+          } catch (error) {
+            console.error("Error getting match details:", error);
+            details[item.id] = { score: 50, matchType: 'neutral' };
+          }
+        }
+
+        // Sort items by score for better presentation
+        const sortedItems = [...processedMenu[0].items].sort((a, b) => {
+          const scoreA = details[a.id]?.score || 0;
+          const scoreB = details[b.id]?.score || 0;
+          return scoreB - scoreA;
+        });
+
+        setProcessedMenu([{ ...processedMenu[0], items: sortedItems }]);
+        setItemMatchDetails(details);
+      } catch (error) {
+        console.error("Error in loadMatchDetails:", error);
+        // Set default neutral scores for all items
+        processedMenu[0].items.forEach(item => {
+          details[item.id] = { score: 50, matchType: 'neutral' };
+        });
+        setItemMatchDetails(details);
+      }
     };
 
     loadMatchDetails();
