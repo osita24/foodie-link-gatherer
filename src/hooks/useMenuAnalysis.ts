@@ -8,7 +8,8 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
 
   useEffect(() => {
     const analyzeMenuItem = (item: any, preferences: any) => {
-      console.log('Analyzing menu item:', item.name, 'with preferences:', preferences);
+      console.log('🔍 Analyzing menu item:', item.name);
+      console.log('👤 User preferences:', preferences);
       
       const itemContent = `${item.name} ${item.description || ''}`.toLowerCase();
       let score = 50;
@@ -16,53 +17,63 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
       let warnings: string[] = [];
       let bonusPoints = 0;
 
-      // Check dietary restrictions first (critical)
-      const dietaryConflicts = preferences.dietary_restrictions?.filter(
-        (restriction: string) => {
-          const r = restriction.toLowerCase();
-          if (r === "vegetarian" && 
-              (itemContent.includes("meat") || 
-               itemContent.includes("chicken") || 
-               itemContent.includes("beef") || 
-               itemContent.includes("pork") ||
-               itemContent.includes("fish"))) {
-            return true;
-          }
-          if (r === "vegan" && 
-              (itemContent.includes("meat") || 
-               itemContent.includes("cheese") || 
-               itemContent.includes("cream") || 
-               itemContent.includes("milk") ||
-               itemContent.includes("egg"))) {
-            return true;
-          }
-          if (r === "gluten-free" && 
-              (itemContent.includes("bread") || 
-               itemContent.includes("pasta") || 
-               itemContent.includes("flour"))) {
-            return true;
-          }
-          return itemContent.includes(r);
-        }
-      );
+      // Check dietary restrictions (vegetarian specific logic)
+      if (preferences.dietary_restrictions?.includes('vegetarian')) {
+        const hasMeat = [
+          'chicken', 'beef', 'pork', 'fish', 'seafood', 'lamb', 'turkey', 'meat',
+          'bacon', 'ham', 'sausage', 'prosciutto', 'salami'
+        ].some(meat => itemContent.includes(meat));
 
-      if (dietaryConflicts?.length > 0) {
-        score = 20;
-        warnings.push(`Contains ${dietaryConflicts[0]}`);
+        if (hasMeat) {
+          score = 20;
+          warnings.push("Contains meat (not vegetarian-friendly)");
+        } else {
+          // Likely vegetarian-friendly
+          score += 30;
+          reasons.push("Vegetarian-friendly option");
+        }
       }
 
-      // Check favorite proteins (major positive)
+      // Check other dietary restrictions
+      const otherRestrictions = preferences.dietary_restrictions?.filter(r => r !== 'vegetarian') || [];
+      const restrictionConflicts = otherRestrictions.filter(restriction => {
+        const r = restriction.toLowerCase();
+        if (r === "vegan" && 
+            (itemContent.includes("cheese") || 
+             itemContent.includes("cream") || 
+             itemContent.includes("milk") ||
+             itemContent.includes("egg"))) {
+          return true;
+        }
+        if (r === "gluten-free" && 
+            (itemContent.includes("bread") || 
+             itemContent.includes("pasta") || 
+             itemContent.includes("flour"))) {
+          return true;
+        }
+        return false;
+      });
+
+      if (restrictionConflicts.length > 0) {
+        score = 20;
+        warnings.push(`Not suitable for ${restrictionConflicts[0]} diet`);
+      }
+
+      // Check favorite proteins
       const proteinMatches = preferences.favorite_proteins?.filter(
         (protein: string) => itemContent.includes(protein.toLowerCase())
       );
       
       if (proteinMatches?.length > 0) {
-        score += 35;
-        bonusPoints += 10;
-        reasons.push(`Features ${proteinMatches[0]}`);
+        // Only add protein bonus if it doesn't conflict with dietary restrictions
+        if (!warnings.length) {
+          score += 35;
+          bonusPoints += 10;
+          reasons.push(`Features ${proteinMatches[0]}`);
+        }
       }
 
-      // Check cuisine preferences (significant positive)
+      // Check cuisine preferences
       const cuisineMatches = preferences.cuisine_preferences?.filter(
         (cuisine: string) => itemContent.includes(cuisine.toLowerCase())
       );
@@ -74,28 +85,14 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
       }
 
       // Check favorite ingredients
-      const favoriteIngredients = preferences.favorite_ingredients?.filter(
+      const ingredientMatches = preferences.favorite_ingredients?.filter(
         (ingredient: string) => itemContent.includes(ingredient.toLowerCase())
       );
       
-      if (favoriteIngredients?.length > 0) {
+      if (ingredientMatches?.length > 0 && !warnings.length) {
         score += 20;
         bonusPoints += 5;
-        reasons.push(`Contains ${favoriteIngredients[0]} that you love`);
-      }
-
-      // Add specific dish type bonuses
-      if (itemContent.includes("fresh") || itemContent.includes("seasonal")) {
-        bonusPoints += 3;
-        reasons.push("Made with fresh ingredients");
-      }
-      if (itemContent.includes("house special") || itemContent.includes("signature")) {
-        bonusPoints += 4;
-        reasons.push("Restaurant's signature dish");
-      }
-      if (itemContent.includes("grilled") || itemContent.includes("roasted")) {
-        bonusPoints += 2;
-        reasons.push("Prepared with healthy cooking method");
+        reasons.push(`Contains ${ingredientMatches[0]} that you love`);
       }
 
       // Determine match type based on final score + bonus points
@@ -106,20 +103,12 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
       else if (finalScore >= 75) matchType = 'good';
       else if (finalScore < 40) matchType = 'warning';
 
-      // Ensure we always have a reason
+      // If no specific matches or warnings found, add a generic reason
       if (reasons.length === 0 && !warnings.length) {
-        if (itemContent.includes("spicy")) {
-          reasons.push("Spicy option available");
-        } else if (itemContent.includes("vegetarian")) {
-          reasons.push("Vegetarian-friendly option");
-        } else if (itemContent.includes("classic")) {
-          reasons.push("Classic menu favorite");
-        } else {
-          reasons.push("Traditional preparation");
-        }
+        reasons.push("Standard menu option");
       }
 
-      console.log(`Analysis result for ${item.name}:`, {
+      console.log(`✨ Analysis result for ${item.name}:`, {
         score: finalScore,
         reasons,
         warnings,
