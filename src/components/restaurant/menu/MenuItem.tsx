@@ -1,8 +1,13 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, ThumbsUp, AlertTriangle, Sparkles, ArrowRight, Info, Crown, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { MatchDetailsBadge } from "./MatchDetailsBadge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface MenuItemProps {
   item: {
@@ -11,7 +16,7 @@ interface MenuItemProps {
     description?: string;
     category?: string;
   };
-  matchDetails?: {
+  matchDetails: {
     score: number;
     matchType?: 'perfect' | 'good' | 'neutral' | 'warning' | 'avoid';
     reason?: string;
@@ -21,10 +26,9 @@ interface MenuItemProps {
     rank?: number;
     rankDescription?: string;
   };
-  isAuthenticated: boolean;
 }
 
-const MenuItem = ({ item, matchDetails, isAuthenticated }: MenuItemProps) => {
+const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const cleanName = item.name
@@ -40,8 +44,6 @@ const MenuItem = ({ item, matchDetails, isAuthenticated }: MenuItemProps) => {
   const displayDescription = isExpanded ? description : description?.substring(0, 100);
 
   const getMatchStyle = (matchType: string = 'neutral') => {
-    if (!isAuthenticated) return "hover:bg-gray-50/50";
-    
     switch (matchType) {
       case 'perfect':
         return "border-l-4 border-emerald-400 bg-gradient-to-r from-emerald-50 to-transparent";
@@ -56,8 +58,41 @@ const MenuItem = ({ item, matchDetails, isAuthenticated }: MenuItemProps) => {
     }
   };
 
+  const getScoreColor = (matchType: string = 'neutral') => {
+    switch (matchType) {
+      case 'perfect':
+        return "text-emerald-700 bg-emerald-100";
+      case 'good':
+        return "text-blue-700 bg-blue-100";
+      case 'warning':
+        return "text-yellow-700 bg-yellow-100";
+      case 'avoid':
+        return "text-red-700 bg-red-100";
+      default:
+        return "text-gray-700 bg-gray-100";
+    }
+  };
+
+  const getMatchIcon = (matchType: string = 'neutral', rank?: number) => {
+    if (rank && rank <= 3) {
+      return rank === 1 ? <Crown className="w-3 h-3 ml-1" /> : <Star className="w-3 h-3 ml-1" />;
+    }
+    switch (matchType) {
+      case 'perfect':
+        return <Sparkles className="w-3 h-3 ml-1" />;
+      case 'good':
+        return <ThumbsUp className="w-3 h-3 ml-1" />;
+      case 'warning':
+        return <AlertTriangle className="w-3 h-3 ml-1" />;
+      case 'avoid':
+        return <AlertTriangle className="w-3 h-3 ml-1" />;
+      default:
+        return <Info className="w-3 h-3 ml-1" />;
+    }
+  };
+
   const getRankBadge = (rank?: number) => {
-    if (!isAuthenticated || !rank || rank > 3) return null;
+    if (!rank || rank > 3) return null;
     
     const badges = {
       1: "bg-gradient-to-r from-yellow-400 to-yellow-600 text-white",
@@ -77,10 +112,10 @@ const MenuItem = ({ item, matchDetails, isAuthenticated }: MenuItemProps) => {
       className={cn(
         "group relative p-4 rounded-lg transition-all duration-300",
         "hover:shadow-md",
-        getMatchStyle(matchDetails?.matchType)
+        getMatchStyle(matchDetails.matchType)
       )}
     >
-      {getRankBadge(matchDetails?.rank)}
+      {getRankBadge(matchDetails.rank)}
       
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 space-y-2">
@@ -89,9 +124,33 @@ const MenuItem = ({ item, matchDetails, isAuthenticated }: MenuItemProps) => {
               {cleanName}
             </h3>
             
-            {isAuthenticated && matchDetails && (
-              <MatchDetailsBadge matchDetails={matchDetails} />
-            )}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge 
+                    className={cn(
+                      "animate-fade-in-up cursor-help transition-colors",
+                      getScoreColor(matchDetails.matchType)
+                    )}
+                  >
+                    {matchDetails.rankDescription || "Try something new"}
+                    {getMatchIcon(matchDetails.matchType, matchDetails.rank)}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-sm">
+                    {matchDetails.highlights?.map((highlight, index) => (
+                      <span key={index} className="block">• {highlight}</span>
+                    ))}
+                    {matchDetails.considerations?.map((consideration, index) => (
+                      <span key={index} className="block text-red-600">• {consideration}</span>
+                    ))}
+                    {!matchDetails.highlights && !matchDetails.considerations && 
+                      "Try something new! This dish might surprise you."}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           
           {description && (
@@ -115,17 +174,17 @@ const MenuItem = ({ item, matchDetails, isAuthenticated }: MenuItemProps) => {
             </div>
           )}
           
-          {isAuthenticated && matchDetails && (matchDetails.highlights?.length || matchDetails.considerations?.length) && (
+          {(matchDetails.highlights?.length || matchDetails.considerations?.length) && (
             <div className="flex items-center gap-2 flex-wrap animate-fade-in-up">
               {matchDetails.highlights?.map((highlight, index) => (
                 <span key={index} className="text-sm text-emerald-700 font-medium flex items-center gap-1">
-                  <ChevronUp className="w-3 h-3" />
+                  <Sparkles className="w-3 h-3" />
                   {highlight}
                 </span>
               ))}
               {matchDetails.considerations?.map((consideration, index) => (
                 <span key={index} className="text-sm text-red-700 font-medium flex items-center gap-1">
-                  <ChevronDown className="w-3 h-3" />
+                  <AlertTriangle className="w-3 h-3" />
                   {consideration}
                 </span>
               ))}

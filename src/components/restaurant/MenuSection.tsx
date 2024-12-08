@@ -8,6 +8,8 @@ import MenuItem from "./menu/MenuItem";
 import MenuHeader from "./menu/MenuHeader";
 import MatchScoreCard from "./MatchScoreCard";
 import { useRestaurantMatch } from "@/hooks/useRestaurantMatch";
+import UnauthenticatedState from "../auth/UnauthenticatedState";
+import { useLocation } from "react-router-dom";
 
 interface MenuSectionProps {
   menu?: MenuCategory[];
@@ -21,17 +23,18 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [itemMatchDetails, setItemMatchDetails] = useState<Record<string, any>>({});
   const { categories } = useRestaurantMatch(null);
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState(null);
+  const location = useLocation();
 
   useEffect(() => {
-    // Check initial session
+    // Check and set initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log("Auth state changed:", _event, session?.user?.id);
+      console.log("🔐 Auth state changed in MenuSection:", session?.user?.id);
       setSession(session);
     });
 
@@ -103,6 +106,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
           const { data: preferences } = await supabase
             .from('user_preferences')
             .select('*')
+            .eq('user_id', session.user.id)
             .single();
 
           if (!preferences) {
@@ -169,6 +173,19 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
     );
   }
 
+  if (!session?.user) {
+    return (
+      <UnauthenticatedState 
+        title="Get Personalized Menu Recommendations"
+        description="Sign up to see which menu items match your taste preferences and dietary requirements. We'll analyze each dish and provide personalized recommendations just for you."
+        onAuthClick={() => {
+          // Store the current location for redirect after onboarding
+          localStorage.setItem('redirectAfterAuth', location.pathname);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       <MatchScoreCard categories={categories} />
@@ -182,8 +199,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
                   <MenuItem
                     key={item.id}
                     item={item}
-                    matchDetails={session ? itemMatchDetails[item.id] : undefined}
-                    isAuthenticated={!!session}
+                    matchDetails={itemMatchDetails[item.id] || { score: 75 }}
                   />
                 ))}
               </div>

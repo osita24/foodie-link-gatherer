@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import AuthForm from "./AuthForm";
 import AuthHeader from "./AuthHeader";
@@ -13,7 +13,6 @@ interface AuthModalProps {
 
 const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const location = useLocation();
-  const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -35,13 +34,6 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
             emailRedirectTo: window.location.origin
           }
         });
-
-        if (result.data?.user && !result.error) {
-          // Store the current URL for redirection after onboarding
-          localStorage.setItem('returnUrl', location.pathname);
-          // Redirect to onboarding
-          navigate('/onboarding');
-        }
       } else {
         result = await supabase.auth.signInWithPassword({
           email,
@@ -53,7 +45,12 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
         throw result.error;
       }
 
-      if (!isSignUp) {
+      if (isSignUp) {
+        toast({
+          title: "Success!",
+          description: "Please check your email to verify your account.",
+        });
+      } else {
         toast({
           title: "Success!",
           description: "Successfully signed in.",
