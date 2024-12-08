@@ -7,12 +7,14 @@ export interface MatchResult {
 }
 
 export const calculateCuisineMatch = (restaurant: RestaurantDetails, preferences: UserPreferences): MatchResult => {
+  console.log('🍽️ Calculating cuisine match:', { restaurantTypes: restaurant.types, userPreferences: preferences.cuisinePreferences });
+  
   if (!preferences.cuisinePreferences?.length) {
-    return { score: 85, description: "Based on popular cuisine type" };
+    return { score: 50, description: "No cuisine preferences set" };
   }
 
   const restaurantCuisines = restaurant.types?.filter(type => 
-    type.includes('cuisine') || type.includes('food')
+    type.toLowerCase().includes('cuisine') || type.toLowerCase().includes('food')
   ) || [];
 
   const matchCount = restaurantCuisines.filter(cuisine =>
@@ -22,41 +24,56 @@ export const calculateCuisineMatch = (restaurant: RestaurantDetails, preferences
   ).length;
 
   const score = matchCount > 0 
-    ? Math.min(100, 70 + (matchCount * 10))
-    : 70;
+    ? Math.min(100, 60 + (matchCount * 20))
+    : 40;
 
   return {
     score,
     description: matchCount > 0 
       ? `Matches ${matchCount} of your preferred cuisines`
-      : "Popular cuisine type that you might enjoy"
+      : "Different from your preferred cuisines"
   };
 };
 
 export const calculateDietaryMatch = (restaurant: RestaurantDetails, preferences: UserPreferences): MatchResult => {
+  console.log('🥗 Calculating dietary match:', { restaurantOptions: restaurant, restrictions: preferences.dietaryRestrictions });
+  
   if (!preferences.dietaryRestrictions?.length) {
-    return { score: 90, description: "No dietary restrictions specified" };
+    return { score: 85, description: "No dietary restrictions specified" };
   }
 
+  // Check if restaurant has vegetarian options when user requires them
+  const needsVegetarian = preferences.dietaryRestrictions.some(r => 
+    r.toLowerCase().includes('vegetarian')
+  );
   const hasVegetarian = restaurant.servesVegetarianFood;
-  const score = hasVegetarian ? 95 : 75;
+
+  if (needsVegetarian && !hasVegetarian) {
+    return {
+      score: 30,
+      description: "May not accommodate vegetarian diet"
+    };
+  }
 
   return {
-    score,
+    score: hasVegetarian ? 95 : 75,
     description: hasVegetarian 
       ? "Offers vegetarian options"
-      : "Limited information about dietary options"
+      : "Limited dietary information available"
   };
 };
 
 export const calculateAtmosphereMatch = (restaurant: RestaurantDetails, preferences: UserPreferences): MatchResult => {
+  console.log('✨ Calculating atmosphere match:', { restaurantAttr: restaurant, preferences: preferences.atmospherePreferences });
+  
   if (!preferences.atmospherePreferences?.length) {
-    return { score: 85, description: "Based on general atmosphere" };
+    return { score: 50, description: "No atmosphere preferences set" };
   }
 
   const atmosphereAttributes = [
     restaurant.reservable && 'Fine Dining',
     restaurant.dineIn && 'Casual Dining',
+    restaurant.takeout && 'Quick Service',
   ].filter(Boolean);
 
   const matchCount = atmosphereAttributes.filter(attr =>
@@ -64,20 +81,22 @@ export const calculateAtmosphereMatch = (restaurant: RestaurantDetails, preferen
   ).length;
 
   const score = matchCount > 0 
-    ? Math.min(100, 75 + (matchCount * 10))
-    : 75;
+    ? Math.min(100, 50 + (matchCount * 25))
+    : 40;
 
   return {
     score,
     description: matchCount > 0
-      ? `Matches ${matchCount} of your preferred atmosphere types`
-      : "General atmosphere rating"
+      ? `Matches ${matchCount} of your preferred atmospheres`
+      : "Different atmosphere than preferred"
   };
 };
 
 export const calculatePriceMatch = (restaurant: RestaurantDetails, preferences: UserPreferences): MatchResult => {
+  console.log('💰 Calculating price match:', { restaurantPrice: restaurant.priceLevel, userPreference: preferences.priceRange });
+  
   if (!preferences.priceRange) {
-    return { score: 85, description: "Based on average pricing" };
+    return { score: 50, description: "No price preference set" };
   }
 
   const priceMap: Record<string, number[]> = {
@@ -90,12 +109,14 @@ export const calculatePriceMatch = (restaurant: RestaurantDetails, preferences: 
   const preferredLevels = priceMap[preferences.priceRange];
   const restaurantLevel = restaurant.priceLevel || 2;
 
-  const score = preferredLevels.includes(restaurantLevel) ? 95 : 75;
+  const score = preferredLevels.includes(restaurantLevel) 
+    ? 90 
+    : Math.max(40, 80 - (Math.abs(restaurantLevel - preferredLevels[0]) * 20));
 
   return {
     score,
-    description: score > 90 
+    description: score > 80 
       ? "Matches your preferred price range"
-      : "Slightly outside your preferred price range"
+      : "Outside your preferred price range"
   };
 };

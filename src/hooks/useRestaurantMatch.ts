@@ -7,7 +7,6 @@ import {
   calculateDietaryMatch, 
   calculateAtmosphereMatch, 
   calculatePriceMatch,
-  MatchResult as CategoryMatchResult 
 } from './restaurant-match/matchCalculators';
 
 interface MatchCategory {
@@ -64,7 +63,7 @@ export const useRestaurantMatch = (restaurant: RestaurantDetails | null): MatchR
         
         const preferences = mapSupabaseToUserPreferences(preferencesData);
 
-        // Calculate matches using the utility functions
+        // Calculate individual matches
         const cuisineMatch = calculateCuisineMatch(restaurant, preferences);
         const dietaryMatch = calculateDietaryMatch(restaurant, preferences);
         const atmosphereMatch = calculateAtmosphereMatch(restaurant, preferences);
@@ -97,11 +96,28 @@ export const useRestaurantMatch = (restaurant: RestaurantDetails | null): MatchR
           }
         ];
 
+        // Calculate weighted average
+        const weights = {
+          cuisine: 0.35,
+          dietary: 0.3,
+          atmosphere: 0.2,
+          price: 0.15
+        };
+
         const overallScore = Math.round(
-          categories.reduce((acc, cat) => acc + cat.score, 0) / categories.length
+          (cuisineMatch.score * weights.cuisine) +
+          (dietaryMatch.score * weights.dietary) +
+          (atmosphereMatch.score * weights.atmosphere) +
+          (priceMatch.score * weights.price)
         );
 
-        console.log('✨ Match calculation complete:', { overallScore, categories });
+        console.log('✨ Match calculation complete:', { 
+          overallScore, 
+          cuisineScore: cuisineMatch.score,
+          dietaryScore: dietaryMatch.score,
+          atmosphereScore: atmosphereMatch.score,
+          priceScore: priceMatch.score
+        });
 
         setMatchResult({
           overallScore,
