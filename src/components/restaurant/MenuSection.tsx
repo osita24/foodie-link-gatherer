@@ -24,6 +24,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
   const { categories } = useRestaurantMatch(restaurant);
   const { itemMatchDetails, analyzedMenu } = useMenuAnalysis(processedMenu);
   const [session, setSession] = useState<any>(null);
+  const [topMatchId, setTopMatchId] = useState<string | null>(null);
 
   useEffect(() => {
     console.log("🔍 Initializing MenuSection with restaurant:", restaurant?.name);
@@ -47,6 +48,19 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
       processRestaurantData();
     }
   }, [menu, photos, reviews, menuUrl]);
+
+  useEffect(() => {
+    // Find the item with the highest match score
+    if (session && itemMatchDetails) {
+      const scores = Object.entries(itemMatchDetails).map(([id, details]) => ({
+        id,
+        score: details.score || 0
+      }));
+      const topMatch = scores.sort((a, b) => b.score - a.score)[0];
+      setTopMatchId(topMatch?.id || null);
+      console.log("🏆 Top match identified:", topMatch);
+    }
+  }, [itemMatchDetails, session]);
 
   const processRestaurantData = async () => {
     setIsProcessing(true);
@@ -108,6 +122,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
                     key={item.id}
                     item={item}
                     matchDetails={session ? (itemMatchDetails[item.id] || { score: 50, matchType: 'neutral' }) : null}
+                    isTopMatch={session && item.id === topMatchId}
                   />
                 ))}
               </div>

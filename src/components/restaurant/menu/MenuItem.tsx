@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, ThumbsUp, AlertTriangle, Sparkles, ArrowRight } from "lucide-react";
+import { ChevronDown, ChevronUp, ThumbsUp, AlertTriangle, Sparkles, ArrowRight, Crown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
@@ -23,9 +23,10 @@ interface MenuItemProps {
     warning?: string;
     matchType?: 'perfect' | 'good' | 'neutral' | 'warning';
   } | null;
+  isTopMatch?: boolean;
 }
 
-const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
+const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const cleanName = item.name
@@ -41,15 +42,19 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
   const displayDescription = isExpanded ? description : description?.substring(0, 100);
 
   const getMatchStyle = (matchType: string = 'neutral') => {
+    const baseStyle = isTopMatch 
+      ? "border-2 border-primary shadow-lg bg-primary/5"
+      : "border-l-4 hover:bg-gray-50/50";
+
     switch (matchType) {
       case 'perfect':
-        return "border-l-4 border-emerald-400 bg-gradient-to-r from-emerald-50 to-transparent";
+        return cn(baseStyle, isTopMatch ? "" : "border-emerald-400 bg-gradient-to-r from-emerald-50 to-transparent");
       case 'good':
-        return "border-l-4 border-blue-400 bg-gradient-to-r from-blue-50 to-transparent";
+        return cn(baseStyle, isTopMatch ? "" : "border-blue-400 bg-gradient-to-r from-blue-50 to-transparent");
       case 'warning':
-        return "border-l-4 border-red-400 bg-gradient-to-r from-red-50 to-transparent";
+        return cn(baseStyle, isTopMatch ? "" : "border-red-400 bg-gradient-to-r from-red-50 to-transparent");
       default:
-        return "border-l-4 border-gray-200 hover:bg-gray-50/50";
+        return cn(baseStyle, isTopMatch ? "" : "border-gray-200");
     }
   };
 
@@ -67,6 +72,7 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
   };
 
   const getMatchLabel = (matchType: string = 'neutral') => {
+    if (isTopMatch) return "TOP MATCH! 👑";
     switch (matchType) {
       case 'perfect':
         return "PERFECT MATCH! 🎯";
@@ -80,6 +86,7 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
   };
 
   const getMatchIcon = (matchType: string = 'neutral') => {
+    if (isTopMatch) return <Crown className="w-3 h-3 ml-1 text-primary animate-bounce" />;
     switch (matchType) {
       case 'perfect':
         return <Sparkles className="w-3 h-3 ml-1" />;
@@ -100,6 +107,11 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
         getMatchStyle(matchDetails?.matchType)
       )}
     >
+      {isTopMatch && (
+        <div className="absolute -top-2 -right-2 bg-primary text-white px-2 py-1 rounded-full text-xs font-semibold shadow-lg animate-bounce">
+          Top Match
+        </div>
+      )}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 space-y-2">
           <div className="flex items-start gap-2 flex-wrap">
