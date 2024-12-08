@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import MenuItem from "./menu/MenuItem";
 import MenuHeader from "./menu/MenuHeader";
+import MatchScoreCard from "./MatchScoreCard";
 import { useRestaurantMatch } from "@/hooks/useRestaurantMatch";
 import { useMenuAnalysis } from "@/hooks/useMenuAnalysis";
 import MenuLoadingState from "./menu/MenuLoadingState";
@@ -104,25 +105,32 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
   const menuToDisplay = session ? (analyzedMenu || processedMenu) : processedMenu;
 
   return (
-    <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
-      <CardContent className="p-0">
-        <div className="relative">
-          <MenuHeader menuUrl={menuUrl} />
-          <div className="p-4 md:p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {menuToDisplay[0].items.map((item) => (
-                <MenuItem
-                  key={item.id}
-                  item={item}
-                  matchDetails={session ? (itemMatchDetails[item.id] || { score: 50, matchType: 'neutral' }) : null}
-                  isTopMatch={session && item.id === topMatchId}
-                />
-              ))}
+    <div className="space-y-6">
+      {session && restaurant && (
+        <div className="animate-fade-in">
+          <MatchScoreCard restaurant={restaurant} />
+        </div>
+      )}
+      <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
+        <CardContent className="p-0">
+          <div className="relative">
+            <MenuHeader menuUrl={menuUrl} />
+            <div className="p-4 md:p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {menuToDisplay[0].items.map((item) => (
+                  <MenuItem
+                    key={item.id}
+                    item={item}
+                    matchDetails={session ? (itemMatchDetails[item.id] || { score: 50, matchType: 'neutral' }) : null}
+                    isTopMatch={session && item.id === topMatchId}
+                  />
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
