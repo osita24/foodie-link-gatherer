@@ -26,6 +26,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
   const [session, setSession] = useState<any>(null);
 
   useEffect(() => {
+    console.log("🔍 Initializing MenuSection with restaurant:", restaurant?.name);
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
@@ -37,30 +38,17 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
 
   useEffect(() => {
     if (menu) {
-      console.log("Using provided menu data:", menu);
+      console.log("📋 Using provided menu data:", menu);
       setProcessedMenu(menu);
     } else if (menuUrl || photos?.length || reviews?.length) {
-      console.log("Processing available data:", {
-        menuUrl: menuUrl || 'none',
-        photos: photos?.length || 0,
-        reviews: reviews?.length || 0
-      });
+      console.log("🔄 Processing available data sources");
       processRestaurantData();
-    } else {
-      console.log("No data available to process");
     }
   }, [menu, photos, reviews, menuUrl]);
 
   const processRestaurantData = async () => {
     setIsProcessing(true);
     try {
-      console.log("Starting menu processing with data:", {
-        menuUrl,
-        photosCount: photos?.length,
-        reviewsCount: reviews?.length
-      });
-      
-      // Validate and prepare the request payload
       const payload = {
         menuUrl: menuUrl || null,
         photos: photos || [],
@@ -70,44 +58,33 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
         })) || []
       };
 
-      console.log("Sending payload to menu processor:", payload);
+      console.log("📤 Sending payload to menu processor:", payload);
       
       const { data, error } = await supabase.functions.invoke('menu-processor', {
         body: payload
       });
 
-      if (error) {
-        console.error("Error processing data:", error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log("Response from menu processor:", data);
-      
       if (!data?.menuSections?.length) {
-        console.log("No menu sections generated");
         toast.info("Could not generate menu information");
         return;
       }
 
-      console.log("Menu sections generated:", data.menuSections);
+      console.log("✅ Menu sections generated:", data.menuSections);
       setProcessedMenu(data.menuSections);
       toast.success(`Found ${data.menuSections[0].items.length} menu items`);
       
     } catch (error) {
-      console.error("Error processing restaurant data:", error);
+      console.error("❌ Error processing restaurant data:", error);
       toast.error("Failed to generate menu information");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  if (isProcessing) {
-    return <MenuLoadingState isProcessing />;
-  }
-
-  if (!processedMenu || processedMenu.length === 0) {
-    return <MenuLoadingState />;
-  }
+  if (isProcessing) return <MenuLoadingState isProcessing />;
+  if (!processedMenu || processedMenu.length === 0) return <MenuLoadingState />;
 
   const menuToDisplay = session ? (analyzedMenu || processedMenu) : processedMenu;
 

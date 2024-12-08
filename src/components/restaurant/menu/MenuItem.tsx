@@ -66,12 +66,12 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
     }
   };
 
-  const getMatchLabel = (matchType: string = 'neutral', score: number) => {
+  const getMatchLabel = (matchType: string = 'neutral') => {
     switch (matchType) {
       case 'perfect':
         return "PERFECT MATCH! 🎯";
       case 'good':
-        return "GOOD MATCH 👍";
+        return "GREAT CHOICE 👍";
       case 'warning':
         return "HEADS UP ⚠️";
       default:
@@ -96,7 +96,7 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
     <div 
       className={cn(
         "group relative p-4 rounded-lg transition-all duration-300",
-        "hover:shadow-md",
+        "hover:shadow-md animate-fade-in-up",
         getMatchStyle(matchDetails?.matchType)
       )}
     >
@@ -117,7 +117,7 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
                         getScoreColor(matchDetails.matchType)
                       )}
                     >
-                      {getMatchLabel(matchDetails.matchType, matchDetails.score)}
+                      {getMatchLabel(matchDetails.matchType)}
                       {getMatchIcon(matchDetails.matchType)}
                     </Badge>
                   </TooltipTrigger>
@@ -127,9 +127,16 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
                       <p className="text-sm font-medium">
                         {matchDetails.score}% Match Score
                       </p>
-                      <p className="text-xs text-gray-500">
-                        {matchDetails.reason || matchDetails.warning}
-                      </p>
+                      {matchDetails.reason && (
+                        <p className="text-xs text-gray-500">
+                          {matchDetails.reason}
+                        </p>
+                      )}
+                      {matchDetails.warning && (
+                        <p className="text-xs text-red-500">
+                          {matchDetails.warning}
+                        </p>
+                      )}
                     </div>
                   </TooltipContent>
                 </Tooltip>
