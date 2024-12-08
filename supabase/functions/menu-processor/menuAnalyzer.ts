@@ -14,93 +14,77 @@ export async function analyzeMenuItem(
     console.log('👤 User preferences:', preferences);
     
     const itemContent = `${item.name} ${item.description || ''}`.toLowerCase();
-    let score = 50;
+    let score = 50; // Start with neutral score
     let reasons: string[] = [];
-    let warnings: string[] = [];
     let matchType: 'perfect' | 'good' | 'neutral' | 'warning' = 'neutral';
 
-    // Check dietary restrictions first (critical)
-    const dietaryConflicts = preferences.dietary_restrictions?.filter(
-      (restriction: string) => {
-        if (restriction === "No Restrictions") return false;
-        return itemContent.includes(restriction.toLowerCase());
-      }
-    );
-
-    if (dietaryConflicts?.length > 0) {
+    // Critical checks (dietary restrictions) - Major negative impact
+    if (preferences.dietary_restrictions?.some(
+      (restriction: string) => itemContent.includes(restriction.toLowerCase())
+    )) {
       return {
         score: 20,
-        warning: `Contains ${dietaryConflicts.join(", ")}`,
+        warning: "Contains ingredients you typically avoid",
         matchType: 'warning'
       };
     }
 
-    // Check favorite proteins (major positive)
-    const proteinMatches = preferences.favorite_proteins?.filter(
-      (protein: string) => {
-        if (protein === "Doesn't Apply") return false;
-        return itemContent.includes(protein.toLowerCase());
-      }
+    // Favorite proteins - Major positive impact
+    const proteinMatch = preferences.favorite_proteins?.find(
+      (protein: string) => itemContent.includes(protein.toLowerCase())
     );
-    
-    if (proteinMatches?.length > 0) {
-      score += 25;
-      reasons.push(`Contains ${proteinMatches.join(", ")}`);
+    if (proteinMatch) {
+      score += 35;
+      reasons.push(`Contains ${proteinMatch}`);
     }
 
-    // Check cuisine preferences (significant positive)
-    const cuisineMatches = preferences.cuisine_preferences?.filter(
+    // Cuisine preferences - Significant positive impact
+    const cuisineMatch = preferences.cuisine_preferences?.find(
       (cuisine: string) => itemContent.includes(cuisine.toLowerCase())
     );
-    
-    if (cuisineMatches?.length > 0) {
-      score += 20;
-      reasons.push(`Matches ${cuisineMatches[0]} cuisine`);
+    if (cuisineMatch) {
+      score += 25;
+      reasons.push(`Matches ${cuisineMatch} cuisine`);
     }
 
-    // Check foods to avoid (negative impact)
-    const avoidanceMatches = preferences.favorite_ingredients?.filter(
-      (ingredient: string) => {
-        if (ingredient === "No Restrictions") return false;
-        return itemContent.includes(ingredient.toLowerCase());
-      }
+    // Favorite ingredients - Moderate positive impact
+    const ingredientMatch = preferences.favorite_ingredients?.find(
+      (ingredient: string) => itemContent.includes(ingredient.toLowerCase())
     );
-    
-    if (avoidanceMatches?.length > 0) {
-      score -= 30;
-      warnings.push(`Contains ${avoidanceMatches.join(", ")}`);
+    if (ingredientMatch) {
+      score += 15;
+      reasons.push(`Contains ${ingredientMatch}`);
     }
 
     // Determine match type based on final score
-    if (score >= 85) {
+    if (score >= 90) {
       matchType = 'perfect';
-    } else if (score >= 70) {
+    } else if (score >= 75) {
       matchType = 'good';
-    } else if (score < 50) {
+    } else if (score < 40) {
       matchType = 'warning';
     }
 
-    // Cap the score between 0 and 100
-    score = Math.max(0, Math.min(100, score));
+    // Cap the score at 100
+    score = Math.min(100, score);
 
     console.log(`✨ Analysis result for ${item.name}:`, {
       score,
       reasons,
-      warnings,
       matchType
     });
 
     return {
       score,
       reason: reasons.length > 0 ? reasons.join(" • ") : undefined,
-      warning: warnings.length > 0 ? warnings.join(" • ") : undefined,
       matchType
     };
   } catch (error) {
     console.error('❌ Error analyzing menu item:', error);
     return { 
       score: 50,
-      matchType: 'neutral'
+      matchType: 'neutral',
+      reason: "Could not analyze this item"
     };
   }
 }
