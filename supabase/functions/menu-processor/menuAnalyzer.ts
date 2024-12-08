@@ -16,7 +16,6 @@ export async function analyzeMenuItem(
     const itemContent = `${item.name} ${item.description || ''}`.toLowerCase();
     let score = 50; // Start with neutral score
     let reasons: string[] = [];
-    let matchType: 'perfect' | 'good' | 'neutral' | 'warning' = 'neutral';
 
     // Critical checks (dietary restrictions) - Major negative impact
     if (preferences.dietary_restrictions?.some(
@@ -47,44 +46,31 @@ export async function analyzeMenuItem(
       reasons.push(`Matches ${cuisineMatch} cuisine`);
     }
 
-    // Favorite ingredients - Moderate positive impact
-    const ingredientMatch = preferences.favorite_ingredients?.find(
-      (ingredient: string) => itemContent.includes(ingredient.toLowerCase())
-    );
-    if (ingredientMatch) {
-      score += 15;
-      reasons.push(`Contains ${ingredientMatch}`);
+    // Foods to avoid - Moderate negative impact
+    if (preferences.foodsToAvoid?.some(
+      (food: string) => itemContent.includes(food.toLowerCase())
+    )) {
+      score -= 30;
+      return {
+        score: Math.max(30, score),
+        warning: "Contains ingredients you prefer to avoid",
+        matchType: 'warning'
+      };
     }
 
     // Determine match type based on final score
-    if (score >= 90) {
-      matchType = 'perfect';
-    } else if (score >= 75) {
-      matchType = 'good';
-    } else if (score < 40) {
-      matchType = 'warning';
-    }
-
-    // Cap the score at 100
-    score = Math.min(100, score);
-
-    console.log(`✨ Analysis result for ${item.name}:`, {
-      score,
-      reasons,
-      matchType
-    });
+    let matchType: 'perfect' | 'good' | 'neutral' | 'warning' = 'neutral';
+    if (score >= 90) matchType = 'perfect';
+    else if (score >= 75) matchType = 'good';
+    else if (score < 40) matchType = 'warning';
 
     return {
-      score,
+      score: Math.min(100, score),
       reason: reasons.length > 0 ? reasons.join(" • ") : undefined,
       matchType
     };
   } catch (error) {
     console.error('❌ Error analyzing menu item:', error);
-    return { 
-      score: 50,
-      matchType: 'neutral',
-      reason: "Could not analyze this item"
-    };
+    return { score: 50, matchType: 'neutral' };
   }
 }

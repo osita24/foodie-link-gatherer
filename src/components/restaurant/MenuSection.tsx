@@ -90,12 +90,10 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
             .single();
 
           if (!preferences) {
-            console.log("No preferences found for user, using default score");
-            details[item.id] = { score: 50, matchType: 'neutral' };
+            details[item.id] = { score: 75 };
             continue;
           }
 
-          console.log("Analyzing item with preferences:", item.name);
           const { data, error } = await supabase.functions.invoke('menu-processor', {
             body: { 
               action: 'analyze-item',
@@ -106,26 +104,17 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
 
           if (error || !data) {
             console.error("Error analyzing item:", error);
-            details[item.id] = { score: 50, matchType: 'neutral' };
+            details[item.id] = { score: 75 };
             continue;
           }
 
-          console.log("Analysis result for", item.name, ":", data);
           details[item.id] = data;
         } catch (error) {
           console.error("Error getting match details:", error);
-          details[item.id] = { score: 50, matchType: 'neutral' };
+          details[item.id] = { score: 75 };
         }
       }
 
-      // Sort items by score for better presentation
-      const sortedItems = [...processedMenu[0].items].sort((a, b) => {
-        const scoreA = details[a.id]?.score || 0;
-        const scoreB = details[b.id]?.score || 0;
-        return scoreB - scoreA;
-      });
-
-      setProcessedMenu([{ ...processedMenu[0], items: sortedItems }]);
       setItemMatchDetails(details);
     };
 
@@ -177,7 +166,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
                   <MenuItem
                     key={item.id}
                     item={item}
-                    matchDetails={itemMatchDetails[item.id] || { score: 50, matchType: 'neutral' }}
+                    matchDetails={itemMatchDetails[item.id] || { score: 75 }}
                   />
                 ))}
               </div>
