@@ -14,45 +14,44 @@ serve(async (req) => {
   try {
     const { restaurant, preferences } = await req.json();
     
-    console.log("🔍 Analyzing restaurant:", restaurant);
+    console.log("🔍 Analyzing restaurant:", restaurant.name);
     console.log("👤 User preferences:", preferences);
 
     if (!restaurant) {
-      console.error("❌ No restaurant data provided");
       throw new Error("Restaurant data is required");
     }
 
     const prompt = `As a friendly AI restaurant expert, analyze this restaurant and the user's preferences to generate a personalized match score and explanation.
 
 Restaurant Details:
-- Name: ${restaurant.name || 'Unknown'}
+- Name: ${restaurant.name}
 - Cuisine Types: ${restaurant.types?.join(', ') || 'Not specified'}
-- Price Level: ${restaurant.priceLevel || 'Not specified'}
+- Price Level: ${restaurant.priceLevel}
 - Features: ${Object.entries(restaurant)
   .filter(([key, value]) => key.startsWith('serves') && value === true)
   .map(([key]) => key.replace('serves', ''))
-  .join(', ') || 'None specified'}
+  .join(', ')}
 
 User Preferences:
 - Cuisine Preferences: ${preferences.cuisinePreferences?.join(', ') || 'None specified'}
 - Dietary Restrictions: ${preferences.dietaryRestrictions?.join(', ') || 'None specified'}
 - Favorite Ingredients: ${preferences.favoriteIngredients?.join(', ') || 'None specified'}
-- Spice Level (1-5): ${preferences.spiceLevel || 'Not specified'}
+- Spice Level: ${preferences.spiceLevel || 'Not specified'}
 - Price Range: ${preferences.priceRange || 'Not specified'}
 - Atmosphere Preferences: ${preferences.atmospherePreferences?.join(', ') || 'None specified'}
 
 Generate:
 1. A match score (0-100) based on how well this restaurant aligns with the user's preferences
-2. Three clear, specific reasons explaining why this score was given. Be direct and honest about both positive and negative aspects.
+2. Three clear, specific reasons explaining the score. Be direct, engaging, and personalized. Focus on both positive matches and potential considerations.
 
-Format the response as a JSON object with 'matchScore' and 'reasons' fields. Be specific and personalized in the reasons.`;
+Format the response as a JSON object with 'matchScore' and 'reasons' fields. Make the reasons fun and helpful for decision-making.`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content: "You are a knowledgeable restaurant expert that provides clear, specific insights to help users make dining decisions."
+          content: "You are a knowledgeable and friendly restaurant expert that provides clear, specific insights to help users make dining decisions. Your tone is casual and engaging."
         },
         {
           role: "user",

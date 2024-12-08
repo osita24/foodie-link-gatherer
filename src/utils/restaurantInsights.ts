@@ -11,7 +11,8 @@ export async function generateRestaurantInsights(
   restaurant: RestaurantDetails,
   preferences: UserPreferences
 ): Promise<InsightResponse> {
-  console.log("🤖 Generating restaurant insights...");
+  console.log("🤖 Generating restaurant insights for:", restaurant.name);
+  console.log("👤 Using preferences:", preferences);
   
   try {
     const { data: insights, error } = await supabase.functions.invoke('restaurant-insights', {
