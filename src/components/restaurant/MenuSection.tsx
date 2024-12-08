@@ -60,7 +60,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
       
       if (!data?.menuSections?.length) {
         console.log("No menu sections generated");
-        toast.info("Could not generate menu information");
+        toast.error("Could not generate menu information");
         return;
       }
 
@@ -70,7 +70,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
       
     } catch (error) {
       console.error("Error processing restaurant data:", error);
-      toast.error("Failed to generate menu information");
+      toast.error("Failed to generate menu information. Please try again.");
     } finally {
       setIsProcessing(false);
     }
@@ -90,10 +90,12 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
             .single();
 
           if (!preferences) {
+            console.log("No preferences found, using default score");
             details[item.id] = { score: 75 };
             continue;
           }
 
+          console.log("Analyzing item with preferences:", { item, preferences });
           const { data, error } = await supabase.functions.invoke('menu-processor', {
             body: { 
               action: 'analyze-item',
@@ -102,12 +104,13 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
             }
           });
 
-          if (error || !data) {
+          if (error) {
             console.error("Error analyzing item:", error);
             details[item.id] = { score: 75 };
             continue;
           }
 
+          console.log("Analysis result for item:", data);
           details[item.id] = data;
         } catch (error) {
           console.error("Error getting match details:", error);

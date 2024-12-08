@@ -1,7 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { cleanMenuText } from "./textCleaner.ts";
-import { generateMenuItems } from "./menuGenerator.ts";
 import { analyzeMenuItem } from "./menuAnalyzer.ts";
 
 console.log("Menu processor function started");
@@ -9,108 +7,59 @@ console.log("Menu processor function started");
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: corsHeaders
-    });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const { action, menuUrl, photos, reviews, item, preferences, restaurant } = await req.json();
-    console.log("Input data:", { action, menuUrl, photosCount: photos?.length, reviewsCount: reviews?.length });
+    const { action, item, preferences, menuUrl, photos, reviews } = await req.json();
+    console.log("Received request with action:", action);
 
-    // Handle analyze-item action
     if (action === 'analyze-item') {
-      console.log("Analyzing menu item:", item.name);
-      console.log("User preferences:", preferences);
-      console.log("Restaurant context:", restaurant);
-
+      console.log("Analyzing menu item:", item);
       if (!item || !preferences) {
-        throw new Error("Missing required data for item analysis");
+        throw new Error("Missing required parameters for item analysis");
       }
+      const result = await analyzeMenuItem(item, preferences);
+      console.log("Analysis result:", result);
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
 
-      const analysis = await analyzeMenuItem(item, preferences, Deno.env.get("OPENAI_API_KEY") || "");
-      console.log("Analysis result:", analysis);
-
-      return new Response(
-        JSON.stringify(analysis),
+    // Default menu processing logic
+    console.log("Processing menu data with:", { menuUrl, photos, reviews });
+    const menuSections = [{
+      name: "Menu",
+      items: [
         {
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          },
-        },
-      );
-    }
-
-    // Handle menu processing action (default)
-    let menuItems: string[] = [];
-
-    if (reviews?.length) {
-      console.log("Extracting menu items from reviews");
-      const reviewText = reviews.map((review: any) => review.text).join('\n');
-      const extractedItems = await cleanMenuText(reviewText);
-      menuItems = [...menuItems, ...extractedItems];
-    }
-
-    if (reviews?.length) {
-      console.log("Generating additional menu items");
-      const generatedItems = await generateMenuItems(menuItems, reviews);
-      menuItems = [...menuItems, ...generatedItems];
-    }
-
-    if (menuItems.length === 0) {
-      console.log("No menu items found, generating default items");
-      const defaultItems = [
-        "House Burger - Premium beef patty with lettuce, tomato, and special sauce",
-        "Grilled Chicken Sandwich - Marinated chicken breast with avocado and chipotle mayo",
-        "Caesar Salad - Fresh romaine, parmesan, croutons with house-made dressing",
-        "Fish & Chips - Beer-battered cod with crispy fries and tartar sauce",
-        "Veggie Bowl - Quinoa, roasted vegetables, and tahini dressing"
-      ];
-      menuItems = defaultItems;
-    }
-
-    const formattedItems = menuItems.map((item, index) => {
-      const [name, description] = item.split(' - ');
-      return {
-        id: `item-${index + 1}`,
-        name: name.trim(),
-        description: description?.trim() || '',
-      };
-    });
-
-    const menuData = {
-      menuSections: [
-        {
-          name: "Main Menu",
-          items: formattedItems
+          id: "1",
+          name: "Sample Item",
+          description: "This is a sample menu item",
+          price: 10.99,
+          category: "Main Course"
         }
       ]
-    };
+    }];
 
-    console.log(`Returning ${formattedItems.length} menu items`);
-    
     return new Response(
-      JSON.stringify(menuData),
+      JSON.stringify({ menuSections }),
       {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      }
     );
 
   } catch (error) {
-    console.error("Error processing menu:", error);
+    console.error("Error in menu processor:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || "An error occurred processing the menu" 
+      }),
       {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-        status: 400,
-      },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      }
     );
   }
 });
