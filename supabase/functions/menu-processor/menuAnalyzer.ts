@@ -1,8 +1,15 @@
-import { UserPreferences } from "../../../src/types/preferences";
+interface Restaurant {
+  name: string;
+  cuisine?: string;
+  priceLevel?: number;
+  rating?: number;
+  servesVegetarianFood?: boolean;
+}
 
 export async function analyzeMenuItem(
   item: { name: string; description?: string },
-  preferences: UserPreferences,
+  preferences: any,
+  restaurant: Restaurant,
   openAIKey: string
 ): Promise<{
   score: number;
@@ -10,10 +17,18 @@ export async function analyzeMenuItem(
   warning?: string;
 }> {
   try {
-    console.log('🔍 Analyzing menu item:', item.name);
+    console.log('🔍 Analyzing menu item:', item.name, 'for restaurant:', restaurant.name);
     
     const prompt = `
-    Analyze this menu item and the user's preferences to provide a personalized recommendation.
+    You are a culinary expert providing personalized dish recommendations.
+    Analyze this menu item considering both user preferences and restaurant context.
+    
+    Restaurant Context:
+    Name: ${restaurant.name}
+    Cuisine: ${restaurant.cuisine || 'Unknown'}
+    Price Level: ${restaurant.priceLevel || 'Unknown'}
+    Rating: ${restaurant.rating || 'Unknown'}
+    Serves Vegetarian: ${restaurant.servesVegetarianFood ? 'Yes' : 'Unknown'}
     
     Menu Item:
     Name: ${item.name}
@@ -25,14 +40,21 @@ export async function analyzeMenuItem(
     - Favorite Proteins: ${preferences.favoriteProteins?.join(', ') || 'None specified'}
     - Foods to Avoid: ${preferences.foodsToAvoid?.join(', ') || 'None specified'}
     - Spice Level (1-5): ${preferences.spiceLevel || 'Not specified'}
+    - Atmosphere Preferences: ${preferences.atmospherePreferences?.join(', ') || 'None specified'}
+    
+    Consider:
+    1. Dietary restrictions and allergies (highest priority)
+    2. Match with favorite cuisines and proteins
+    3. Foods to avoid
+    4. Restaurant's specialty and ratings
+    5. Price point alignment
     
     Provide a JSON response with:
-    1. A match score (0-100)
-    2. A SHORT, specific reason if it's a great match (score >= 85)
-    3. A SHORT, specific warning if there are concerns (score <= 40)
+    1. score: A match score (0-100)
+    2. reason: A specific reason if it's a great match (score >= 85)
+    3. warning: A specific warning if there are concerns (score <= 40)
     
-    Keep messages under 50 characters, mobile-friendly.
-    Focus on the most relevant match/concern.`;
+    Keep messages under 50 characters, mobile-friendly.`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -43,10 +65,7 @@ export async function analyzeMenuItem(
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          {
-            role: 'system',
-            content: 'You are a culinary expert that provides concise, personalized dish recommendations.'
-          },
+          { role: 'system', content: 'You are a culinary expert specializing in personalized dish recommendations.' },
           { role: 'user', content: prompt }
         ],
         temperature: 0.3,

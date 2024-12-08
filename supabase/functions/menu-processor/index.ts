@@ -1,94 +1,43 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from "../_shared/cors.ts";
-import { cleanMenuText } from "./textCleaner.ts";
-import { generateMenuItems } from "./menuGenerator.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { analyzeMenuItem } from "./menuAnalyzer.ts";
 
-console.log("Menu processor function started");
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: corsHeaders
-    });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { menuUrl, photos, reviews } = await req.json();
-    console.log("Input data:", { menuUrl, photosCount: photos?.length, reviewsCount: reviews?.length });
+    const { action, item, preferences, restaurant } = await req.json();
+    const openAIKey = Deno.env.get('OPENAI_API_KEY');
 
-    let menuItems: string[] = [];
-
-    // Try to extract menu items from reviews first
-    if (reviews?.length) {
-      console.log("Extracting menu items from reviews");
-      const reviewText = reviews.map((review: any) => review.text).join('\n');
-      const extractedItems = await cleanMenuText(reviewText);
-      menuItems = [...menuItems, ...extractedItems];
+    if (!openAIKey) {
+      throw new Error('OpenAI API key not configured');
     }
 
-    // Generate additional menu items based on existing items and reviews
-    if (reviews?.length) {
-      console.log("Generating additional menu items");
-      const generatedItems = await generateMenuItems(menuItems, reviews);
-      menuItems = [...menuItems, ...generatedItems];
+    if (action === 'analyze-item') {
+      console.log('🔍 Analyzing menu item:', item.name);
+      const analysis = await analyzeMenuItem(item, preferences, restaurant, openAIKey);
+      
+      return new Response(JSON.stringify(analysis), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    // If we still don't have menu items, generate some based on the restaurant type
-    if (menuItems.length === 0) {
-      console.log("No menu items found, generating default items");
-      const defaultItems = [
-        "House Burger - Premium beef patty with lettuce, tomato, and special sauce",
-        "Grilled Chicken Sandwich - Marinated chicken breast with avocado and chipotle mayo",
-        "Caesar Salad - Fresh romaine, parmesan, croutons with house-made dressing",
-        "Fish & Chips - Beer-battered cod with crispy fries and tartar sauce",
-        "Veggie Bowl - Quinoa, roasted vegetables, and tahini dressing"
-      ];
-      menuItems = defaultItems;
-    }
-
-    // Transform the items into the expected format
-    const formattedItems = menuItems.map((item, index) => {
-      const [name, description] = item.split(' - ');
-      return {
-        id: `item-${index + 1}`,
-        name: name.trim(),
-        description: description?.trim() || '',
-      };
-    });
-
-    const menuData = {
-      menuSections: [
-        {
-          name: "Main Menu",
-          items: formattedItems
-        }
-      ]
-    };
-
-    console.log(`Returning ${formattedItems.length} menu items`);
-    
-    return new Response(
-      JSON.stringify(menuData),
-      {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      },
-    );
-
+    throw new Error('Invalid action specified');
   } catch (error) {
-    console.error("Error processing menu:", error);
+    console.error('Error in menu-processor:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-        status: 400,
-      },
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
     );
   }
 });
