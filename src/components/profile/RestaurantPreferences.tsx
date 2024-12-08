@@ -12,6 +12,7 @@ const defaultPreferences: UserPreferences = {
   foodsToAvoid: [],
   atmospherePreferences: [],
   favoriteIngredients: [],
+  favoriteProteins: [],
   spiceLevel: 3,
   priceRange: 'moderate' as PriceRange,
   specialConsiderations: "",
@@ -56,6 +57,7 @@ const RestaurantPreferences = () => {
             foodsToAvoid: data.favorite_ingredients || [],
             atmospherePreferences: data.atmosphere_preferences || [],
             favoriteIngredients: [],
+            favoriteProteins: data.favorite_proteins || [],
             spiceLevel: data.spice_level || 3,
             priceRange: data.price_range || 'moderate',
             specialConsiderations: data.special_considerations || "",
@@ -76,12 +78,13 @@ const RestaurantPreferences = () => {
 
   useEffect(() => {
     let completed = 0;
-    let total = 4;
+    let total = 5; // Updated to include protein preferences
 
     if (preferences.cuisinePreferences.length > 0) completed++;
     if (preferences.dietaryRestrictions.length > 0) completed++;
     if (preferences.foodsToAvoid.length > 0) completed++;
     if (preferences.atmospherePreferences.length > 0) completed++;
+    if (preferences.favoriteProteins.length > 0) completed++;
 
     setCompletionPercentage((completed / total) * 100);
   }, [preferences]);
@@ -111,6 +114,7 @@ const RestaurantPreferences = () => {
         dietary_restrictions: preferences.dietaryRestrictions,
         favorite_ingredients: preferences.foodsToAvoid,
         atmosphere_preferences: preferences.atmospherePreferences,
+        favorite_proteins: preferences.favoriteProteins,
         special_considerations: preferences.specialConsiderations,
       };
 
