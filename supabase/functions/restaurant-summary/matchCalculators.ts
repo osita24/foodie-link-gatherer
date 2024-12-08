@@ -1,4 +1,4 @@
-import { RestaurantFeatures, UserPreferences } from './types';
+import { RestaurantFeatures, UserPreferences } from './types.ts';
 
 export const calculateDietaryMatch = (restaurant: RestaurantFeatures, preferences: UserPreferences): number => {
   if (!preferences.dietary_restrictions?.length) return 85;
@@ -97,7 +97,7 @@ export const calculateAtmosphereMatch = (restaurant: RestaurantFeatures, prefere
 
   let matchCount = 0;
   for (const pref of preferences.atmosphere_preferences) {
-    if (features[pref]) {
+    if (features[pref as keyof typeof features]) {
       matchCount++;
     }
   }

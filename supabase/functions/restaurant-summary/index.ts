@@ -1,12 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { RestaurantFeatures, UserPreferences, SummaryResponse } from './types';
+import { RestaurantFeatures, UserPreferences, SummaryResponse } from './types.ts';
 import { 
   calculateDietaryMatch,
   calculateCuisineMatch,
   calculatePriceMatch,
   calculateAtmosphereMatch
-} from './matchCalculators';
-import { generateVerdict } from './verdictGenerator';
+} from './matchCalculators.ts';
+import { generateVerdict } from './verdictGenerator.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

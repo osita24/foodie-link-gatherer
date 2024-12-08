@@ -1,4 +1,4 @@
-import { RestaurantFeatures, UserPreferences, SummaryResponse, Reason } from './types';
+import { RestaurantFeatures, UserPreferences, SummaryResponse, Reason } from './types.ts';
 
 interface Scores {
   dietaryScore: number;
