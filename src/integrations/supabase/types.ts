@@ -29,6 +29,7 @@ export type Database = {
       }
       saved_restaurants: {
         Row: {
+          address: string | null
           created_at: string | null
           cuisine: string | null
           id: string
@@ -39,6 +40,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          address?: string | null
           created_at?: string | null
           cuisine?: string | null
           id?: string
@@ -49,6 +51,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          address?: string | null
           created_at?: string | null
           cuisine?: string | null
           id?: string
