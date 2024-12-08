@@ -113,7 +113,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
 
   return (
     <div className="space-y-6">
-      {session && restaurant && <MatchScoreCard categories={categories} restaurant={restaurant} />}
+      {session && restaurant && <MatchScoreCard restaurant={restaurant} />}
       <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
         <CardContent className="p-0">
           <div className="relative">
