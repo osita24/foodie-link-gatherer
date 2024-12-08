@@ -9,6 +9,7 @@ import MatchScoreCard from "./MatchScoreCard";
 import { useRestaurantMatch } from "@/hooks/useRestaurantMatch";
 import { useMenuAnalysis } from "@/hooks/useMenuAnalysis";
 import MenuLoadingState from "./menu/MenuLoadingState";
+import { Star, ChevronDown } from "lucide-react";
 
 interface MenuSectionProps {
   menu?: MenuCategory[];
@@ -22,7 +23,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
   const [processedMenu, setProcessedMenu] = useState<MenuCategory[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const { categories } = useRestaurantMatch(restaurant);
-  const { itemMatchDetails, analyzedMenu } = useMenuAnalysis(processedMenu);
+  const { itemMatchDetails, analyzedMenu, topMatch } = useMenuAnalysis(processedMenu);
   const [session, setSession] = useState<any>(null);
 
   useEffect(() => {
@@ -92,6 +93,33 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
 
   return (
     <div className="space-y-6">
+      {session && topMatch && (
+        <Card className="overflow-hidden bg-gradient-to-br from-primary/10 to-accent/20 border-accent/20">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-4">
+              <div className="bg-primary/20 p-3 rounded-full">
+                <Star className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-medium text-primary flex items-center gap-2">
+                  Top Match
+                  <span className="text-sm font-normal text-muted-foreground">
+                    ({topMatch.analysis.score}% match)
+                  </span>
+                </h3>
+                <p className="text-base font-medium mt-1">{topMatch.name}</p>
+                {topMatch.description && (
+                  <p className="text-sm text-muted-foreground mt-1">{topMatch.description}</p>
+                )}
+                <p className="text-sm text-primary mt-2">
+                  {topMatch.analysis.reason}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
         <CardContent className="p-0">
           <div className="relative">
