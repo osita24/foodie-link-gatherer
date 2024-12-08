@@ -8,8 +8,6 @@ import MenuItem from "./menu/MenuItem";
 import MenuHeader from "./menu/MenuHeader";
 import MatchScoreCard from "./MatchScoreCard";
 import { useRestaurantMatch } from "@/hooks/useRestaurantMatch";
-import UnauthenticatedState from "../auth/UnauthenticatedState";
-import { useLocation } from "react-router-dom";
 
 interface MenuSectionProps {
   menu?: MenuCategory[];
@@ -23,23 +21,6 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [itemMatchDetails, setItemMatchDetails] = useState<Record<string, any>>({});
   const { categories } = useRestaurantMatch(null);
-  const [session, setSession] = useState(null);
-  const location = useLocation();
-
-  useEffect(() => {
-    // Check and set initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log("🔐 Auth state changed in MenuSection:", session?.user?.id);
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   useEffect(() => {
     if (menu) {
@@ -97,7 +78,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
 
   useEffect(() => {
     const loadMatchDetails = async () => {
-      if (!processedMenu?.[0]?.items || !session?.user) return;
+      if (!processedMenu?.[0]?.items) return;
 
       const details: Record<string, any> = {};
       
@@ -106,7 +87,6 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
           const { data: preferences } = await supabase
             .from('user_preferences')
             .select('*')
-            .eq('user_id', session.user.id)
             .single();
 
           if (!preferences) {
@@ -139,7 +119,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
     };
 
     loadMatchDetails();
-  }, [processedMenu, session]);
+  }, [processedMenu]);
 
   if (isProcessing) {
     return (
@@ -170,19 +150,6 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
           </p>
         </CardContent>
       </Card>
-    );
-  }
-
-  if (!session?.user) {
-    return (
-      <UnauthenticatedState 
-        title="Get Personalized Menu Recommendations"
-        description="Sign up to see which menu items match your taste preferences and dietary requirements. We'll analyze each dish and provide personalized recommendations just for you."
-        onAuthClick={() => {
-          // Store the current location for redirect after onboarding
-          localStorage.setItem('redirectAfterAuth', location.pathname);
-        }}
-      />
     );
   }
 

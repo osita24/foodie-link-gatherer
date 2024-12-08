@@ -76,12 +76,7 @@ const Onboarding = () => {
           description: "Your preferences have been saved. Let's find you some great restaurants!",
         });
 
-        // Check for redirect URL from localStorage
-        const redirectUrl = localStorage.getItem('redirectAfterAuth');
-        localStorage.removeItem('redirectAfterAuth'); // Clean up
-
-        // Navigate to stored URL or home
-        navigate(redirectUrl || "/");
+        navigate("/");
       } catch (error) {
         console.error('Error saving preferences:', error);
         toast({
