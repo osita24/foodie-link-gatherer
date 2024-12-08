@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "../auth/AuthModal";
 import { useParams } from "react-router-dom";
+import { useRestaurantData } from "@/hooks/useRestaurantData";
 
 const ActionButtons = () => {
   const [isSaving, setIsSaving] = useState(false);
@@ -12,6 +13,7 @@ const ActionButtons = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [session, setSession] = useState(null);
   const { id: placeId } = useParams();
+  const { data: restaurant } = useRestaurantData(placeId);
 
   useEffect(() => {
     // Get initial session
@@ -67,7 +69,7 @@ const ActionButtons = () => {
 
     try {
       setIsSaving(true);
-      console.log("Saving restaurant...");
+      console.log("Saving restaurant...", restaurant);
 
       if (isSaved) {
         // Remove from saved
@@ -84,14 +86,17 @@ const ActionButtons = () => {
           description: "Restaurant removed from your saved list!",
         });
       } else {
-        // Add to saved
+        // Add to saved with enhanced details
         const { error } = await supabase
           .from('saved_restaurants')
           .insert({
             user_id: session.user.id,
             place_id: placeId,
-            name: document.title, // This will get the restaurant name from the page title
-            image_url: document.querySelector('img')?.src, // Get the first image from the page
+            name: restaurant?.name || "Unknown Restaurant",
+            image_url: restaurant?.photos?.[0] || null,
+            cuisine: restaurant?.types?.[0] || null,
+            rating: restaurant?.rating || null,
+            address: restaurant?.address || null,
           });
 
         if (error) throw error;
