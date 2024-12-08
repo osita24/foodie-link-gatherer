@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Star, ChevronDown, ChevronUp, Lock, ThumbsUp, AlertCircle } from "lucide-react";
+import { Star, ChevronDown, ChevronUp, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import AuthModal from "@/components/auth/AuthModal";
@@ -43,126 +43,89 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
   const isLongDescription = description && description.length > 100;
   const displayDescription = isExpanded ? description : description?.substring(0, 100);
 
-  const getMatchColor = (score: number) => {
-    if (score >= 90) return "bg-success/10 text-success border-success/20";
-    if (score >= 75) return "bg-primary/10 text-primary border-primary/20";
-    if (score >= 60) return "bg-warning/10 text-warning border-warning/20";
-    return "bg-gray-100 text-gray-600 border-gray-200";
-  };
-
-  const getRecommendationDetails = (score: number) => {
+  const getPersonalizedRecommendation = (score: number) => {
     if (score >= 90) {
       return {
-        icon: <ThumbsUp className="w-4 h-4" />,
-        label: "Perfect Match!",
-        description: "This dish aligns perfectly with your preferences and dietary needs."
+        className: "bg-success/5 hover:bg-success/10",
+        badge: "Perfect for You!",
+        badgeClass: "bg-success/10 text-success border-success/20",
+        reason: "Based on your preferences, this dish is an excellent match! It aligns with your dietary needs and favorite ingredients."
       };
     }
     if (score >= 75) {
       return {
-        icon: <Star className="w-4 h-4" />,
-        label: "Great Choice",
-        description: "This dish matches most of your preferences."
-      };
-    }
-    if (score >= 60) {
-      return {
-        icon: <Star className="w-4 h-4" />,
-        label: "Good Option",
-        description: "This dish matches some of your preferences."
+        className: "bg-primary/5 hover:bg-primary/10",
+        badge: "Recommended",
+        badgeClass: "bg-primary/10 text-primary border-primary/20",
+        reason: "This dish includes ingredients and preparation methods you typically enjoy."
       };
     }
     return {
-      icon: <AlertCircle className="w-4 h-4" />,
-      label: "Consider Alternatives",
-      description: "This dish may not align with your preferences."
+      className: "hover:bg-accent/5",
+      badge: "Consider This",
+      badgeClass: "bg-muted/10 text-muted-foreground border-muted/20",
+      reason: "While this may not be your usual choice, it could be worth trying something new!"
     };
   };
 
-  const recommendation = getRecommendationDetails(recommendationScore);
+  const recommendation = getPersonalizedRecommendation(recommendationScore);
 
   return (
     <div className={cn(
       "group relative p-4 rounded-lg transition-all duration-300",
-      recommendationScore >= 90 ? "bg-success/5" : 
-      recommendationScore >= 75 ? "bg-primary/5" : 
-      "hover:bg-accent/10"
+      recommendation.className
     )}>
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 space-y-2">
-          <div className="flex items-start gap-3">
-            <h3 className="text-base font-medium text-secondary group-hover:text-primary transition-colors">
-              {cleanName}
-            </h3>
-          </div>
-          
-          {description && (
-            <div className="mt-1">
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {displayDescription}
-                {isLongDescription && !isExpanded && "..."}
-              </p>
-              {isLongDescription && (
-                <button
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className="mt-1 text-xs text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
-                >
-                  {isExpanded ? (
-                    <>
-                      Show less
-                      <ChevronUp className="w-3 h-3" />
-                    </>
-                  ) : (
-                    <>
-                      Show more
-                      <ChevronDown className="w-3 h-3" />
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
+      <div className="space-y-3">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="text-base font-medium text-secondary">
+            {cleanName}
+          </h3>
+          {session ? (
+            <Badge variant="outline" className={cn("text-xs", recommendation.badgeClass)}>
+              {recommendation.badge}
+            </Badge>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-3 text-xs gap-1.5 hover:bg-primary/10"
+              onClick={() => setShowAuthModal(true)}
+            >
+              <Star className="w-3.5 h-3.5 text-yellow-400" />
+              <span>View match</span>
+              <Lock className="w-3 h-3 text-primary/70" />
+            </Button>
           )}
-          
-          <div className="flex items-center gap-2 flex-wrap">
-            {item.category && (
-              <Badge 
-                variant="outline" 
-                className="text-xs bg-transparent border-primary/20 text-primary/70"
+        </div>
+        
+        {description && (
+          <div>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {displayDescription}
+              {isLongDescription && !isExpanded && "..."}
+            </p>
+            {isLongDescription && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="mt-1 text-xs text-primary hover:text-primary/80 flex items-center gap-1"
               >
-                {item.category}
-              </Badge>
-            )}
-            {!session ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-3 text-xs gap-1.5 hover:bg-primary/10 group/match relative overflow-hidden
-                  border border-primary/20 rounded-full transition-all duration-300"
-                onClick={() => setShowAuthModal(true)}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/10 opacity-0 group-hover/match:opacity-100 transition-opacity" />
-                <Star className="w-3.5 h-3.5 text-yellow-400" strokeWidth={2} />
-                <span className="relative z-10 font-medium">View match score</span>
-                <Lock className="w-3 h-3 text-primary/70" strokeWidth={2} />
-              </Button>
-            ) : (
-              <div className={cn(
-                "flex flex-col gap-1.5 w-full sm:w-auto rounded-lg p-3 border animate-fade-up transition-all duration-300",
-                getMatchColor(recommendationScore)
-              )}>
-                <div className="flex items-center gap-2">
-                  {recommendation.icon}
-                  <span className="text-sm font-medium">
-                    {recommendation.label} ({recommendationScore}% Match)
-                  </span>
-                </div>
-                <p className="text-xs opacity-90">
-                  {recommendation.description}
-                </p>
-              </div>
+                {isExpanded ? (
+                  <>Show less <ChevronUp className="w-3 h-3" /></>
+                ) : (
+                  <>Show more <ChevronDown className="w-3 h-3" /></>
+                )}
+              </button>
             )}
           </div>
-        </div>
+        )}
+        
+        {session && (
+          <div className="text-sm text-muted-foreground">
+            <p className="leading-relaxed">
+              {recommendation.reason}
+            </p>
+          </div>
+        )}
       </div>
 
       <AuthModal 
