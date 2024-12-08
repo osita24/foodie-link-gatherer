@@ -1,7 +1,14 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, ThumbsUp, AlertTriangle, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronUp, ThumbsUp, AlertTriangle, Sparkles, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Progress } from "@/components/ui/progress";
 
 interface MenuItemProps {
   item: {
@@ -15,7 +22,6 @@ interface MenuItemProps {
     reason?: string;
     warning?: string;
     matchType?: 'perfect' | 'good' | 'neutral' | 'warning';
-    isTopMatch?: boolean;
   } | null;
 }
 
@@ -34,26 +40,20 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
   const isLongDescription = description && description.length > 100;
   const displayDescription = isExpanded ? description : description?.substring(0, 100);
 
-  const getMatchStyle = (matchType: string = 'neutral', isTopMatch: boolean = false) => {
-    if (isTopMatch) {
-      return "border-l-4 border-primary bg-gradient-to-r from-primary/5 to-transparent";
-    }
+  const getMatchStyle = (matchType: string = 'neutral') => {
     switch (matchType) {
       case 'perfect':
-        return "border-l-4 border-emerald-400 bg-gradient-to-r from-emerald-50/50 to-transparent";
+        return "border-l-4 border-emerald-400 bg-gradient-to-r from-emerald-50 to-transparent";
       case 'good':
-        return "border-l-4 border-blue-400 bg-gradient-to-r from-blue-50/50 to-transparent";
+        return "border-l-4 border-blue-400 bg-gradient-to-r from-blue-50 to-transparent";
       case 'warning':
-        return "border-l-4 border-red-400 bg-gradient-to-r from-red-50/50 to-transparent";
+        return "border-l-4 border-red-400 bg-gradient-to-r from-red-50 to-transparent";
       default:
         return "border-l-4 border-gray-200 hover:bg-gray-50/50";
     }
   };
 
-  const getScoreColor = (matchType: string = 'neutral', isTopMatch: boolean = false) => {
-    if (isTopMatch) {
-      return "text-primary bg-primary/10";
-    }
+  const getScoreColor = (matchType: string = 'neutral') => {
     switch (matchType) {
       case 'perfect':
         return "text-emerald-700 bg-emerald-100";
@@ -66,12 +66,38 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
     }
   };
 
+  const getMatchLabel = (matchType: string = 'neutral') => {
+    switch (matchType) {
+      case 'perfect':
+        return "PERFECT MATCH! 🎯";
+      case 'good':
+        return "GREAT CHOICE 👍";
+      case 'warning':
+        return "HEADS UP ⚠️";
+      default:
+        return "POSSIBLE MATCH 🤔";
+    }
+  };
+
+  const getMatchIcon = (matchType: string = 'neutral') => {
+    switch (matchType) {
+      case 'perfect':
+        return <Sparkles className="w-3 h-3 ml-1" />;
+      case 'good':
+        return <ThumbsUp className="w-3 h-3 ml-1" />;
+      case 'warning':
+        return <AlertTriangle className="w-3 h-3 ml-1" />;
+      default:
+        return <ArrowRight className="w-3 h-3 ml-1" />;
+    }
+  };
+
   return (
     <div 
       className={cn(
         "group relative p-4 rounded-lg transition-all duration-300",
-        "hover:shadow-md animate-fade-up",
-        getMatchStyle(matchDetails?.matchType, matchDetails?.isTopMatch)
+        "hover:shadow-md animate-fade-in-up",
+        getMatchStyle(matchDetails?.matchType)
       )}
     >
       <div className="flex items-start justify-between gap-4">
@@ -81,25 +107,40 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
               {cleanName}
             </h3>
             
-            {matchDetails?.isTopMatch && (
-              <Badge 
-                className="animate-fade-up bg-primary/10 text-primary hover:bg-primary/20"
-              >
-                TOP MATCH
-                <Sparkles className="w-3 h-3 ml-1" />
-              </Badge>
-            )}
-            
-            {matchDetails && !matchDetails.isTopMatch && matchDetails.score > 70 && (
-              <Badge 
-                className={cn(
-                  "animate-fade-up",
-                  getScoreColor(matchDetails.matchType)
-                )}
-              >
-                {matchDetails.score}% Match
-                <ThumbsUp className="w-3 h-3 ml-1" />
-              </Badge>
+            {matchDetails && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge 
+                      className={cn(
+                        "animate-fade-in-up cursor-help transition-colors",
+                        getScoreColor(matchDetails.matchType)
+                      )}
+                    >
+                      {getMatchLabel(matchDetails.matchType)}
+                      {getMatchIcon(matchDetails.matchType)}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent className="w-64 p-3">
+                    <div className="space-y-2">
+                      <Progress value={matchDetails.score} className="h-2" />
+                      <p className="text-sm font-medium">
+                        {matchDetails.score}% Match Score
+                      </p>
+                      {matchDetails.reason && (
+                        <p className="text-xs text-gray-500">
+                          {matchDetails.reason}
+                        </p>
+                      )}
+                      {matchDetails.warning && (
+                        <p className="text-xs text-red-500">
+                          {matchDetails.warning}
+                        </p>
+                      )}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
           
@@ -124,25 +165,18 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
             </div>
           )}
           
-          {matchDetails?.reason && !matchDetails.warning && (
-            <div className="flex flex-wrap gap-2 mt-2 animate-fade-up">
-              {matchDetails.reason.split(' • ').map((reason, index) => (
-                <Badge 
-                  key={index}
-                  variant="outline" 
-                  className="text-primary border-primary/20 bg-primary/5"
-                >
-                  {reason}
+          {matchDetails && (matchDetails.reason || matchDetails.warning) && (
+            <div className="flex items-center gap-2 flex-wrap animate-fade-in-up">
+              {matchDetails.matchType !== 'warning' && matchDetails.reason && (
+                <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50">
+                  {matchDetails.reason} ✨
                 </Badge>
-              ))}
-            </div>
-          )}
-          
-          {matchDetails?.warning && (
-            <div className="flex items-center gap-2 animate-fade-up">
-              <Badge variant="outline" className="text-red-700 border-red-200 bg-red-50">
-                {matchDetails.warning} <AlertTriangle className="w-3 h-3 ml-1" />
-              </Badge>
+              )}
+              {matchDetails.matchType === 'warning' && matchDetails.warning && (
+                <Badge variant="outline" className="text-red-700 border-red-200 bg-red-50">
+                  {matchDetails.warning} ⚠️
+                </Badge>
+              )}
             </div>
           )}
         </div>

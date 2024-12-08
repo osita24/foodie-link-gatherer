@@ -154,7 +154,7 @@ export async function analyzeMenuItem(
 
     return {
       score,
-      reason: reasons.join(' • '),
+      reason: reasons[0],
       matchType
     };
   } catch (error) {
