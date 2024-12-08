@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import MenuItem from "./MenuItem";
+import MenuItem from "./menu/MenuItem";
 import { supabase } from "@/integrations/supabase/client";
 
 interface MenuSectionProps {
@@ -14,6 +14,7 @@ interface MenuSectionProps {
     priceLevel?: number;
     rating?: number;
     servesVegetarianFood?: boolean;
+    types?: string[];  // Added this to fix the TypeScript error
   };
 }
 
