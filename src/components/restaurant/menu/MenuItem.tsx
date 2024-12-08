@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Star, ChevronDown, ChevronUp, Lock } from "lucide-react";
+import { Star, ChevronDown, ChevronUp, Lock, ThumbsUp, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import AuthModal from "@/components/auth/AuthModal";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 interface MenuItemProps {
   item: {
@@ -49,18 +50,47 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
     return "bg-gray-100 text-gray-600 border-gray-200";
   };
 
-  const getMatchDescription = (score: number) => {
-    if (score >= 90) return "Perfect match! Aligns with your preferences";
-    if (score >= 75) return "Great match based on your taste profile";
-    if (score >= 60) return "Good match with some of your preferences";
-    return "Moderate match with your preferences";
+  const getRecommendationDetails = (score: number) => {
+    if (score >= 90) {
+      return {
+        icon: <ThumbsUp className="w-4 h-4" />,
+        label: "Perfect Match!",
+        description: "This dish aligns perfectly with your preferences and dietary needs."
+      };
+    }
+    if (score >= 75) {
+      return {
+        icon: <Star className="w-4 h-4" />,
+        label: "Great Choice",
+        description: "This dish matches most of your preferences."
+      };
+    }
+    if (score >= 60) {
+      return {
+        icon: <Star className="w-4 h-4" />,
+        label: "Good Option",
+        description: "This dish matches some of your preferences."
+      };
+    }
+    return {
+      icon: <AlertCircle className="w-4 h-4" />,
+      label: "Consider Alternatives",
+      description: "This dish may not align with your preferences."
+    };
   };
 
+  const recommendation = getRecommendationDetails(recommendationScore);
+
   return (
-    <div className="group relative p-4 rounded-lg hover:bg-accent/20 transition-all duration-300">
+    <div className={cn(
+      "group relative p-4 rounded-lg transition-all duration-300",
+      recommendationScore >= 90 ? "bg-success/5" : 
+      recommendationScore >= 75 ? "bg-primary/5" : 
+      "hover:bg-accent/10"
+    )}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 space-y-2">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
             <h3 className="text-base font-medium text-secondary group-hover:text-primary transition-colors">
               {cleanName}
             </h3>
@@ -93,7 +123,7 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
             </div>
           )}
           
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             {item.category && (
               <Badge 
                 variant="outline" 
@@ -112,20 +142,22 @@ const MenuItem = ({ item, recommendationScore }: MenuItemProps) => {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/10 opacity-0 group-hover/match:opacity-100 transition-opacity" />
                 <Star className="w-3.5 h-3.5 text-yellow-400" strokeWidth={2} />
-                <span className="relative z-10 font-medium">Check if it's a match</span>
+                <span className="relative z-10 font-medium">View match score</span>
                 <Lock className="w-3 h-3 text-primary/70" strokeWidth={2} />
               </Button>
             ) : (
-              <div className={`flex flex-col gap-1 w-full sm:w-auto ${getMatchColor(recommendationScore)} 
-                rounded-lg p-3 border animate-fade-up transition-all duration-300`}>
+              <div className={cn(
+                "flex flex-col gap-1.5 w-full sm:w-auto rounded-lg p-3 border animate-fade-up transition-all duration-300",
+                getMatchColor(recommendationScore)
+              )}>
                 <div className="flex items-center gap-2">
-                  <Star className="w-3.5 h-3.5 fill-current" />
+                  {recommendation.icon}
                   <span className="text-sm font-medium">
-                    {recommendationScore}% Match
+                    {recommendation.label} ({recommendationScore}% Match)
                   </span>
                 </div>
                 <p className="text-xs opacity-90">
-                  {getMatchDescription(recommendationScore)}
+                  {recommendation.description}
                 </p>
               </div>
             )}
