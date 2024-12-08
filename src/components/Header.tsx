@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSession, useSupabaseClient } from "@supabase/auth-helpers-react";
 import AuthModal from "./auth/AuthModal";
@@ -27,7 +27,23 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  console.log("🔐 Current session state:", session?.user?.id);
+  // Add effect to listen for auth state changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      console.log("🔐 Auth state changed:", event, currentSession?.user?.id);
+      
+      if (event === 'SIGNED_IN') {
+        toast({
+          title: "Welcome back!",
+          description: "Successfully signed in",
+        });
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase.auth]);
 
   const handleSignOut = async () => {
     try {
