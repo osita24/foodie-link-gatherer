@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import MenuItem from "./menu/MenuItem";
 import MenuHeader from "./menu/MenuHeader";
-import MatchScoreCard from "./MatchScoreCard";
+import RestaurantSummaryCard from "./RestaurantSummaryCard";
 import { useRestaurantMatch } from "@/hooks/useRestaurantMatch";
 import { useMenuAnalysis } from "@/hooks/useMenuAnalysis";
 import MenuLoadingState from "./menu/MenuLoadingState";
@@ -106,10 +106,11 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
 
   return (
     <div className="space-y-6">
-      {session && restaurant && (
-        <div className="animate-fade-in">
-          <MatchScoreCard restaurant={restaurant} />
-        </div>
+      {restaurant && (
+        <RestaurantSummaryCard 
+          restaurant={restaurant}
+          isAuthenticated={!!session}
+        />
       )}
       <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
         <CardContent className="p-0">
