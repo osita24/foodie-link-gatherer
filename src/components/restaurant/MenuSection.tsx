@@ -75,8 +75,14 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
     }
   };
 
-  const getRecommendationScore = (item: any) => {
-    return Math.floor(Math.random() * 31) + 70;
+  const getMatchDetails = (item: any) => {
+    // Generate a random score for now - this should be replaced with actual logic
+    const score = Math.floor(Math.random() * 31) + 70;
+    return {
+      score,
+      reason: score >= 90 ? "Perfect match for your preferences!" : undefined,
+      warning: score <= 30 ? "Contains ingredients you might want to avoid" : undefined
+    };
   };
 
   if (isProcessing) {
@@ -124,7 +130,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
                   <MenuItem
                     key={item.id}
                     item={item}
-                    recommendationScore={getRecommendationScore(item)}
+                    matchDetails={getMatchDetails(item)}
                   />
                 ))}
               </div>
