@@ -37,7 +37,7 @@ const SavedRestaurants = () => {
           throw error;
         }
 
-        console.log("✅ Fetched saved restaurants data:", data);
+        console.log("✅ Raw saved restaurants data:", data);
         setSavedRestaurants(data || []);
       } catch (error) {
         console.error("Failed to fetch saved restaurants:", error);

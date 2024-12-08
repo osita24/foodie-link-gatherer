@@ -18,15 +18,13 @@ interface SavedRestaurantCardProps {
 
 const SavedRestaurantCard = ({ restaurant, onRemove }: SavedRestaurantCardProps) => {
   const navigate = useNavigate();
-  console.log("🏪 SavedRestaurantCard - Full restaurant data:", {
-    id: restaurant.id,
-    name: restaurant.name,
-    image: restaurant.image_url,
-    cuisine: restaurant.cuisine,
-    rating: restaurant.rating,
-    address: restaurant.address,
-    created: restaurant.created_at
-  });
+  console.log("🏪 SavedRestaurantCard - Restaurant data:", restaurant);
+
+  // Early validation to ensure we have the minimum required data
+  if (!restaurant || !restaurant.id) {
+    console.error("❌ Invalid restaurant data:", restaurant);
+    return null;
+  }
 
   return (
     <Card 
@@ -54,7 +52,7 @@ const SavedRestaurantCard = ({ restaurant, onRemove }: SavedRestaurantCardProps)
       <CardContent className="p-4">
         <div className="space-y-2">
           <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors">
-            {restaurant.name || "Unnamed Restaurant"}
+            {restaurant.name}
           </h3>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             {restaurant.rating && (
