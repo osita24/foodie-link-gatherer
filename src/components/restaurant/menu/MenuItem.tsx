@@ -1,9 +1,6 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Lock } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import AuthModal from "@/components/auth/AuthModal";
-import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 interface MenuItemProps {
@@ -13,24 +10,15 @@ interface MenuItemProps {
     description?: string;
     category?: string;
   };
-  recommendationScore: number;
-  matchReason?: string;
-  avoidReason?: string;
+  matchDetails: {
+    score: number;
+    reason?: string;
+    warning?: string;
+  };
 }
 
-const MenuItem = ({ item, recommendationScore, matchReason, avoidReason }: MenuItemProps) => {
+const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [session, setSession] = useState(null);
-
-  // Listen for auth state changes
-  supabase.auth.getSession().then(({ data: { session } }) => {
-    setSession(session);
-  });
-
-  supabase.auth.onAuthStateChange((_event, session) => {
-    setSession(session);
-  });
 
   const cleanName = item.name
     .replace(/^\d+\.\s*/, '')
@@ -50,28 +38,10 @@ const MenuItem = ({ item, recommendationScore, matchReason, avoidReason }: MenuI
     return "";
   };
 
-  const getRecommendationBadge = (score: number) => {
-    if (score >= 90) {
-      return (
-        <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-0">
-          Perfect Match! 🎯
-        </Badge>
-      );
-    }
-    if (score <= 30) {
-      return (
-        <Badge className="bg-red-100 text-red-700 hover:bg-red-200 border-0">
-          Heads Up! ⚠️
-        </Badge>
-      );
-    }
-    return null;
-  };
-
   return (
     <div className={cn(
       "group relative p-4 rounded-lg transition-all duration-300",
-      getMatchStyle(recommendationScore)
+      getMatchStyle(matchDetails.score)
     )}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 space-y-2">
@@ -79,7 +49,16 @@ const MenuItem = ({ item, recommendationScore, matchReason, avoidReason }: MenuI
             <h3 className="text-base font-medium text-gray-900">
               {cleanName}
             </h3>
-            {session && getRecommendationBadge(recommendationScore)}
+            {matchDetails.score >= 90 && (
+              <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-0">
+                Perfect Match! 🎯
+              </Badge>
+            )}
+            {matchDetails.score <= 30 && (
+              <Badge className="bg-red-100 text-red-700 hover:bg-red-200 border-0">
+                Heads Up! ⚠️
+              </Badge>
+            )}
           </div>
           
           {description && (
@@ -104,43 +83,19 @@ const MenuItem = ({ item, recommendationScore, matchReason, avoidReason }: MenuI
           )}
           
           <div className="flex items-center gap-2 flex-wrap">
-            {item.category && (
-              <Badge variant="outline" className="text-xs">
-                {item.category}
-              </Badge>
+            {matchDetails.score >= 90 && matchDetails.reason && (
+              <p className="text-sm text-emerald-700">
+                {matchDetails.reason} ✨
+              </p>
             )}
-            
-            {!session ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-3 text-xs gap-1.5"
-                onClick={() => setShowAuthModal(true)}
-              >
-                View match details
-                <Lock className="w-3 h-3" />
-              </Button>
-            ) : (
-              recommendationScore >= 90 && matchReason && (
-                <p className="text-sm text-emerald-700">
-                  {matchReason} ✨
-                </p>
-              )
-            )}
-            
-            {session && recommendationScore <= 30 && avoidReason && (
+            {matchDetails.score <= 30 && matchDetails.warning && (
               <p className="text-sm text-red-700">
-                {avoidReason} ⚠️
+                {matchDetails.warning} ⚠️
               </p>
             )}
           </div>
         </div>
       </div>
-
-      <AuthModal 
-        open={showAuthModal}
-        onOpenChange={setShowAuthModal}
-      />
     </div>
   );
 };

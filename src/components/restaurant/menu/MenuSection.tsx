@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MenuItem from "./MenuItem";
-import { useRestaurantMatch } from "@/hooks/useRestaurantMatch";
 import { supabase } from "@/integrations/supabase/client";
 
 interface MenuSectionProps {
@@ -14,30 +13,30 @@ interface MenuSectionProps {
 const MenuSection = ({ menu = [] }: MenuSectionProps) => {
   const [userPreferences, setUserPreferences] = useState<any>(null);
 
-  // Fetch user preferences
-  const loadUserPreferences = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return;
+  useEffect(() => {
+    const loadUserPreferences = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
 
-      const { data } = await supabase
-        .from('user_preferences')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .single();
+        const { data } = await supabase
+          .from('user_preferences')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single();
 
-      setUserPreferences(data);
-    } catch (error) {
-      console.error('Error loading preferences:', error);
-    }
-  };
+        console.log("Loaded user preferences:", data);
+        setUserPreferences(data);
+      } catch (error) {
+        console.error('Error loading preferences:', error);
+      }
+    };
 
-  useState(() => {
     loadUserPreferences();
   }, []);
 
-  const getItemRecommendation = (item: any) => {
-    if (!userPreferences) return { score: 50, matchReason: null, avoidReason: null };
+  const getItemMatchDetails = (item: any) => {
+    if (!userPreferences) return { score: 50 };
 
     const itemName = item.name.toLowerCase();
     const description = item.description?.toLowerCase() || '';
@@ -50,8 +49,29 @@ const MenuSection = ({ menu = [] }: MenuSectionProps) => {
     if (hasPreferredProtein) {
       return {
         score: 95,
-        matchReason: `Contains your favorite protein!`,
-        avoidReason: null
+        reason: "Contains your favorite protein!"
+      };
+    }
+
+    // Check for dietary restrictions
+    const hasDietaryRestriction = userPreferences.dietary_restrictions?.some(
+      (restriction: string) => content.includes(restriction.toLowerCase())
+    );
+    if (hasDietaryRestriction) {
+      return {
+        score: 20,
+        warning: "Contains ingredients you avoid"
+      };
+    }
+
+    // Check for cuisine preferences
+    const hasFavoriteCuisine = userPreferences.cuisine_preferences?.some(
+      (cuisine: string) => content.includes(cuisine.toLowerCase())
+    );
+    if (hasFavoriteCuisine) {
+      return {
+        score: 90,
+        reason: "Matches your favorite cuisine!"
       };
     }
 
@@ -62,13 +82,12 @@ const MenuSection = ({ menu = [] }: MenuSectionProps) => {
     if (hasAllergen) {
       return {
         score: 20,
-        matchReason: null,
-        avoidReason: `Contains ingredients you prefer to avoid`
+        warning: "Contains ingredients you prefer to avoid"
       };
     }
 
     // Default score if no strong matches/mismatches
-    return { score: 50, matchReason: null, avoidReason: null };
+    return { score: 50 };
   };
 
   // Group menu items by category
@@ -96,18 +115,13 @@ const MenuSection = ({ menu = [] }: MenuSectionProps) => {
 
         {Object.entries(menuByCategory).map(([category, items]: [string, any]) => (
           <TabsContent key={category} value={category} className="p-4 space-y-4">
-            {items.map((item: any) => {
-              const { score, matchReason, avoidReason } = getItemRecommendation(item);
-              return (
-                <MenuItem
-                  key={item.id}
-                  item={item}
-                  recommendationScore={score}
-                  matchReason={matchReason}
-                  avoidReason={avoidReason}
-                />
-              );
-            })}
+            {items.map((item: any) => (
+              <MenuItem
+                key={item.id}
+                item={item}
+                matchDetails={getItemMatchDetails(item)}
+              />
+            ))}
           </TabsContent>
         ))}
       </Tabs>
