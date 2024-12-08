@@ -23,11 +23,30 @@ serve(async (req) => {
     console.log("🏪 Processing restaurant:", restaurant.name);
     console.log("👤 User preferences:", preferences);
 
+    // Transform restaurant data to match our internal type
+    const restaurantFeatures: RestaurantFeatures = {
+      name: restaurant.name,
+      servesBreakfast: restaurant.servesBreakfast,
+      servesBrunch: restaurant.servesBrunch,
+      servesLunch: restaurant.servesLunch,
+      servesDinner: restaurant.servesDinner,
+      servesVegetarianFood: restaurant.servesVegetarianFood,
+      servesBeer: restaurant.servesBeer,
+      servesWine: restaurant.servesWine,
+      delivery: restaurant.delivery,
+      dineIn: restaurant.dineIn,
+      takeout: restaurant.takeout,
+      reservable: restaurant.reservable,
+      rating: restaurant.rating,
+      priceLevel: restaurant.priceLevel,
+      types: restaurant.types,
+    };
+
     // Calculate individual scores
-    const dietaryScore = calculateDietaryMatch(restaurant, preferences);
-    const cuisineScore = calculateCuisineMatch(restaurant, preferences);
-    const priceScore = calculatePriceMatch(restaurant, preferences);
-    const atmosphereScore = calculateAtmosphereMatch(restaurant, preferences);
+    const dietaryScore = calculateDietaryMatch(restaurantFeatures, preferences);
+    const cuisineScore = calculateCuisineMatch(restaurantFeatures, preferences);
+    const priceScore = calculatePriceMatch(restaurantFeatures, preferences);
+    const atmosphereScore = calculateAtmosphereMatch(restaurantFeatures, preferences);
     
     // Calculate weighted score with priority on dietary and cuisine matches
     const weightedScore = (
@@ -48,7 +67,7 @@ serve(async (req) => {
     // Generate personalized verdict and reasons
     const summary = generateVerdict(
       weightedScore,
-      restaurant,
+      restaurantFeatures,
       preferences,
       { dietaryScore, cuisineScore, priceScore, atmosphereScore }
     );

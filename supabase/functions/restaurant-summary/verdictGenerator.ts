@@ -21,12 +21,12 @@ export function generateVerdict(
       const restriction = preferences.dietary_restrictions[0];
       reasons.push({ 
         emoji: "✅", 
-        text: `Great ${restriction} options available based on your dietary needs` 
+        text: `Perfect for your ${restriction} dietary preferences` 
       });
     } else if (scores.dietaryScore <= 40) {
       reasons.push({ 
         emoji: "⚠️", 
-        text: `Limited options for your ${preferences.dietary_restrictions.join(', ')} dietary requirements` 
+        text: `Limited options for your ${preferences.dietary_restrictions.join(' and ')} requirements` 
       });
     }
   }
@@ -36,7 +36,7 @@ export function generateVerdict(
     const cuisineMatch = preferences.cuisine_preferences?.[0];
     reasons.push({ 
       emoji: "🎯", 
-      text: `Perfectly matches your love for ${cuisineMatch} cuisine` 
+      text: `Matches your love for ${cuisineMatch} cuisine perfectly` 
     });
   } else if (scores.cuisineScore >= 70) {
     reasons.push({ 
@@ -50,12 +50,12 @@ export function generateVerdict(
     if (scores.priceScore >= 90) {
       reasons.push({ 
         emoji: "💰", 
-        text: `Matches your preferred ${preferences.price_range} price range perfectly` 
+        text: `Fits your ${preferences.price_range} budget preference perfectly` 
       });
     } else if (scores.priceScore <= 60) {
       reasons.push({ 
         emoji: "💸", 
-        text: `Note: This is ${restaurant.priceLevel && restaurant.priceLevel > 2 ? 'pricier' : 'more affordable'} than your usual ${preferences.price_range} preference` 
+        text: `${restaurant.priceLevel && restaurant.priceLevel > 2 ? 'More expensive' : 'More affordable'} than your usual ${preferences.price_range} preference` 
       });
     }
   }
@@ -79,11 +79,11 @@ export function generateVerdict(
     });
   }
 
-  // High rating mention only if other personalized reasons aren't enough
+  // High rating mention if it's exceptional
   if (reasons.length < 3 && restaurant.rating && restaurant.rating >= 4.5) {
     reasons.push({ 
       emoji: "⭐", 
-      text: `Exceptional ${restaurant.rating}/5 rating from diners with similar preferences` 
+      text: `Exceptional ${restaurant.rating}/5 rating from diners with similar tastes` 
     });
   }
 
@@ -97,22 +97,22 @@ export function generateVerdict(
     verdict = "SKIP IT";
   }
 
-  // Ensure we have at least 3 reasons, but all highly personalized
-  while (reasons.length < 3) {
+  // Ensure we have at least 2 reasons
+  while (reasons.length < 2) {
     if (restaurant.servesVegetarianFood && !reasons.some(r => r.text.includes("vegetarian"))) {
       reasons.push({ 
         emoji: "🥗", 
-        text: "Offers diverse vegetarian options that match your preferences" 
+        text: `Offers diverse vegetarian options that match your preferences` 
       });
     } else if (restaurant.delivery && preferences.atmosphere_preferences?.includes('Delivery')) {
       reasons.push({ 
         emoji: "🚚", 
-        text: "Offers delivery, matching your dining preferences" 
+        text: `Offers delivery, matching your dining preferences` 
       });
     } else if (restaurant.reservable && preferences.atmosphere_preferences?.includes('Fine Dining')) {
       reasons.push({ 
         emoji: "📅", 
-        text: "Takes reservations for a refined dining experience" 
+        text: `Takes reservations for a refined dining experience` 
       });
     } else {
       break;

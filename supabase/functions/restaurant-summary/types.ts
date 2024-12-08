@@ -13,6 +13,7 @@ export interface RestaurantFeatures {
   rating?: number;
   priceLevel?: number;
   types?: string[];
+  name: string;
 }
 
 export interface UserPreferences {

@@ -30,6 +30,9 @@ export const calculateCuisineMatch = (restaurant: RestaurantFeatures, preference
     asian: ['chinese', 'japanese', 'korean', 'thai', 'vietnamese', 'asian'],
     mediterranean: ['greek', 'turkish', 'lebanese', 'mediterranean'],
     european: ['italian', 'french', 'spanish', 'german', 'european'],
+    indian: ['indian', 'pakistani', 'bengali', 'south asian'],
+    latinAmerican: ['mexican', 'peruvian', 'brazilian', 'argentinian', 'latin'],
+    middleEastern: ['lebanese', 'turkish', 'persian', 'middle eastern', 'arab'],
   };
 
   let maxScore = 0;
