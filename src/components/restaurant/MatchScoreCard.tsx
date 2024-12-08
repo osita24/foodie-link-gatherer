@@ -1,9 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Star } from "lucide-react";
+import { Star, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/auth/AuthModal";
+import { generateRestaurantInsights } from "@/utils/restaurantInsights";
+import { mapSupabaseToUserPreferences } from "@/utils/preferencesMapper";
 
 interface MatchCategory {
   category: string;
@@ -14,23 +16,62 @@ interface MatchCategory {
 
 interface MatchScoreCardProps {
   categories: MatchCategory[];
+  restaurant: any;
 }
 
-const MatchScoreCard = ({ categories }: MatchScoreCardProps) => {
+const MatchScoreCard = ({ categories, restaurant }: MatchScoreCardProps) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [session, setSession] = useState(null);
+  const [insights, setInsights] = useState<{ matchScore: number; reasons: string[] } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Listen for auth state changes
-  supabase.auth.getSession().then(({ data: { session } }) => {
-    setSession(session);
-  });
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
 
-  supabase.auth.onAuthStateChange((_event, session) => {
-    setSession(session);
-    if (session) {
-      setShowAuthModal(false);
-    }
-  });
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) {
+        setShowAuthModal(false);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    const loadInsights = async () => {
+      if (!session?.user) return;
+
+      try {
+        setIsLoading(true);
+        console.log("🔍 Loading user preferences...");
+        
+        const { data: preferencesData } = await supabase
+          .from('user_preferences')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (!preferencesData) {
+          console.log("❌ No preferences found");
+          return;
+        }
+
+        const preferences = mapSupabaseToUserPreferences(preferencesData);
+        console.log("✅ User preferences loaded:", preferences);
+
+        const generatedInsights = await generateRestaurantInsights(restaurant, preferences);
+        console.log("✨ Setting insights:", generatedInsights);
+        setInsights(generatedInsights);
+      } catch (error) {
+        console.error("❌ Error loading insights:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadInsights();
+  }, [session, restaurant]);
 
   const UnauthenticatedContent = () => (
     <div className="space-y-8 text-center py-6">
@@ -62,35 +103,41 @@ const MatchScoreCard = ({ categories }: MatchScoreCardProps) => {
   );
 
   const AuthenticatedContent = () => (
-    <div className="space-y-4 md:space-y-6">
-      {categories.map((item, index) => (
-        <div
-          key={item.category}
-          className="space-y-1.5 md:space-y-2 animate-fade-up"
-          style={{ animationDelay: `${index * 150}ms` }}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5 md:gap-2">
-              <span className="text-lg md:text-xl">{item.icon}</span>
-              <span className="font-medium text-secondary text-sm md:text-base">
-                {item.category}
-              </span>
-            </div>
-            <span className="text-primary font-bold text-sm md:text-base">
-              {item.score}%
-            </span>
-          </div>
-          <div className="relative pt-0.5 md:pt-1">
-            <div className="overflow-hidden h-1.5 md:h-2 text-xs flex rounded-full bg-gray-100">
-              <div
-                style={{ width: `${item.score}%` }}
-                className="animate-[slideRight_1s_ease-out] shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary"
-              />
-            </div>
-          </div>
-          <p className="text-xs md:text-sm text-gray-600">{item.description}</p>
+    <div className="space-y-6">
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      ))}
+      ) : insights ? (
+        <>
+          <div className="text-center space-y-2">
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-4xl font-bold text-primary">
+                {insights.matchScore}%
+              </span>
+              <span className="text-lg text-gray-600">match</span>
+            </div>
+          </div>
+          <div className="space-y-4">
+            {insights.reasons.map((reason, index) => (
+              <div
+                key={index}
+                className="flex items-start gap-3 p-4 rounded-lg bg-accent/5 animate-fade-up"
+                style={{ animationDelay: `${index * 150}ms` }}
+              >
+                <div className="mt-1">
+                  <div className="w-2 h-2 rounded-full bg-primary" />
+                </div>
+                <p className="text-sm text-gray-600 leading-relaxed">{reason}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className="text-center text-gray-600">
+          Unable to generate insights at this time
+        </div>
+      )}
     </div>
   );
 
