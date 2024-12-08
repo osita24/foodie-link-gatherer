@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "@/components/auth/AuthModal";
 import { generateRestaurantInsights } from "@/utils/restaurantInsights";
 import { mapSupabaseToUserPreferences } from "@/utils/preferencesMapper";
+import { toast } from "sonner";
 
 interface MatchScoreCardProps {
   restaurant: any;
@@ -13,13 +14,14 @@ interface MatchScoreCardProps {
 
 const MatchScoreCard = ({ restaurant }: MatchScoreCardProps) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [session, setSession] = useState(null);
+  const [session, setSession] = useState<any>(null);
   const [insights, setInsights] = useState<{ matchScore: number; reasons: string[] } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     console.log("🔍 Initializing MatchScoreCard with restaurant:", restaurant);
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("🔐 Auth session loaded:", session?.user?.id);
       setSession(session);
     });
 
@@ -31,17 +33,26 @@ const MatchScoreCard = ({ restaurant }: MatchScoreCardProps) => {
 
   useEffect(() => {
     const loadInsights = async () => {
-      if (!session?.user || !restaurant) return;
+      if (!session?.user || !restaurant) {
+        console.log("❌ Cannot load insights - missing user or restaurant data");
+        return;
+      }
 
       try {
         setIsLoading(true);
-        console.log("🔍 Loading user preferences...");
+        console.log("🔍 Loading user preferences for insights...");
         
-        const { data: preferencesData } = await supabase
+        const { data: preferencesData, error: preferencesError } = await supabase
           .from('user_preferences')
           .select('*')
           .eq('user_id', session.user.id)
           .single();
+
+        if (preferencesError) {
+          console.error("❌ Error loading preferences:", preferencesError);
+          toast.error("Failed to load your preferences");
+          return;
+        }
 
         if (!preferencesData) {
           console.log("❌ No preferences found");
@@ -56,6 +67,7 @@ const MatchScoreCard = ({ restaurant }: MatchScoreCardProps) => {
         setInsights(generatedInsights);
       } catch (error) {
         console.error("❌ Error loading insights:", error);
+        toast.error("Failed to generate restaurant insights");
       } finally {
         setIsLoading(false);
       }
@@ -70,7 +82,7 @@ const MatchScoreCard = ({ restaurant }: MatchScoreCardProps) => {
         <Card className="bg-white/95 backdrop-blur border-accent/20 hover:shadow-lg transition-shadow duration-300">
           <CardContent className="p-6">
             <div className="text-center space-y-4">
-              <Sparkles className="h-8 w-8 mx-auto text-primary" />
+              <Sparkles className="h-8 w-8 mx-auto text-primary animate-pulse" />
               <h3 className="text-xl font-semibold text-primary">
                 See Your Match Score
               </h3>
@@ -108,7 +120,7 @@ const MatchScoreCard = ({ restaurant }: MatchScoreCardProps) => {
           ) : insights ? (
             <div className="space-y-4">
               <div className="flex items-center justify-center gap-2">
-                <span className="text-4xl font-bold text-primary">
+                <span className="text-4xl font-bold text-primary animate-fade-in">
                   {insights.matchScore}%
                 </span>
                 <span className="text-sm text-gray-600">match</span>
@@ -128,7 +140,8 @@ const MatchScoreCard = ({ restaurant }: MatchScoreCardProps) => {
             </div>
           ) : (
             <div className="text-center text-sm text-gray-600">
-              Unable to generate insights
+              <p>Unable to generate insights</p>
+              <p className="text-xs text-gray-500 mt-1">Please try again later</p>
             </div>
           )}
         </CardContent>
