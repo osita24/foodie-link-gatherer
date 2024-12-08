@@ -19,7 +19,17 @@ const SavedRestaurants = () => {
         console.log("🔍 Fetching saved restaurants for user:", session.user.id);
         const { data, error } = await supabase
           .from('saved_restaurants')
-          .select('*')
+          .select(`
+            id,
+            name,
+            image_url,
+            cuisine,
+            rating,
+            place_id,
+            created_at,
+            address
+          `)
+          .eq('user_id', session.user.id)
           .order('created_at', { ascending: false });
 
         if (error) {
@@ -48,7 +58,8 @@ const SavedRestaurants = () => {
       const { error } = await supabase
         .from('saved_restaurants')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', session?.user?.id);
 
       if (error) throw error;
 
