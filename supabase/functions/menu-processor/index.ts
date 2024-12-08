@@ -6,84 +6,109 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface MenuItem {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+}
+
+interface MenuCategory {
+  name: string;
+  items: MenuItem[];
+}
+
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { action, item, preferences } = await req.json();
+    const { action, item, preferences, menuUrl, photos, reviews } = await req.json();
+    console.log('Request payload:', { action, menuUrl, photos, reviews });
 
+    // Handle menu item analysis
     if (action === 'analyze-item') {
       console.log('Analyzing menu item:', item);
       console.log('User preferences:', preferences);
 
+      const itemText = `${item.name} ${item.description || ''}`.toLowerCase();
+      let score = 75; // Default score
       const reasons: string[] = [];
       const warnings: string[] = [];
-      let score = 75; // Default score
-      
-      const itemText = `${item.name} ${item.description || ''}`.toLowerCase();
 
-      // Check for favorite proteins (highest priority)
-      const proteinMatch = preferences.favorite_proteins?.some(
-        protein => itemText.includes(protein.toLowerCase())
-      );
-      if (proteinMatch) {
-        score += 20;
-        reasons.push("Contains your favorite protein!");
-      }
-
-      // Check cuisine preferences (high priority)
-      const cuisineMatch = preferences.cuisine_preferences?.some(
-        cuisine => itemText.includes(cuisine.toLowerCase())
-      );
-      if (cuisineMatch) {
-        score += 15;
-        reasons.push("Matches your preferred cuisine style");
-      }
-
-      // Check favorite ingredients (medium priority)
-      const ingredientMatch = preferences.favorite_ingredients?.some(
-        ingredient => itemText.includes(ingredient.toLowerCase())
-      );
-      if (ingredientMatch) {
-        score += 10;
-        reasons.push("Includes ingredients you love");
+      // Check favorite proteins (highest priority)
+      if (preferences.favorite_proteins) {
+        for (const protein of preferences.favorite_proteins) {
+          if (itemText.includes(protein.toLowerCase())) {
+            score += 20;
+            reasons.push(`Contains ${protein} (your favorite protein)`);
+          }
+        }
       }
 
       // Check dietary restrictions (highest negative priority)
-      const dietaryIssue = preferences.dietary_restrictions?.some(
-        restriction => itemText.includes(restriction.toLowerCase())
-      );
-      if (dietaryIssue) {
-        score -= 50;
-        warnings.push("Contains ingredients you prefer to avoid");
+      if (preferences.dietary_restrictions) {
+        for (const restriction of preferences.dietary_restrictions) {
+          if (itemText.includes(restriction.toLowerCase())) {
+            score -= 40;
+            warnings.push(`Contains ${restriction} (dietary restriction)`);
+          }
+        }
       }
 
-      // Only return detailed reasons for very good or concerning matches
+      // Normalize score
+      score = Math.min(Math.max(score, 0), 100);
+
       const response = {
         score,
         allReasons: score >= 85 ? reasons : [],
-        allWarnings: score <= 40 ? warnings : []
+        allWarnings: score <= 40 ? warnings : [],
       };
 
-      console.log('Analysis result:', response);
-      
       return new Response(JSON.stringify(response), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Menu processing logic
-    // This part of the code should handle the processing of the menu data
-    // For example, fetching menu items from a database or an API
-    // and returning them in a structured format.
+    // Handle menu processing
+    console.log('Processing menu data');
+    
+    // For testing, return a sample menu structure
+    const sampleMenu: MenuCategory[] = [{
+      name: "Main Menu",
+      items: [
+        {
+          id: "1",
+          name: "Grilled Chicken Breast",
+          description: "Tender chicken breast with herbs",
+          category: "Mains"
+        },
+        {
+          id: "2",
+          name: "Vegetable Stir Fry",
+          description: "Fresh vegetables in garlic sauce",
+          category: "Mains"
+        }
+      ]
+    }];
+
+    return new Response(
+      JSON.stringify({ menuSections: sampleMenu }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
 
   } catch (error) {
     console.error('Error in menu-processor:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
 });
