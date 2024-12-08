@@ -1,11 +1,24 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+interface RestaurantFeatures {
+  servesBreakfast?: boolean;
+  servesBrunch?: boolean;
+  servesLunch?: boolean;
+  servesDinner?: boolean;
+  servesVegetarianFood?: boolean;
+  servesBeer?: boolean;
+  servesWine?: boolean;
+  delivery?: boolean;
+  dineIn?: boolean;
+  takeout?: boolean;
+  reservable?: boolean;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -14,100 +27,44 @@ serve(async (req) => {
 
   try {
     const { restaurant, preferences } = await req.json();
-
     console.log("🏪 Processing restaurant:", restaurant.name);
     console.log("👤 User preferences:", preferences);
 
-    const prompt = `
-      You are a friendly AI restaurant advisor. Based on the following user preferences and restaurant details,
-      provide a short, personalized recommendation. Keep each reason very concise (max 60 characters).
-      
-      Restaurant Details:
-      - Name: ${restaurant.name}
-      - Cuisine Types: ${restaurant.types?.join(", ")}
-      - Price Level: ${restaurant.priceLevel}
-      - Rating: ${restaurant.rating}
-      - Features: ${Object.entries(restaurant)
-        .filter(([key, value]) => typeof value === "boolean" && value)
-        .map(([key]) => key)
-        .join(", ")}
-      
-      User Preferences:
-      - Favorite Cuisines: ${preferences?.cuisine_preferences?.join(", ")}
-      - Dietary Restrictions: ${preferences?.dietary_restrictions?.join(", ")}
-      - Favorite Ingredients: ${preferences?.favorite_ingredients?.join(", ")}
-      - Price Range: ${preferences?.price_range}
-      - Atmosphere: ${preferences?.atmosphere_preferences?.join(", ")}
-      
-      Respond with JSON in this exact format:
-      {
-        "verdict": "MUST VISIT" or "WORTH A TRY" or "SKIP IT",
-        "reasons": [
-          {
-            "emoji": "relevant emoji",
-            "text": "very concise reason"
-          },
-          {
-            "emoji": "relevant emoji",
-            "text": "very concise reason"
-          },
-          {
-            "emoji": "relevant emoji",
-            "text": "very concise reason"
-          }
-        ]
-      }
+    // Calculate match scores for different aspects
+    const dietaryScore = calculateDietaryScore(restaurant, preferences);
+    const cuisineScore = calculateCuisineScore(restaurant, preferences);
+    const priceScore = calculatePriceScore(restaurant, preferences);
+    const atmosphereScore = calculateAtmosphereScore(restaurant, preferences);
+    
+    // Weight the scores
+    const weightedScore = (
+      (dietaryScore * 0.35) +    // Dietary is most important
+      (cuisineScore * 0.30) +    // Cuisine type is second
+      (priceScore * 0.20) +      // Price is third
+      (atmosphereScore * 0.15)   // Atmosphere is fourth
+    );
 
-      Make sure each reason is super concise and punchy. Use relevant emojis that match the reason.
-      Example response:
-      {
-        "verdict": "MUST VISIT",
-        "reasons": [
-          {
-            "emoji": "🌶️",
-            "text": "Perfect spice level for your taste"
-          },
-          {
-            "emoji": "🌿",
-            "text": "Lots of vegetarian options you'll love"
-          },
-          {
-            "emoji": "💫",
-            "text": "Cozy atmosphere matches your vibe"
-          }
-        ]
-      }
-    `;
-
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${Deno.env.get("OPENAI_API_KEY")}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: "You are a helpful restaurant advisor that provides concise, personalized recommendations."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-      }),
+    console.log("📊 Calculated scores:", {
+      dietary: dietaryScore,
+      cuisine: cuisineScore,
+      price: priceScore,
+      atmosphere: atmosphereScore,
+      weighted: weightedScore
     });
 
-    const data = await response.json();
-    console.log("🤖 OpenAI response:", data);
+    // Generate verdict and reasons
+    const { verdict, reasons } = generateVerdict(
+      weightedScore,
+      restaurant,
+      preferences,
+      { dietaryScore, cuisineScore, priceScore, atmosphereScore }
+    );
 
-    const summary = JSON.parse(data.choices[0].message.content);
-    console.log("✨ Generated summary:", summary);
+    console.log("✨ Generated verdict:", verdict);
+    console.log("📝 Generated reasons:", reasons);
 
-    return new Response(JSON.stringify(summary), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(JSON.stringify({ verdict, reasons }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error("❌ Error in restaurant-summary function:", error);
@@ -115,8 +72,146 @@ serve(async (req) => {
       JSON.stringify({ error: "Failed to generate summary" }),
       { 
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
   }
 });
+
+function calculateDietaryScore(restaurant: RestaurantFeatures, preferences: any): number {
+  let score = 70; // Base score
+
+  if (preferences.dietary_restrictions?.includes('vegetarian')) {
+    if (restaurant.servesVegetarianFood) {
+      score += 30;
+    } else {
+      score -= 40; // Major penalty if vegetarian options aren't available
+    }
+  }
+
+  return Math.min(100, Math.max(0, score));
+}
+
+function calculateCuisineScore(restaurant: any, preferences: any): number {
+  if (!preferences.cuisine_preferences?.length) return 75;
+
+  const restaurantCuisines = restaurant.types?.filter((type: string) => 
+    type.includes('cuisine') || type.includes('food')
+  ) || [];
+
+  const matchCount = restaurantCuisines.filter((cuisine: string) =>
+    preferences.cuisine_preferences.some((pref: string) => 
+      cuisine.toLowerCase().includes(pref.toLowerCase())
+    )
+  ).length;
+
+  return matchCount > 0 ? Math.min(100, 70 + (matchCount * 15)) : 60;
+}
+
+function calculatePriceScore(restaurant: any, preferences: any): number {
+  if (!preferences.price_range) return 75;
+
+  const priceMap: Record<string, number[]> = {
+    'budget': [1],
+    'moderate': [1, 2],
+    'upscale': [2, 3],
+    'luxury': [3, 4]
+  };
+
+  const preferredLevels = priceMap[preferences.price_range];
+  const restaurantLevel = restaurant.priceLevel || 2;
+
+  return preferredLevels.includes(restaurantLevel) ? 95 : 60;
+}
+
+function calculateAtmosphereScore(restaurant: RestaurantFeatures, preferences: any): number {
+  if (!preferences.atmosphere_preferences?.length) return 75;
+
+  let score = 70;
+  const features = {
+    'Fine Dining': restaurant.reservable,
+    'Casual Dining': restaurant.dineIn,
+    'Quick Bites': restaurant.takeout,
+    'Delivery': restaurant.delivery,
+    'Bar Scene': restaurant.servesBeer || restaurant.servesWine
+  };
+
+  preferences.atmosphere_preferences.forEach((pref: string) => {
+    if (features[pref]) {
+      score += 15;
+    }
+  });
+
+  return Math.min(100, score);
+}
+
+function generateVerdict(
+  weightedScore: number,
+  restaurant: any,
+  preferences: any,
+  scores: { dietaryScore: number; cuisineScore: number; priceScore: number; atmosphereScore: number }
+): { verdict: string; reasons: Array<{ emoji: string; text: string }> } {
+  const reasons: Array<{ emoji: string; text: string }> = [];
+
+  // Add dietary reason if relevant
+  if (preferences.dietary_restrictions?.length) {
+    if (scores.dietaryScore >= 90) {
+      reasons.push({ emoji: "🌱", text: "Perfect for your dietary preferences" });
+    } else if (scores.dietaryScore <= 40) {
+      reasons.push({ emoji: "⚠️", text: "Limited options for your dietary needs" });
+    }
+  }
+
+  // Add cuisine match reason
+  if (scores.cuisineScore >= 85) {
+    reasons.push({ emoji: "🎯", text: "Matches your favorite cuisine perfectly" });
+  } else if (scores.cuisineScore >= 70) {
+    reasons.push({ emoji: "👍", text: "Similar to cuisines you enjoy" });
+  }
+
+  // Add price match reason
+  if (scores.priceScore >= 90) {
+    reasons.push({ emoji: "💰", text: "Fits your preferred price range" });
+  } else if (scores.priceScore <= 60) {
+    reasons.push({ emoji: "💸", text: "Outside your usual price range" });
+  }
+
+  // Add atmosphere reason
+  if (scores.atmosphereScore >= 85) {
+    reasons.push({ emoji: "✨", text: "Perfect atmosphere for your style" });
+  }
+
+  // Add rating-based reason if high rated
+  if (restaurant.rating >= 4.5) {
+    reasons.push({ emoji: "⭐", text: "Highly rated by other diners" });
+  }
+
+  // Determine verdict based on weighted score
+  let verdict: "MUST VISIT" | "WORTH A TRY" | "SKIP IT";
+  if (weightedScore >= 85) {
+    verdict = "MUST VISIT";
+  } else if (weightedScore >= 65) {
+    verdict = "WORTH A TRY";
+  } else {
+    verdict = "SKIP IT";
+  }
+
+  // Ensure we have at least 3 reasons
+  while (reasons.length < 3) {
+    if (restaurant.delivery && !reasons.some(r => r.text.includes("delivery"))) {
+      reasons.push({ emoji: "🚚", text: "Offers convenient delivery" });
+    } else if (restaurant.reservable && !reasons.some(r => r.text.includes("reservation"))) {
+      reasons.push({ emoji: "📅", text: "Easy to make reservations" });
+    } else if (restaurant.servesVegetarianFood && !reasons.some(r => r.text.includes("vegetarian"))) {
+      reasons.push({ emoji: "🥗", text: "Good vegetarian options available" });
+    } else {
+      reasons.push({ emoji: "📍", text: "Popular local establishment" });
+      break;
+    }
+  }
+
+  // Limit to top 3 most relevant reasons
+  reasons.splice(3);
+
+  return { verdict, reasons };
+}
