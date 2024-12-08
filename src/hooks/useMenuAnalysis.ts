@@ -24,8 +24,8 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
       if (dietaryConflicts?.length) {
         score = 20;
         matchType = 'warning';
-        reasons.push(`Contains ${dietaryConflicts[0]}`);
-        return { score, matchType, reason: reasons[0] };
+        reasons.push(`Contains ${dietaryConflicts[0].toLowerCase()}`);
+        return { score, matchType, warning: reasons[0] };
       }
 
       // Protein preferences (major boost)
@@ -35,7 +35,7 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
       
       if (proteinMatches?.length) {
         score += 25;
-        reasons.push(`Features ${proteinMatches[0]}`);
+        reasons.push(`Made with ${proteinMatches[0].toLowerCase()}, one of your favorite proteins`);
       }
 
       // Favorite ingredients (significant boost)
@@ -45,21 +45,29 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
       
       if (ingredientMatches?.length) {
         score += 15;
-        reasons.push(`Contains ${ingredientMatches[0]}`);
+        reasons.push(`Includes ${ingredientMatches[0].toLowerCase()}, an ingredient you love`);
       }
 
       // Preparation method bonus
-      const healthyMethods = ['grilled', 'steamed', 'baked', 'roasted'];
-      const methodMatch = healthyMethods.find(method => itemContent.includes(method));
-      if (methodMatch) {
-        score += 10;
-        reasons.push(`Healthy ${methodMatch} preparation`);
+      const healthyMethods = {
+        'grilled': 'Healthy grilled preparation',
+        'steamed': 'Light steamed cooking method',
+        'baked': 'Oven-baked for better nutrition',
+        'roasted': 'Flavorful roasted preparation'
+      };
+
+      for (const [method, description] of Object.entries(healthyMethods)) {
+        if (itemContent.includes(method)) {
+          score += 10;
+          reasons.push(description);
+          break;
+        }
       }
 
       // Special indicators
       if (itemContent.includes('signature') || itemContent.includes('chef special')) {
         score += 10;
-        reasons.push('Chef\'s special dish');
+        reasons.push('Chef\'s special creation');
       }
 
       // Determine match type based on score
@@ -67,10 +75,15 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
       else if (score >= 75) matchType = 'good';
       else if (score < 40) matchType = 'warning';
 
+      // Join all reasons with proper formatting
+      const formattedReasons = reasons.length > 0 
+        ? reasons.join(' • ')
+        : 'Based on your general preferences';
+
       return {
         score,
         matchType,
-        reason: reasons[0] || 'Matches your preferences',
+        reason: formattedReasons,
       };
     };
 
@@ -92,12 +105,10 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
         const details: Record<string, any> = {};
         let bestMatch = { score: -1, item: null, analysis: null };
 
-        // Analyze each item
         processedMenu[0].items.forEach(item => {
           const analysis = analyzeMenuItem(item, preferences);
           details[item.id] = analysis;
 
-          // Track the best match
           if (analysis.score > bestMatch.score) {
             bestMatch = { score: analysis.score, item, analysis };
           }
@@ -106,7 +117,6 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
         setItemMatchDetails(details);
         setTopMatch(bestMatch.score > 0 ? { ...bestMatch.item, analysis: bestMatch.analysis } : null);
         
-        // Keep original menu order, just add analysis
         setAnalyzedMenu([{
           ...processedMenu[0],
           items: processedMenu[0].items.map(item => ({

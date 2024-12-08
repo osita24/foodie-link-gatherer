@@ -2,13 +2,6 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp, ThumbsUp, AlertTriangle, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Progress } from "@/components/ui/progress";
 
 interface MenuItemProps {
   item: {
@@ -16,7 +9,6 @@ interface MenuItemProps {
     name: string;
     description?: string;
     category?: string;
-    price?: string;
   };
   matchDetails: {
     score: number;
@@ -133,10 +125,16 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
           )}
           
           {matchDetails?.reason && !matchDetails.warning && (
-            <div className="flex items-center gap-2 animate-fade-up">
-              <Badge variant="outline" className="text-primary border-primary/20 bg-primary/5">
-                {matchDetails.reason}
-              </Badge>
+            <div className="flex flex-wrap gap-2 mt-2 animate-fade-up">
+              {matchDetails.reason.split(' • ').map((reason, index) => (
+                <Badge 
+                  key={index}
+                  variant="outline" 
+                  className="text-primary border-primary/20 bg-primary/5"
+                >
+                  {reason}
+                </Badge>
+              ))}
             </div>
           )}
           
