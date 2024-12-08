@@ -8,6 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Progress } from "@/components/ui/progress";
 
 interface MenuItemProps {
   item: {
@@ -40,8 +41,6 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
   const displayDescription = isExpanded ? description : description?.substring(0, 100);
 
   const getMatchStyle = (matchType: string = 'neutral') => {
-    if (!matchDetails) return "hover:bg-gray-50/50";
-    
     switch (matchType) {
       case 'perfect':
         return "border-l-4 border-emerald-400 bg-gradient-to-r from-emerald-50 to-transparent";
@@ -64,6 +63,19 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
         return "text-red-700 bg-red-100";
       default:
         return "text-gray-700 bg-gray-100";
+    }
+  };
+
+  const getMatchLabel = (matchType: string = 'neutral', score: number) => {
+    switch (matchType) {
+      case 'perfect':
+        return "PERFECT MATCH! 🎯";
+      case 'good':
+        return "GOOD MATCH 👍";
+      case 'warning':
+        return "HEADS UP ⚠️";
+      default:
+        return "NEUTRAL 🤔";
     }
   };
 
@@ -105,17 +117,23 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
                         getScoreColor(matchDetails.matchType)
                       )}
                     >
-                      {matchDetails.score}% Match
+                      {getMatchLabel(matchDetails.matchType, matchDetails.score)}
                       {getMatchIcon(matchDetails.matchType)}
                     </Badge>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    <p>
-                      {matchDetails.matchType === 'perfect' ? "Perfect match for your preferences!" :
-                       matchDetails.matchType === 'good' ? "Good match based on your preferences" :
-                       matchDetails.matchType === 'warning' ? "May not match your preferences" :
-                       "Something new to try"}
-                    </p>
+                  <TooltipContent className="w-64 p-3">
+                    <div className="space-y-2">
+                      <Progress value={matchDetails.score} className="h-2" />
+                      <p className="text-sm font-medium">
+                        {matchDetails.score}% Match Score
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {matchDetails.matchType === 'perfect' ? "This dish perfectly matches your preferences!" :
+                         matchDetails.matchType === 'good' ? "This is a solid match for your tastes" :
+                         matchDetails.matchType === 'warning' ? "This might not align with your preferences" :
+                         "This dish has neutral alignment with your preferences"}
+                      </p>
+                    </div>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -146,14 +164,14 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
           {matchDetails && (matchDetails.reason || matchDetails.warning) && (
             <div className="flex items-center gap-2 flex-wrap animate-fade-in-up">
               {matchDetails.matchType !== 'warning' && matchDetails.reason && (
-                <p className="text-sm text-emerald-700 font-medium">
+                <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50">
                   {matchDetails.reason} ✨
-                </p>
+                </Badge>
               )}
               {matchDetails.matchType === 'warning' && matchDetails.warning && (
-                <p className="text-sm text-red-700 font-medium">
+                <Badge variant="outline" className="text-red-700 border-red-200 bg-red-50">
                   {matchDetails.warning} ⚠️
-                </p>
+                </Badge>
               )}
             </div>
           )}
