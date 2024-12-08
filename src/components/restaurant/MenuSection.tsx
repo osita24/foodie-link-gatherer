@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { List, Loader2 } from "lucide-react";
 import { MenuCategory } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import MenuItem from "./menu/MenuItem";
 import MenuHeader from "./menu/MenuHeader";
+import MenuLoadingState from "./menu/MenuLoadingState";
+import MenuEmptyState from "./menu/MenuEmptyState";
 import MatchScoreCard from "./MatchScoreCard";
 import { useRestaurantMatch } from "@/hooks/useRestaurantMatch";
 import UnauthenticatedState from "../auth/UnauthenticatedState";
@@ -27,12 +28,10 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
   const location = useLocation();
 
   useEffect(() => {
-    // Check and set initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log("🔐 Auth state changed in MenuSection:", session?.user?.id);
       setSession(session);
@@ -142,48 +141,11 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
   }, [processedMenu, session]);
 
   if (isProcessing) {
-    return (
-      <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
-        <CardContent className="p-8 flex flex-col items-center justify-center min-h-[300px]">
-          <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
-          <p className="text-secondary text-lg font-medium">
-            Processing Menu...
-          </p>
-          <p className="text-muted-foreground text-sm mt-2">
-            Analyzing available information to create your digital menu
-          </p>
-        </CardContent>
-      </Card>
-    );
+    return <MenuLoadingState />;
   }
 
   if (!processedMenu || processedMenu.length === 0) {
-    return (
-      <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
-        <CardContent className="p-8 flex flex-col items-center justify-center min-h-[300px]">
-          <List className="w-8 h-8 text-muted-foreground mb-4" />
-          <p className="text-secondary text-lg font-medium">
-            Menu Not Available
-          </p>
-          <p className="text-muted-foreground text-sm mt-2">
-            We're working on getting the latest menu information.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!session?.user) {
-    return (
-      <UnauthenticatedState 
-        title="Get Personalized Menu Recommendations"
-        description="Sign up to see which menu items match your taste preferences and dietary requirements. We'll analyze each dish and provide personalized recommendations just for you."
-        onAuthClick={() => {
-          // Store the current location for redirect after onboarding
-          localStorage.setItem('redirectAfterAuth', location.pathname);
-        }}
-      />
-    );
+    return <MenuEmptyState />;
   }
 
   return (
@@ -199,7 +161,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
                   <MenuItem
                     key={item.id}
                     item={item}
-                    matchDetails={itemMatchDetails[item.id] || { score: 75 }}
+                    matchDetails={session?.user ? itemMatchDetails[item.id] || { score: 75 } : { score: 0 }}
                   />
                 ))}
               </div>
