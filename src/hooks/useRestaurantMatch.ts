@@ -39,7 +39,7 @@ export const useRestaurantMatch = (restaurant: RestaurantDetails | null): MatchR
       }
 
       try {
-        console.log('🔍 Fetching user preferences for match calculation');
+        console.log('🔍 Starting match calculation for restaurant:', restaurant.name);
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session?.user) {
@@ -69,6 +69,13 @@ export const useRestaurantMatch = (restaurant: RestaurantDetails | null): MatchR
         const atmosphereMatch = calculateAtmosphereMatch(restaurant, preferences);
         const priceMatch = calculatePriceMatch(restaurant, preferences);
 
+        console.log('Match scores calculated:', {
+          cuisine: cuisineMatch.score,
+          dietary: dietaryMatch.score,
+          atmosphere: atmosphereMatch.score,
+          price: priceMatch.score
+        });
+
         const categories: MatchCategory[] = [
           {
             category: "Cuisine",
@@ -96,12 +103,12 @@ export const useRestaurantMatch = (restaurant: RestaurantDetails | null): MatchR
           }
         ];
 
-        // Calculate weighted average
+        // Calculate weighted average with more emphasis on cuisine and dietary matches
         const weights = {
-          cuisine: 0.35,
-          dietary: 0.3,
-          atmosphere: 0.2,
-          price: 0.15
+          cuisine: 0.35,    // 35% weight for cuisine match
+          dietary: 0.30,    // 30% weight for dietary restrictions
+          atmosphere: 0.20, // 20% weight for atmosphere
+          price: 0.15      // 15% weight for price match
         };
 
         const overallScore = Math.round(
@@ -111,12 +118,14 @@ export const useRestaurantMatch = (restaurant: RestaurantDetails | null): MatchR
           (priceMatch.score * weights.price)
         );
 
-        console.log('✨ Match calculation complete:', { 
-          overallScore, 
-          cuisineScore: cuisineMatch.score,
-          dietaryScore: dietaryMatch.score,
-          atmosphereScore: atmosphereMatch.score,
-          priceScore: priceMatch.score
+        console.log('Final calculation:', { 
+          overallScore,
+          weightedScores: {
+            cuisine: cuisineMatch.score * weights.cuisine,
+            dietary: dietaryMatch.score * weights.dietary,
+            atmosphere: atmosphereMatch.score * weights.atmosphere,
+            price: priceMatch.score * weights.price
+          }
         });
 
         setMatchResult({
