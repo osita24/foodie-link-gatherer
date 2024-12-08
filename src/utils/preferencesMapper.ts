@@ -3,6 +3,7 @@ interface SupabasePreferences {
   cuisine_preferences: string[];
   dietary_restrictions: string[];
   favorite_ingredients: string[];
+  favorite_proteins: string[];
   spice_level: number;
   price_range: 'budget' | 'moderate' | 'upscale' | 'luxury';
   special_considerations: string;
@@ -22,6 +23,7 @@ export const mapSupabaseToUserPreferences = (data: SupabasePreferences): UserPre
     dietaryRestrictions: data.dietary_restrictions || [],
     foodsToAvoid: data.favorite_ingredients || [], // Using this field for foods to avoid
     favoriteIngredients: [],
+    favoriteProteins: data.favorite_proteins || [],
     spiceLevel: data.spice_level || 3,
     priceRange: data.price_range || 'moderate',
     specialConsiderations: data.special_considerations || "",

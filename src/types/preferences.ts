@@ -6,6 +6,7 @@ export interface UserPreferences {
   foodsToAvoid: string[];
   atmospherePreferences: string[];
   favoriteIngredients: string[];
+  favoriteProteins: string[];
   spiceLevel: number;
   priceRange: PriceRange;
   specialConsiderations: string;

@@ -91,6 +91,7 @@ export type Database = {
           cuisine_preferences: string[] | null
           dietary_restrictions: string[] | null
           favorite_ingredients: string[] | null
+          favorite_proteins: string[] | null
           id: string
           preferred_dining_times: string[] | null
           price_range: Database["public"]["Enums"]["price_range"] | null
@@ -105,6 +106,7 @@ export type Database = {
           cuisine_preferences?: string[] | null
           dietary_restrictions?: string[] | null
           favorite_ingredients?: string[] | null
+          favorite_proteins?: string[] | null
           id?: string
           preferred_dining_times?: string[] | null
           price_range?: Database["public"]["Enums"]["price_range"] | null
@@ -119,6 +121,7 @@ export type Database = {
           cuisine_preferences?: string[] | null
           dietary_restrictions?: string[] | null
           favorite_ingredients?: string[] | null
+          favorite_proteins?: string[] | null
           id?: string
           preferred_dining_times?: string[] | null
           price_range?: Database["public"]["Enums"]["price_range"] | null

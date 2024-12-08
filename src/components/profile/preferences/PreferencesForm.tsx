@@ -6,6 +6,7 @@ import CuisinePreferences from "./CuisinePreferences";
 import DietaryPreferences from "./DietaryPreferences";
 import AtmospherePreferences from "./AtmospherePreferences";
 import AvoidancePreferences from "./AvoidancePreferences";
+import ProteinPreferences from "./ProteinPreferences";
 
 interface PreferencesFormProps {
   preferences: UserPreferences;
@@ -28,6 +29,19 @@ const PreferencesForm = ({ preferences, onChange }: PreferencesFormProps) => {
           <DietaryPreferences
             selected={preferences.dietaryRestrictions}
             onChange={(restrictions) => onChange({ ...preferences, dietaryRestrictions: restrictions })}
+          />
+        </div>
+      </PreferencesSection>
+
+      <PreferencesSection 
+        value="proteins" 
+        title="Favorite Proteins"
+        selectedCount={preferences.favoriteProteins.length}
+      >
+        <div className="pt-2">
+          <ProteinPreferences
+            selected={preferences.favoriteProteins}
+            onChange={(proteins) => onChange({ ...preferences, favoriteProteins: proteins })}
           />
         </div>
       </PreferencesSection>
