@@ -5,115 +5,187 @@ import { MenuCategory } from "@/types/restaurant";
 export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
   const [itemMatchDetails, setItemMatchDetails] = useState<Record<string, any>>({});
   const [analyzedMenu, setAnalyzedMenu] = useState<MenuCategory[] | null>(null);
-  const [topMatch, setTopMatch] = useState<any>(null);
 
   useEffect(() => {
     const analyzeMenuItem = (item: any, preferences: any) => {
-      console.log('Analyzing menu item:', item.name);
+      console.log('Analyzing menu item:', item.name, 'with preferences:', preferences);
       
       const itemContent = `${item.name} ${item.description || ''}`.toLowerCase();
       let score = 50;
-      let matchType: 'perfect' | 'good' | 'neutral' | 'warning' = 'neutral';
       let reasons: string[] = [];
-      
-      // Dietary restrictions (critical)
+      let warnings: string[] = [];
+      let bonusPoints = 0;
+
+      // Check dietary restrictions first (critical)
       const dietaryConflicts = preferences.dietary_restrictions?.filter(
-        (restriction: string) => itemContent.includes(restriction.toLowerCase())
+        (restriction: string) => {
+          const r = restriction.toLowerCase();
+          if (r === "vegetarian" && 
+              (itemContent.includes("meat") || 
+               itemContent.includes("chicken") || 
+               itemContent.includes("beef") || 
+               itemContent.includes("pork") ||
+               itemContent.includes("fish"))) {
+            return true;
+          }
+          if (r === "vegan" && 
+              (itemContent.includes("meat") || 
+               itemContent.includes("cheese") || 
+               itemContent.includes("cream") || 
+               itemContent.includes("milk") ||
+               itemContent.includes("egg"))) {
+            return true;
+          }
+          if (r === "gluten-free" && 
+              (itemContent.includes("bread") || 
+               itemContent.includes("pasta") || 
+               itemContent.includes("flour"))) {
+            return true;
+          }
+          return itemContent.includes(r);
+        }
       );
-      
-      if (dietaryConflicts?.length) {
+
+      if (dietaryConflicts?.length > 0) {
         score = 20;
-        matchType = 'warning';
-        reasons.push(`Contains ${dietaryConflicts[0]}`);
-        return { score, matchType, reason: reasons[0] };
+        warnings.push(`Contains ${dietaryConflicts[0]}`);
       }
 
-      // Protein preferences (major boost)
+      // Check favorite proteins (major positive)
       const proteinMatches = preferences.favorite_proteins?.filter(
         (protein: string) => itemContent.includes(protein.toLowerCase())
       );
       
-      if (proteinMatches?.length) {
-        score += 25;
+      if (proteinMatches?.length > 0) {
+        score += 35;
+        bonusPoints += 10;
         reasons.push(`Features ${proteinMatches[0]}`);
       }
 
-      // Favorite ingredients (significant boost)
-      const ingredientMatches = preferences.favorite_ingredients?.filter(
+      // Check cuisine preferences (significant positive)
+      const cuisineMatches = preferences.cuisine_preferences?.filter(
+        (cuisine: string) => itemContent.includes(cuisine.toLowerCase())
+      );
+      
+      if (cuisineMatches?.length > 0) {
+        score += 25;
+        bonusPoints += 5;
+        reasons.push(`Matches ${cuisineMatches[0]} cuisine style`);
+      }
+
+      // Check favorite ingredients
+      const favoriteIngredients = preferences.favorite_ingredients?.filter(
         (ingredient: string) => itemContent.includes(ingredient.toLowerCase())
       );
       
-      if (ingredientMatches?.length) {
-        score += 15;
-        reasons.push(`Contains ${ingredientMatches[0]}`);
+      if (favoriteIngredients?.length > 0) {
+        score += 20;
+        bonusPoints += 5;
+        reasons.push(`Contains ${favoriteIngredients[0]} that you love`);
       }
 
-      // Preparation method bonus
-      const healthyMethods = ['grilled', 'steamed', 'baked', 'roasted'];
-      const methodMatch = healthyMethods.find(method => itemContent.includes(method));
-      if (methodMatch) {
-        score += 10;
-        reasons.push(`Healthy ${methodMatch} preparation`);
+      // Add specific dish type bonuses
+      if (itemContent.includes("fresh") || itemContent.includes("seasonal")) {
+        bonusPoints += 3;
+        reasons.push("Made with fresh ingredients");
+      }
+      if (itemContent.includes("house special") || itemContent.includes("signature")) {
+        bonusPoints += 4;
+        reasons.push("Restaurant's signature dish");
+      }
+      if (itemContent.includes("grilled") || itemContent.includes("roasted")) {
+        bonusPoints += 2;
+        reasons.push("Prepared with healthy cooking method");
       }
 
-      // Special indicators
-      if (itemContent.includes('signature') || itemContent.includes('chef special')) {
-        score += 10;
-        reasons.push('Chef\'s special dish');
+      // Determine match type based on final score + bonus points
+      let matchType: 'perfect' | 'good' | 'neutral' | 'warning' = 'neutral';
+      const finalScore = Math.min(100, score + bonusPoints);
+
+      if (finalScore >= 90) matchType = 'perfect';
+      else if (finalScore >= 75) matchType = 'good';
+      else if (finalScore < 40) matchType = 'warning';
+
+      // Ensure we always have a reason
+      if (reasons.length === 0 && !warnings.length) {
+        if (itemContent.includes("spicy")) {
+          reasons.push("Spicy option available");
+        } else if (itemContent.includes("vegetarian")) {
+          reasons.push("Vegetarian-friendly option");
+        } else if (itemContent.includes("classic")) {
+          reasons.push("Classic menu favorite");
+        } else {
+          reasons.push("Traditional preparation");
+        }
       }
 
-      // Determine match type based on score
-      if (score >= 90) matchType = 'perfect';
-      else if (score >= 75) matchType = 'good';
-      else if (score < 40) matchType = 'warning';
+      console.log(`Analysis result for ${item.name}:`, {
+        score: finalScore,
+        reasons,
+        warnings,
+        matchType
+      });
 
       return {
-        score,
-        matchType,
-        reason: reasons[0] || 'Matches your preferences',
+        score: finalScore,
+        reason: reasons[0],
+        warning: warnings[0],
+        matchType
       };
     };
 
     const loadMatchDetails = async () => {
       if (!processedMenu?.[0]?.items) return;
+
+      const details: Record<string, any> = {};
       
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.log("No authenticated user found");
+        return;
+      }
 
+      console.log("Loading preferences for user:", user.id);
+      
       try {
-        const { data: preferences } = await supabase
+        const { data: preferences, error: preferencesError } = await supabase
           .from('user_preferences')
           .select('*')
           .eq('user_id', user.id)
           .maybeSingle();
 
-        if (!preferences) return;
+        if (preferencesError) {
+          console.error("Error fetching preferences:", preferencesError);
+          throw preferencesError;
+        }
 
-        const details: Record<string, any> = {};
-        let bestMatch = { score: -1, item: null, analysis: null };
+        if (!preferences) {
+          console.log("No preferences found for user");
+          return;
+        }
 
-        // Analyze each item
-        processedMenu[0].items.forEach(item => {
-          const analysis = analyzeMenuItem(item, preferences);
-          details[item.id] = analysis;
+        console.log("Found user preferences:", preferences);
 
-          // Track the best match
-          if (analysis.score > bestMatch.score) {
-            bestMatch = { score: analysis.score, item, analysis };
-          }
+        // Analyze each menu item
+        const analyzedItems = processedMenu[0].items.map(item => ({
+          ...item,
+          analysis: analyzeMenuItem(item, preferences)
+        }));
+
+        // Sort items by score
+        const sortedItems = analyzedItems.sort((a, b) => {
+          const scoreA = a.analysis.score || 0;
+          const scoreB = b.analysis.score || 0;
+          return scoreB - scoreA;
         });
 
+        // Create match details for each item
+        sortedItems.forEach(item => {
+          details[item.id] = item.analysis;
+        });
+
+        setAnalyzedMenu([{ ...processedMenu[0], items: sortedItems }]);
         setItemMatchDetails(details);
-        setTopMatch(bestMatch.score > 0 ? { ...bestMatch.item, analysis: bestMatch.analysis } : null);
-        
-        // Keep original menu order, just add analysis
-        setAnalyzedMenu([{
-          ...processedMenu[0],
-          items: processedMenu[0].items.map(item => ({
-            ...item,
-            analysis: details[item.id]
-          }))
-        }]);
 
       } catch (error) {
         console.error("Error in loadMatchDetails:", error);
@@ -123,5 +195,5 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
     loadMatchDetails();
   }, [processedMenu]);
 
-  return { itemMatchDetails, analyzedMenu, topMatch };
+  return { itemMatchDetails, analyzedMenu };
 };

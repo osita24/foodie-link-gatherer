@@ -9,7 +9,6 @@ import ReviewsSection from "@/components/restaurant/ReviewsSection";
 import ActionButtons from "@/components/restaurant/ActionButtons";
 import OrderSection from "@/components/restaurant/OrderSection";
 import AdditionalInfo from "@/components/restaurant/AdditionalInfo";
-import MatchScoreCard from "@/components/restaurant/MatchScoreCard";
 import { RestaurantDetails as RestaurantDetailsType } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -155,14 +154,11 @@ const RestaurantDetails = () => {
               <RestaurantInfo restaurant={restaurant} />
             </div>
             
-            <MatchScoreCard restaurant={restaurant} />
-            
             <MenuSection 
               menu={restaurant?.menu} 
               photos={restaurant?.photos}
               reviews={restaurant?.googleReviews}
               menuUrl={restaurant?.website}
-              restaurant={restaurant}
             />
 
             <div className="block lg:hidden">
