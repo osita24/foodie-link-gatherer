@@ -1,9 +1,8 @@
-import { Configuration, OpenAIApi } from "https://esm.sh/openai@3.2.1";
+import { corsHeaders } from '../_shared/cors.ts';
 
 export async function analyzeMenuItem(
   item: { name: string; description?: string },
-  preferences: any,
-  openAIKey: string
+  preferences: any
 ): Promise<{
   score: number;
   reason?: string;
@@ -11,55 +10,69 @@ export async function analyzeMenuItem(
 }> {
   try {
     console.log('🔍 Analyzing menu item:', item.name);
+    console.log('👤 User preferences:', preferences);
     
-    // Basic analysis without AI for common cases
     const itemContent = `${item.name} ${item.description || ''}`.toLowerCase();
+    let score = 50; // Start with neutral score
 
-    // Check dietary restrictions first (critical)
+    // Critical checks (dietary restrictions) - Major negative impact
     if (preferences.dietary_restrictions?.some(
       (restriction: string) => itemContent.includes(restriction.toLowerCase())
     )) {
       return {
         score: 20,
-        warning: "Contains ingredients you avoid"
+        warning: "Contains ingredients you typically avoid"
       };
     }
 
-    // Check favorite proteins (strong positive)
+    // Favorite proteins - Major positive impact
     if (preferences.favorite_proteins?.some(
       (protein: string) => itemContent.includes(protein.toLowerCase())
     )) {
+      score += 35;
       return {
-        score: 95,
+        score: Math.min(95, score),
         reason: "Contains your favorite protein!"
       };
     }
 
-    // Check cuisine preferences (positive)
+    // Cuisine preferences - Moderate positive impact
     if (preferences.cuisine_preferences?.some(
       (cuisine: string) => itemContent.includes(cuisine.toLowerCase())
     )) {
+      score += 25;
       return {
-        score: 90,
-        reason: "Matches your favorite cuisine!"
+        score: Math.min(90, score),
+        reason: "Matches your preferred cuisine style!"
       };
     }
 
-    // Check favorite ingredients (positive)
-    if (preferences.favorite_ingredients?.some(
-      (ingredient: string) => itemContent.includes(ingredient.toLowerCase())
+    // Foods to avoid - Moderate negative impact
+    if (preferences.foodsToAvoid?.some(
+      (food: string) => itemContent.includes(food.toLowerCase())
     )) {
+      score -= 20;
       return {
-        score: 85,
-        reason: "Contains ingredients you love!"
+        score: Math.max(30, score),
+        warning: "Contains ingredients you prefer to avoid"
       };
     }
 
-    // Default moderate score if no strong matches/mismatches
-    return { score: 75 };
+    // Atmosphere match - Small positive impact
+    if (preferences.atmosphere_preferences?.some(
+      (atmosphere: string) => itemContent.includes(atmosphere.toLowerCase())
+    )) {
+      score += 10;
+    }
+
+    // Default moderate score with no strong matches/mismatches
+    return { 
+      score: score,
+      reason: score > 70 ? "This could be a good match based on your preferences" : undefined
+    };
 
   } catch (error) {
-    console.error('Error analyzing menu item:', error);
+    console.error('❌ Error analyzing menu item:', error);
     return { score: 50 };
   }
 }

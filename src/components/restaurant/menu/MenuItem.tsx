@@ -1,7 +1,13 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, ThumbsUp, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface MenuItemProps {
   item: {
@@ -35,7 +41,15 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
   const getMatchStyle = (score: number) => {
     if (score >= 85) return "border-l-4 border-emerald-400 bg-gradient-to-r from-emerald-50 to-transparent";
     if (score <= 40) return "border-l-4 border-red-400 bg-gradient-to-r from-red-50 to-transparent";
+    if (score >= 70) return "border-l-4 border-blue-400 bg-gradient-to-r from-blue-50 to-transparent";
     return "hover:bg-gray-50/50";
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 85) return "text-emerald-700 bg-emerald-100";
+    if (score <= 40) return "text-red-700 bg-red-100";
+    if (score >= 70) return "text-blue-700 bg-blue-100";
+    return "text-gray-700 bg-gray-100";
   };
 
   return (
@@ -52,22 +66,34 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
             <h3 className="text-base font-medium text-gray-900">
               {cleanName}
             </h3>
-            {matchDetails.score >= 85 && (
-              <Badge 
-                className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-0
-                  animate-fade-in-up"
-              >
-                Perfect Match! 🎯
-              </Badge>
-            )}
-            {matchDetails.score <= 40 && (
-              <Badge 
-                className="bg-red-100 text-red-700 hover:bg-red-200 border-0
-                  animate-fade-in-up"
-              >
-                Heads Up! ⚠️
-              </Badge>
-            )}
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge 
+                    className={cn(
+                      "animate-fade-in-up cursor-help transition-colors",
+                      getScoreColor(matchDetails.score)
+                    )}
+                  >
+                    {matchDetails.score}% Match
+                    {matchDetails.score >= 70 ? (
+                      <ThumbsUp className="w-3 h-3 ml-1" />
+                    ) : matchDetails.score <= 40 ? (
+                      <AlertTriangle className="w-3 h-3 ml-1" />
+                    ) : null}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    {matchDetails.score >= 85 ? "Perfect match based on your preferences!" :
+                     matchDetails.score >= 70 ? "Good match for you" :
+                     matchDetails.score <= 40 ? "May not match your preferences" :
+                     "Neutral match"}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           
           {description && (
@@ -93,7 +119,7 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
           
           {(matchDetails.reason || matchDetails.warning) && (
             <div className="flex items-center gap-2 flex-wrap animate-fade-in-up">
-              {matchDetails.score >= 85 && matchDetails.reason && (
+              {matchDetails.score >= 70 && matchDetails.reason && (
                 <p className="text-sm text-emerald-700 font-medium">
                   {matchDetails.reason} ✨
                 </p>
