@@ -20,16 +20,20 @@ export async function analyzeMenuItem(
     Description: ${item.description || 'No description available'}
     
     User Preferences:
-    - Favorite Cuisines: ${preferences.cuisinePreferences?.join(', ') || 'None specified'}
+    - Cuisine Preferences: ${preferences.cuisinePreferences?.join(', ') || 'None specified'}
     - Dietary Restrictions: ${preferences.dietaryRestrictions?.join(', ') || 'None specified'}
     - Favorite Proteins: ${preferences.favoriteProteins?.join(', ') || 'None specified'}
     - Foods to Avoid: ${preferences.foodsToAvoid?.join(', ') || 'None specified'}
     - Spice Level (1-5): ${preferences.spiceLevel || 'Not specified'}
+    - Atmosphere Preferences: ${preferences.atmospherePreferences?.join(', ') || 'None specified'}
+    - Special Considerations: ${preferences.specialConsiderations || 'None specified'}
     
     Provide a JSON response with:
     1. A match score (0-100)
-    2. A SHORT, specific reason if it's a great match (score >= 85)
+    2. A SHORT, specific reason if it's a great match (score >= 85) focusing on user preferences
+       Examples: "Contains your favorite protein: chicken", "Perfect for your spice level", "Matches your dietary needs"
     3. A SHORT, specific warning if there are concerns (score <= 40)
+       Examples: "Contains shellfish (your allergen)", "Very spicy (you prefer mild)", "Contains ingredients you avoid"
     
     Keep messages under 50 characters, mobile-friendly.
     Focus on the most relevant match/concern.`;
@@ -45,7 +49,7 @@ export async function analyzeMenuItem(
         messages: [
           {
             role: 'system',
-            content: 'You are a culinary expert that provides concise, personalized dish recommendations.'
+            content: 'You are a culinary expert that provides concise, personalized dish recommendations based on detailed user preferences.'
           },
           { role: 'user', content: prompt }
         ],

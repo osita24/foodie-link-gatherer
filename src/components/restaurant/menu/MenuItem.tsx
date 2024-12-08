@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Star, AlertTriangle, Check, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -33,10 +33,42 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
   const displayDescription = isExpanded ? description : description?.substring(0, 100);
 
   const getMatchStyle = (score: number) => {
-    if (score >= 85) return "border-l-4 border-emerald-400 bg-gradient-to-r from-emerald-50 to-transparent";
-    if (score <= 40) return "border-l-4 border-red-400 bg-gradient-to-r from-red-50 to-transparent";
+    if (score >= 85) return "border-l-4 border-emerald-400 bg-gradient-to-r from-emerald-50/50 to-transparent";
+    if (score <= 40) return "border-l-4 border-red-400 bg-gradient-to-r from-red-50/50 to-transparent";
+    if (score >= 70) return "border-l-4 border-blue-400 bg-gradient-to-r from-blue-50/50 to-transparent";
     return "hover:bg-gray-50/50";
   };
+
+  const getMatchBadge = (score: number) => {
+    if (score >= 85) {
+      return {
+        icon: <Star className="w-3 h-3" />,
+        text: "Perfect Match!",
+        className: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-0"
+      };
+    }
+    if (score <= 40) {
+      return {
+        icon: <AlertTriangle className="w-3 h-3" />,
+        text: "Heads Up!",
+        className: "bg-red-100 text-red-700 hover:bg-red-200 border-0"
+      };
+    }
+    if (score >= 70) {
+      return {
+        icon: <Check className="w-3 h-3" />,
+        text: "Good Choice",
+        className: "bg-blue-100 text-blue-700 hover:bg-blue-200 border-0"
+      };
+    }
+    return {
+      icon: <Info className="w-3 h-3" />,
+      text: "Consider This",
+      className: "bg-gray-100 text-gray-700 hover:bg-gray-200 border-0"
+    };
+  };
+
+  const badge = getMatchBadge(matchDetails.score);
 
   return (
     <div 
@@ -52,22 +84,15 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
             <h3 className="text-base font-medium text-gray-900">
               {cleanName}
             </h3>
-            {matchDetails.score >= 85 && (
-              <Badge 
-                className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-0
-                  animate-fade-in-up"
-              >
-                Perfect Match! 🎯
-              </Badge>
-            )}
-            {matchDetails.score <= 40 && (
-              <Badge 
-                className="bg-red-100 text-red-700 hover:bg-red-200 border-0
-                  animate-fade-in-up"
-              >
-                Heads Up! ⚠️
-              </Badge>
-            )}
+            <Badge 
+              className={cn(
+                "flex items-center gap-1 animate-fade-in-up",
+                badge.className
+              )}
+            >
+              {badge.icon}
+              {badge.text}
+            </Badge>
           </div>
           
           {description && (
@@ -92,15 +117,17 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
           )}
           
           {(matchDetails.reason || matchDetails.warning) && (
-            <div className="flex items-center gap-2 flex-wrap animate-fade-in-up">
+            <div className="flex items-center gap-2 flex-wrap mt-2 animate-fade-in-up">
               {matchDetails.score >= 85 && matchDetails.reason && (
-                <p className="text-sm text-emerald-700 font-medium">
-                  {matchDetails.reason} ✨
+                <p className="text-sm text-emerald-700 font-medium flex items-center gap-1">
+                  <Check className="w-4 h-4" />
+                  {matchDetails.reason}
                 </p>
               )}
               {matchDetails.score <= 40 && matchDetails.warning && (
-                <p className="text-sm text-red-700 font-medium">
-                  {matchDetails.warning} ⚠️
+                <p className="text-sm text-red-700 font-medium flex items-center gap-1">
+                  <AlertTriangle className="w-4 h-4" />
+                  {matchDetails.warning}
                 </p>
               )}
             </div>
