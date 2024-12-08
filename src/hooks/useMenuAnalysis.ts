@@ -12,11 +12,10 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
       
       const itemContent = `${item.name} ${item.description || ''}`.toLowerCase();
       let score = 50;
-      let matchType: 'perfect' | 'good' | 'neutral' | 'warning' = 'neutral';
       let reasons: string[] = [];
       let warnings: string[] = [];
 
-      // Check dietary restrictions (critical)
+      // Check dietary restrictions first (critical)
       const dietaryConflicts = preferences.dietary_restrictions?.filter(
         (restriction: string) => {
           const r = restriction.toLowerCase();
@@ -36,14 +35,18 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
                itemContent.includes("egg"))) {
             return true;
           }
+          if (r === "gluten-free" && 
+              (itemContent.includes("bread") || 
+               itemContent.includes("pasta") || 
+               itemContent.includes("flour"))) {
+            return true;
+          }
           return itemContent.includes(r);
         }
       );
 
       if (dietaryConflicts?.length > 0) {
-        console.log('Found dietary conflicts:', dietaryConflicts);
         score = 20;
-        matchType = 'warning';
         warnings.push(`Contains ${dietaryConflicts[0]}`);
       }
 
@@ -53,18 +56,16 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
       );
       
       if (proteinMatches?.length > 0) {
-        console.log('Found protein matches:', proteinMatches);
         score += 30;
         reasons.push(`Contains ${proteinMatches[0]}`);
       }
 
-      // Check cuisine preferences
+      // Check cuisine preferences (significant positive)
       const cuisineMatches = preferences.cuisine_preferences?.filter(
         (cuisine: string) => itemContent.includes(cuisine.toLowerCase())
       );
       
       if (cuisineMatches?.length > 0) {
-        console.log('Found cuisine matches:', cuisineMatches);
         score += 25;
         reasons.push(`Matches ${cuisineMatches[0]} cuisine`);
       }
@@ -73,14 +74,31 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
       const ingredientsToAvoid = preferences.favorite_ingredients?.filter(
         (ingredient: string) => itemContent.includes(ingredient.toLowerCase())
       );
-
+      
       if (ingredientsToAvoid?.length > 0) {
-        console.log('Found ingredients to avoid:', ingredientsToAvoid);
         score -= 30;
         warnings.push(`Contains ${ingredientsToAvoid[0]}`);
       }
 
-      // Determine final match type
+      // Add neutral reasons if no specific matches found
+      if (reasons.length === 0 && warnings.length === 0) {
+        if (itemContent.includes("vegetarian") || itemContent.includes("vegan")) {
+          reasons.push("Plant-based option available");
+        } else if (itemContent.includes("spicy") || itemContent.includes("hot")) {
+          reasons.push("Spicy dish - adjust to taste");
+        } else if (itemContent.includes("fresh") || itemContent.includes("seasonal")) {
+          reasons.push("Made with fresh ingredients");
+        } else if (itemContent.includes("grilled")) {
+          reasons.push("Grilled preparation");
+        } else if (itemContent.includes("house") || itemContent.includes("signature")) {
+          reasons.push("House specialty");
+        } else {
+          reasons.push("Standard menu item");
+        }
+      }
+
+      // Determine match type based on final score
+      let matchType: 'perfect' | 'good' | 'neutral' | 'warning' = 'neutral';
       if (score >= 90) matchType = 'perfect';
       else if (score >= 75) matchType = 'good';
       else if (score < 40) matchType = 'warning';
@@ -88,18 +106,18 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
       // Cap score between 0 and 100
       score = Math.max(0, Math.min(100, score));
 
-      console.log('Final analysis for', item.name, ':', {
+      console.log(`Analysis result for ${item.name}:`, {
         score,
-        matchType,
         reasons,
-        warnings
+        warnings,
+        matchType
       });
 
       return {
         score,
-        matchType,
         reason: reasons[0],
-        warning: warnings[0]
+        warning: warnings[0],
+        matchType
       };
     };
 
@@ -137,15 +155,21 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
         console.log("Found user preferences:", preferences);
 
         // Analyze each menu item
-        for (const item of processedMenu[0].items) {
-          details[item.id] = analyzeMenuItem(item, preferences);
-        }
+        const analyzedItems = processedMenu[0].items.map(item => ({
+          ...item,
+          analysis: analyzeMenuItem(item, preferences)
+        }));
 
         // Sort items by score
-        const sortedItems = [...processedMenu[0].items].sort((a, b) => {
-          const scoreA = details[a.id]?.score || 0;
-          const scoreB = details[b.id]?.score || 0;
+        const sortedItems = analyzedItems.sort((a, b) => {
+          const scoreA = a.analysis.score || 0;
+          const scoreB = b.analysis.score || 0;
           return scoreB - scoreA;
+        });
+
+        // Create match details for each item
+        sortedItems.forEach(item => {
+          details[item.id] = item.analysis;
         });
 
         setAnalyzedMenu([{ ...processedMenu[0], items: sortedItems }]);

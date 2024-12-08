@@ -49,7 +49,7 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
       case 'warning':
         return "border-l-4 border-red-400 bg-gradient-to-r from-red-50 to-transparent";
       default:
-        return "hover:bg-gray-50/50";
+        return "border-l-4 border-gray-200 hover:bg-gray-50/50";
     }
   };
 
@@ -75,7 +75,7 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
       case 'warning':
         return "HEADS UP ⚠️";
       default:
-        return "NEUTRAL 🤔";
+        return "POSSIBLE MATCH 🤔";
     }
   };
 
@@ -128,10 +128,7 @@ const MenuItem = ({ item, matchDetails }: MenuItemProps) => {
                         {matchDetails.score}% Match Score
                       </p>
                       <p className="text-xs text-gray-500">
-                        {matchDetails.matchType === 'perfect' ? "This dish perfectly matches your preferences!" :
-                         matchDetails.matchType === 'good' ? "This is a solid match for your tastes" :
-                         matchDetails.matchType === 'warning' ? "This might not align with your preferences" :
-                         "This dish has neutral alignment with your preferences"}
+                        {matchDetails.reason || matchDetails.warning}
                       </p>
                     </div>
                   </TooltipContent>
