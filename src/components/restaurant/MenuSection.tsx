@@ -19,6 +19,7 @@ interface MenuSectionProps {
 const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
   const [processedMenu, setProcessedMenu] = useState<MenuCategory[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [itemMatchDetails, setItemMatchDetails] = useState<Record<string, any>>({});
   const { categories } = useRestaurantMatch(null);
 
   useEffect(() => {
@@ -75,36 +76,50 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
     }
   };
 
-  const getMatchDetails = async (item: any) => {
-    try {
-      const { data: preferences } = await supabase
-        .from('user_preferences')
-        .select('*')
-        .single();
+  useEffect(() => {
+    const loadMatchDetails = async () => {
+      if (!processedMenu?.[0]?.items) return;
 
-      if (!preferences) {
-        return { score: 75 };
-      }
+      const details: Record<string, any> = {};
+      
+      for (const item of processedMenu[0].items) {
+        try {
+          const { data: preferences } = await supabase
+            .from('user_preferences')
+            .select('*')
+            .single();
 
-      const { data, error } = await supabase.functions.invoke('menu-processor', {
-        body: { 
-          action: 'analyze-item',
-          item,
-          preferences
+          if (!preferences) {
+            details[item.id] = { score: 75 };
+            continue;
+          }
+
+          const { data, error } = await supabase.functions.invoke('menu-processor', {
+            body: { 
+              action: 'analyze-item',
+              item,
+              preferences
+            }
+          });
+
+          if (error || !data) {
+            console.error("Error analyzing item:", error);
+            details[item.id] = { score: 75 };
+            continue;
+          }
+
+          details[item.id] = data;
+        } catch (error) {
+          console.error("Error getting match details:", error);
+          details[item.id] = { score: 75 };
         }
-      });
-
-      if (error || !data) {
-        console.error("Error analyzing item:", error);
-        return { score: 75 };
       }
 
-      return data;
-    } catch (error) {
-      console.error("Error getting match details:", error);
-      return { score: 75 };
-    }
-  };
+      setItemMatchDetails(details);
+    };
+
+    loadMatchDetails();
+  }, [processedMenu]);
 
   if (isProcessing) {
     return (
@@ -151,7 +166,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl }: MenuSectionProps) => {
                   <MenuItem
                     key={item.id}
                     item={item}
-                    matchDetails={getMatchDetails(item)}
+                    matchDetails={itemMatchDetails[item.id] || { score: 75 }}
                   />
                 ))}
               </div>
