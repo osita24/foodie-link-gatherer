@@ -76,6 +76,7 @@ const ActionButtons = () => {
 
     try {
       setIsSaving(true);
+      console.log("💾 Starting save operation for restaurant:", restaurant);
 
       if (isSaved) {
         const { error } = await supabase
@@ -89,19 +90,27 @@ const ActionButtons = () => {
         setIsSaved(false);
         toast.success("Restaurant removed from your saved list");
       } else {
+        // Ensure all required fields are present
+        const restaurantData = {
+          user_id: session.user.id,
+          place_id: placeId,
+          name: restaurant.name || 'Unnamed Restaurant', // Provide a fallback
+          image_url: restaurant.photos?.[0] || null,
+          cuisine: restaurant.types?.[0] || null,
+          rating: restaurant.rating || null,
+          address: restaurant.address || null,
+        };
+
+        console.log("📝 Saving restaurant data:", restaurantData);
+
         const { error } = await supabase
           .from('saved_restaurants')
-          .insert({
-            user_id: session.user.id,
-            place_id: placeId,
-            name: restaurant.name,
-            image_url: restaurant.photos?.[0] || null,
-            cuisine: restaurant.types?.[0] || null,
-            rating: restaurant.rating || null,
-            address: restaurant.address || null,
-          });
+          .insert(restaurantData);
 
-        if (error) throw error;
+        if (error) {
+          console.error("❌ Error saving restaurant:", error);
+          throw error;
+        }
 
         setIsSaved(true);
         toast.success("Restaurant saved to your list!");
