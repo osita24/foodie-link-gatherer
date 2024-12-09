@@ -55,9 +55,8 @@ export const NavigationItems = () => {
         <div className="relative">
           <User className={className} />
           {session?.user && completionPercentage < 100 && (
-            <div className="absolute -right-1 -top-1">
-              <Circle className="w-2.5 h-2.5 fill-green-500 text-green-500" />
-              <div className="absolute -right-0.5 -top-0.5 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <div className="absolute -top-0.5 -right-0.5">
+              <Circle className="w-2 h-2 text-green-500 opacity-60" />
             </div>
           )}
         </div>
