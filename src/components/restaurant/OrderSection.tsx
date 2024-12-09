@@ -10,6 +10,9 @@ const OrderSection = () => {
 
   console.log("🌐 Restaurant website URL:", restaurant?.website);
 
+  // Only show the button if we have a valid website URL
+  const hasValidWebsite = restaurant?.website && restaurant.website.startsWith('http');
+
   return (
     <Card className="bg-white hover:shadow-lg transition-shadow duration-300 mt-6">
       <CardHeader>
@@ -20,10 +23,10 @@ const OrderSection = () => {
           variant="outline"
           className="w-full justify-between hover:bg-primary/5"
           asChild
-          disabled={!restaurant?.website}
+          disabled={!hasValidWebsite}
         >
           <a 
-            href={restaurant?.website || '#'} 
+            href={hasValidWebsite ? restaurant.website : '#'} 
             target="_blank" 
             rel="noopener noreferrer"
             className="flex items-center justify-between w-full"
