@@ -37,21 +37,23 @@ const Features = () => {
                 transition: "all 0.5s ease-out"
               }}
             >
-              <div className="absolute inset-0 bg-gradient-to-br opacity-90 rounded-xl shadow-lg transform group-hover:scale-105 group-hover:-translate-y-2 transition-all duration-300"></div>
               <div 
-                className={`relative h-full bg-gradient-to-br ${feature.gradient} rounded-xl p-6 md:p-8 shadow-lg 
-                  hover:shadow-2xl transition-all duration-300`}
+                className={`relative h-full bg-gradient-to-br ${feature.gradient} rounded-xl p-6 md:p-8
+                  transform transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1
+                  hover:shadow-lg shadow-sm`}
               >
                 <div 
-                  className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-6 bg-white/10 rounded-full flex items-center justify-center 
-                    backdrop-blur-sm transform group-hover:rotate-12 transition-transform duration-300"
+                  className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-6 bg-white/10 rounded-full 
+                    flex items-center justify-center backdrop-blur-sm
+                    transform group-hover:scale-110 group-hover:rotate-3
+                    transition-all duration-500 ease-out"
                 >
                   {feature.icon}
                 </div>
                 <h3 className="text-lg md:text-xl font-bold mb-3 text-white text-center">
                   {feature.title}
                 </h3>
-                <p className="text-sm md:text-base text-white/90 text-center">
+                <p className="text-sm md:text-base text-white/90 text-center leading-relaxed">
                   {feature.description}
                 </p>
               </div>
