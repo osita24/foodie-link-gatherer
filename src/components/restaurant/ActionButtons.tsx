@@ -118,41 +118,31 @@ const ActionButtons = () => {
 
   const handleShare = async () => {
     console.log("Share clicked");
-    const shareUrl = window.location.href;
-    const isMobile = window.innerWidth <= 768;
-
-    if (navigator.share && isMobile) {
-      try {
+    try {
+      const shareUrl = window.location.href;
+      if (navigator.share) {
         await navigator.share({
           title: restaurant?.name || 'Check out this restaurant!',
           text: `Check out ${restaurant?.name} on our platform!`,
-          url: shareUrl
+          url: shareUrl,
         });
         toast.success("Shared successfully!");
-      } catch (error) {
-        console.error("Error sharing:", error);
-      }
-    } else {
-      // Desktop only - copy to clipboard
-      try {
+      } else {
         await navigator.clipboard.writeText(shareUrl);
-        toast.success("Link copied to clipboard!", {
-          description: "Share it with your friends!",
-        });
-      } catch (error) {
-        console.error("Error copying to clipboard:", error);
-        toast.error("Failed to copy link");
+        toast.success("Link copied to clipboard!");
       }
+    } catch (error) {
+      console.error("Error sharing:", error);
+      toast.error("Failed to share");
     }
   };
 
   return (
     <>
-      <div className="fixed bottom-4 left-4 right-4 flex flex-col sm:flex-row gap-2 z-50 md:static md:flex-row md:justify-end md:gap-3 md:mb-6">
+      <div className="fixed bottom-4 left-4 right-4 flex flex-col sm:flex-row gap-2 z-50 md:static md:flex-col md:gap-3">
         <Button
           size="lg"
-          className={`bg-primary text-white hover:bg-primary/90 transition-all duration-300 w-full sm:w-auto shadow-lg
-            md:px-8 md:py-6 md:text-base md:font-medium
+          className={`bg-primary text-white hover:bg-primary/90 transition-all duration-300 w-full shadow-lg
             ${isSaving ? 'scale-105 bg-green-500' : ''}`}
           onClick={handleSave}
           disabled={isSaving}
@@ -169,8 +159,7 @@ const ActionButtons = () => {
         <Button
           variant="outline"
           size="lg"
-          className="bg-white/80 backdrop-blur-sm hover:bg-white w-full sm:w-auto shadow-lg
-            md:px-8 md:py-6 md:text-base md:font-medium"
+          className="bg-white/80 backdrop-blur-sm hover:bg-white w-full shadow-lg"
           onClick={handleShare}
         >
           <Share2 className="mr-2 h-5 w-5" />

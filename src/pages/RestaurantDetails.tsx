@@ -7,6 +7,7 @@ import MenuSection from "@/components/restaurant/MenuSection";
 import PhotosSection from "@/components/restaurant/PhotosSection";
 import ReviewsSection from "@/components/restaurant/ReviewsSection";
 import ActionButtons from "@/components/restaurant/ActionButtons";
+import OrderSection from "@/components/restaurant/OrderSection";
 import AdditionalInfo from "@/components/restaurant/AdditionalInfo";
 import { RestaurantDetails as RestaurantDetailsType } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
@@ -107,6 +108,7 @@ const RestaurantDetails = () => {
   }, [id, navigate]);
 
   if (isLoading) {
+    console.log("🔄 Rendering loading state");
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -151,7 +153,7 @@ const RestaurantDetails = () => {
 
       <div className="container mx-auto px-4 -mt-10 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          <div className="lg:col-span-3 space-y-6">
+          <div className="lg:col-span-2 space-y-6">
             <div className="bg-white rounded-xl shadow-sm p-6">
               <RestaurantInfo restaurant={restaurant} />
             </div>
@@ -165,9 +167,19 @@ const RestaurantDetails = () => {
               menuUrl={restaurant?.website}
             />
 
+            <div className="block lg:hidden">
+              <OrderSection />
+            </div>
+
             <AdditionalInfo restaurant={restaurant} />
             {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}
             {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
+          </div>
+
+          <div className="hidden lg:block">
+            <div className="sticky top-24">
+              <OrderSection />
+            </div>
           </div>
         </div>
       </div>
