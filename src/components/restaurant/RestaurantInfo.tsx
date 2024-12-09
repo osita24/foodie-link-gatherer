@@ -1,4 +1,4 @@
-import { MapPin, Clock, DollarSign, Users, Utensils, WifiIcon, Wheelchair, Coffee } from "lucide-react";
+import { MapPin, Clock, DollarSign, Users, Utensils, WifiIcon, Accessibility, Coffee } from "lucide-react";
 import { RestaurantDetails } from "@/types/restaurant";
 import ServiceOptions from "./ServiceOptions";
 
@@ -103,7 +103,7 @@ const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
     if (restaurant?.servesLunch) features.push({ icon: Utensils, text: "Serves Lunch" });
     if (restaurant?.servesDinner) features.push({ icon: Utensils, text: "Serves Dinner" });
     if (restaurant?.servesVegetarianFood) features.push({ icon: Utensils, text: "Vegetarian Options" });
-    if (restaurant?.wheelchairAccessible) features.push({ icon: Wheelchair, text: "Wheelchair Accessible" });
+    if (restaurant?.wheelchairAccessible) features.push({ icon: Accessibility, text: "Wheelchair Accessible" });
     
     if (features.length === 0) return null;
     
