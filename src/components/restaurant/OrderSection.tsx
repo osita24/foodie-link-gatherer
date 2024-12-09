@@ -1,31 +1,35 @@
 import { ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRestaurantData } from "@/hooks/useRestaurantData";
+import { useParams } from "react-router-dom";
 
 const OrderSection = () => {
+  const { id: placeId } = useParams();
+  const { data: restaurant } = useRestaurantData(placeId);
+
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-300 mt-6">
+    <Card className="bg-white hover:shadow-lg transition-shadow duration-300 mt-6">
       <CardHeader>
-        <CardTitle>Order Now</CardTitle>
+        <CardTitle>Book Now</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {[
-          { name: "OpenTable", link: "#" },
-          { name: "DoorDash", link: "#" },
-          { name: "Uber Eats", link: "#" }
-        ].map((platform) => (
-          <Button
-            key={platform.name}
-            variant="outline"
-            className="w-full justify-between hover:bg-primary/5"
-            asChild
+      <CardContent>
+        <Button
+          variant="outline"
+          className="w-full justify-between hover:bg-primary/5"
+          asChild
+          disabled={!restaurant?.website}
+        >
+          <a 
+            href={restaurant?.website || '#'} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center justify-between w-full"
           >
-            <a href={platform.link} target="_blank" rel="noopener noreferrer">
-              {platform.name}
-              <ExternalLink className="w-4 h-4" />
-            </a>
-          </Button>
-        ))}
+            Visit Website
+            <ExternalLink className="w-4 h-4" />
+          </a>
+        </Button>
       </CardContent>
     </Card>
   );
