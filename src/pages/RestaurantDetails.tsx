@@ -12,6 +12,7 @@ import AdditionalInfo from "@/components/restaurant/AdditionalInfo";
 import { RestaurantDetails as RestaurantDetailsType } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
 import RestaurantSummary from "@/components/restaurant/RestaurantSummary";
+import SavePrompt from "@/components/restaurant/SavePrompt";
 
 const RestaurantDetails = () => {
   const [restaurant, setRestaurant] = useState<RestaurantDetailsType | null>(null);
@@ -147,6 +148,8 @@ const RestaurantDetails = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
         <ActionButtons />
       </div>
+
+      <SavePrompt />
 
       <div className="container mx-auto px-4 -mt-10 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
