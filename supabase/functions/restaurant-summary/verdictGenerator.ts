@@ -175,18 +175,82 @@ export function generateVerdict(
   const hasDietaryRestrictions = preferences.dietary_restrictions?.length > 0;
   const meetsRestrictions = scores.dietaryScore >= 70;
 
+  // Generate personalized verdict with explanation
+  let summaryReasons: Array<{ emoji: string; text: string }> = [];
+
   if (hasDietaryRestrictions && !meetsRestrictions) {
     verdict = "SKIP IT";
+    summaryReasons = [
+      {
+        emoji: "⚠️",
+        text: `This restaurant might not accommodate your ${preferences.dietary_restrictions.join(" and ")} dietary needs well`
+      },
+      {
+        emoji: "🔍",
+        text: "We recommend finding a more suitable option that aligns with your dietary preferences"
+      },
+      {
+        emoji: "💡",
+        text: "Consider checking our other recommended restaurants that better match your requirements"
+      }
+    ];
   } else if (weightedScore >= 85) {
     verdict = "MUST VISIT";
+    const matchingCuisine = preferences.cuisine_preferences?.find(cuisine => 
+      restaurant.types?.some(type => type.toLowerCase().includes(cuisine.toLowerCase()))
+    );
+    summaryReasons = [
+      {
+        emoji: "🎯",
+        text: matchingCuisine 
+          ? `Perfect match for your ${matchingCuisine} cuisine preference`
+          : "Exceptionally well-aligned with your preferences"
+      },
+      {
+        emoji: "✨",
+        text: `The atmosphere and dining style match exactly what you enjoy`
+      },
+      {
+        emoji: "💝",
+        text: "Based on your preferences, we think you'll love this place"
+      }
+    ];
   } else if (weightedScore >= 65) {
     verdict = "WORTH A TRY";
+    summaryReasons = [
+      {
+        emoji: "👍",
+        text: "Several aspects of this restaurant align with your preferences"
+      },
+      {
+        emoji: "💭",
+        text: "While not a perfect match, it offers enough of what you enjoy"
+      },
+      {
+        emoji: "🌟",
+        text: "Could be a good opportunity to try something slightly different"
+      }
+    ];
   } else {
     verdict = "SKIP IT";
+    summaryReasons = [
+      {
+        emoji: "📊",
+        text: "This place doesn't quite match your usual preferences"
+      },
+      {
+        emoji: "💭",
+        text: "We have other options that would better suit your taste"
+      },
+      {
+        emoji: "🎯",
+        text: "Based on your profile, we think you might not enjoy it as much"
+      }
+    ];
   }
 
-  // Take top 3 reasons
-  const finalReasons = validReasons.slice(0, 3).map(({ emoji, text }) => ({ emoji, text }));
+  // Take top 3 reasons, combining both summary and specific reasons
+  const finalReasons = [...summaryReasons, ...validReasons.slice(0, 2)];
 
   return { verdict, reasons: finalReasons };
 }
