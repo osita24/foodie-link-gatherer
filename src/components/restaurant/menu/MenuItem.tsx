@@ -9,6 +9,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { MenuItemMatchBadge } from "./MenuItemMatchBadge";
 import { MenuItemDescription } from "./MenuItemDescription";
+import { Crown } from "lucide-react";
 
 interface MenuItemProps {
   item: {
@@ -62,14 +63,15 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
       )}
     >
       {isTopMatch && (
-        <div className="absolute -top-2 -right-2 bg-primary text-white px-2 py-1 rounded-full text-xs font-semibold shadow-lg animate-bounce">
+        <div className="absolute -top-2 -right-2 bg-primary text-white px-2 py-1 rounded-full text-xs font-semibold shadow-lg animate-bounce flex items-center gap-1">
+          <Crown className="w-3 h-3" />
           Top Match
         </div>
       )}
       
       <div className="flex-1">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <h3 className="text-base font-medium text-gray-900 break-words flex-1 min-w-[200px]">
+        <div className="flex items-start justify-between gap-4 flex-wrap sm:flex-nowrap">
+          <h3 className="text-base font-medium text-gray-900 break-words flex-1">
             {cleanName}
           </h3>
           
@@ -85,7 +87,7 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
                     />
                   </div>
                 </TooltipTrigger>
-                <TooltipContent className="w-64 p-3">
+                <TooltipContent side="top" className="w-64 p-3">
                   <div className="space-y-2">
                     <Progress value={matchDetails.score} className="h-2" />
                     <p className="text-sm font-medium">

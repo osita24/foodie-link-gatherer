@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { MenuCategory, RestaurantDetails } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,43 +26,36 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
   const [session, setSession] = useState<any>(null);
   const [topMatchId, setTopMatchId] = useState<string | null>(null);
 
-  useEffect(() => {
-    console.log("🔍 Initializing MenuSection with restaurant:", restaurant?.name);
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("🔐 Auth session loaded:", session?.user?.id);
-      setSession(session);
-    });
-
-    supabase.auth.onAuthStateChange((_event, session) => {
+  // Memoize the auth subscription to prevent unnecessary re-renders
+  const setupAuthSubscription = useCallback(() => {
+    console.log("🔍 Setting up auth subscription");
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log("🔄 Auth state changed:", session?.user?.id);
       setSession(session);
     });
+
+    return () => {
+      console.log("🧹 Cleaning up auth subscription");
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
-    if (menu) {
-      console.log("📋 Using provided menu data:", menu);
-      setProcessedMenu(menu);
-    } else if (menuUrl || photos?.length || reviews?.length) {
-      console.log("🔄 Processing available data sources");
-      processRestaurantData();
-    }
-  }, [menu, photos, reviews, menuUrl]);
+    console.log("🔍 Initializing MenuSection with restaurant:", restaurant?.name);
+    
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("🔐 Initial auth session loaded:", session?.user?.id);
+      setSession(session);
+    });
 
-  useEffect(() => {
-    // Find the item with the highest match score
-    if (session && itemMatchDetails) {
-      const scores = Object.entries(itemMatchDetails).map(([id, details]) => ({
-        id,
-        score: details.score || 0
-      }));
-      const topMatch = scores.sort((a, b) => b.score - a.score)[0];
-      setTopMatchId(topMatch?.id || null);
-      console.log("🏆 Top match identified:", topMatch);
-    }
-  }, [itemMatchDetails, session]);
+    return setupAuthSubscription();
+  }, [setupAuthSubscription]);
 
-  const processRestaurantData = async () => {
+  // Memoize the menu processing logic
+  const processRestaurantData = useCallback(async () => {
+    if (isProcessing) return;
+    
     setIsProcessing(true);
     try {
       const payload = {
@@ -83,6 +76,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
       if (error) throw error;
 
       if (!data?.menuSections?.length) {
+        console.log("⚠️ No menu sections generated");
         toast.info("Could not generate menu information");
         return;
       }
@@ -97,12 +91,41 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [menuUrl, photos, reviews, isProcessing]);
+
+  useEffect(() => {
+    if (menu) {
+      console.log("📋 Using provided menu data:", menu);
+      setProcessedMenu(menu);
+    } else if (menuUrl || photos?.length || reviews?.length) {
+      console.log("🔄 Processing available data sources");
+      processRestaurantData();
+    }
+  }, [menu, processRestaurantData]);
+
+  // Memoize the top match calculation
+  useEffect(() => {
+    if (session && itemMatchDetails) {
+      const scores = Object.entries(itemMatchDetails)
+        .map(([id, details]) => ({
+          id,
+          score: details.score || 0
+        }))
+        .sort((a, b) => b.score - a.score);
+      
+      const topMatch = scores[0];
+      setTopMatchId(topMatch?.id || null);
+      console.log("🏆 Top match identified:", topMatch);
+    }
+  }, [itemMatchDetails, session]);
+
+  const menuToDisplay = useMemo(() => 
+    session ? (analyzedMenu || processedMenu) : processedMenu,
+    [session, analyzedMenu, processedMenu]
+  );
 
   if (isProcessing) return <MenuLoadingState isProcessing />;
   if (!processedMenu || processedMenu.length === 0) return <MenuLoadingState />;
-
-  const menuToDisplay = session ? (analyzedMenu || processedMenu) : processedMenu;
 
   return (
     <div className="space-y-6">
@@ -116,7 +139,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
           <div className="relative">
             <MenuHeader menuUrl={menuUrl} />
             <div className="p-4 md:p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {menuToDisplay[0].items.map((item) => (
                   <MenuItem
                     key={item.id}

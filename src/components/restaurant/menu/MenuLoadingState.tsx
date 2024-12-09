@@ -9,11 +9,11 @@ interface MenuLoadingStateProps {
 const MenuLoadingState = ({ isProcessing }: MenuLoadingStateProps) => {
   if (isProcessing) {
     return (
-      <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
+      <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg animate-fade-in">
         <CardContent className="p-4 md:p-6">
           <div className="flex flex-col items-center justify-center mb-6">
             <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
-            <p className="text-secondary text-lg font-medium">
+            <p className="text-secondary text-lg font-medium animate-pulse">
               Processing Menu...
             </p>
             <p className="text-muted-foreground text-sm mt-2">
@@ -22,7 +22,10 @@ const MenuLoadingState = ({ isProcessing }: MenuLoadingStateProps) => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="p-4 border rounded-lg space-y-3 animate-pulse">
+              <div 
+                key={i} 
+                className="p-4 border rounded-lg space-y-3 animate-pulse transition-all duration-300"
+              >
                 <Skeleton className="h-6 w-3/4" />
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-2/3" />
@@ -35,14 +38,14 @@ const MenuLoadingState = ({ isProcessing }: MenuLoadingStateProps) => {
   }
 
   return (
-    <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg">
+    <Card className="overflow-hidden bg-white/80 backdrop-blur-sm border-none shadow-lg animate-fade-in">
       <CardContent className="p-8 flex flex-col items-center justify-center min-h-[300px]">
         <List className="w-8 h-8 text-muted-foreground mb-4" />
         <p className="text-secondary text-lg font-medium">
           Menu Not Available
         </p>
-        <p className="text-muted-foreground text-sm mt-2">
-          We're working on getting the latest menu information.
+        <p className="text-muted-foreground text-sm mt-2 text-center">
+          We're working on getting the latest menu information
         </p>
       </CardContent>
     </Card>
