@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Crown, Sparkles, ThumbsUp, AlertTriangle, ArrowRight } from "lucide-react";
+import { Crown, Sparkles, ThumbsUp, AlertTriangle, CircleCheck } from "lucide-react";
 
 interface MenuItemMatchBadgeProps {
   score: number;
@@ -32,7 +32,7 @@ export const MenuItemMatchBadge = ({ score, matchType = 'neutral', isTopMatch }:
       case 'warning':
         return <AlertTriangle className="w-3 h-3 ml-1" />;
       default:
-        return <ArrowRight className="w-3 h-3 ml-1" />;
+        return <CircleCheck className="w-3 h-3 ml-1" />;
     }
   };
 
