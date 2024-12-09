@@ -29,7 +29,7 @@ const PhotosSection = ({ photos = [] }: PhotosSectionProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {photos.slice(0, 6).map((photo, index) => (
               <div 
                 key={index} 
@@ -43,7 +43,7 @@ const PhotosSection = ({ photos = [] }: PhotosSectionProps) => {
                   src={photo}
                   alt={`Restaurant photo ${index + 1}`}
                   className={`w-full h-full object-cover rounded-lg transition-all duration-300 
-                    group-hover:scale-[1.02] group-hover:shadow-lg
+                    group-hover:scale-105 group-hover:shadow-lg
                     ${loadedImages.has(index) ? 'opacity-100' : 'opacity-0'}`}
                   loading="lazy"
                   onLoad={() => handleImageLoad(index)}
@@ -59,20 +59,18 @@ const PhotosSection = ({ photos = [] }: PhotosSectionProps) => {
         open={!!selectedPhoto} 
         onOpenChange={() => setSelectedPhoto(null)}
       >
-        <DialogContent className="max-w-4xl p-1 overflow-hidden sm:p-2">
+        <DialogContent className="max-w-4xl p-0 overflow-hidden">
           {selectedPhoto && (
             <div className="relative group">
               <img
                 src={selectedPhoto}
                 alt="Restaurant photo"
-                className="w-full h-auto rounded-lg"
+                className="w-full h-auto"
               />
               <button
                 onClick={() => setSelectedPhoto(null)}
                 className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full 
-                  opacity-0 group-hover:opacity-100 transition-opacity duration-300
-                  focus:outline-none focus:ring-2 focus:ring-white/50"
-                aria-label="Close dialog"
+                  opacity-0 group-hover:opacity-100 transition-opacity duration-300"
               >
                 ✕
               </button>
