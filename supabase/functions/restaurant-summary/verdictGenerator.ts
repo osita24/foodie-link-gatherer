@@ -7,14 +7,14 @@ function generateDietaryReason(restaurant: RestaurantFeatures, preferences: User
   if (preferences.dietary_restrictions.includes('Vegetarian')) {
     if (restaurant.servesVegetarianFood) {
       return {
-        emoji: "🌱",
-        text: "Great vegetarian options available",
+        emoji: "🥗",
+        text: "Perfect for your vegetarian diet",
         priority: 1
       };
     } else {
       return {
         emoji: "⚠️",
-        text: "Limited vegetarian options available",
+        text: "May have limited vegetarian options",
         priority: 1
       };
     }
@@ -29,8 +29,8 @@ function generateDietaryReason(restaurant: RestaurantFeatures, preferences: User
   if (matchingDiets.length > 0) {
     const dietText = matchingDiets.join(" and ");
     return {
-      emoji: "🥗",
-      text: `Menu can accommodate ${dietText} preferences`,
+      emoji: "✅",
+      text: `Menu aligns with your ${dietText} preferences`,
       priority: 1
     };
   }
@@ -48,11 +48,30 @@ function generateCuisineReason(restaurant: RestaurantFeatures, preferences: User
   );
 
   if (matchingCuisines?.length) {
-    const cuisineType = matchingCuisines[0].split('_')[0];
     return {
       emoji: "🎯",
-      text: `Matches your love for ${cuisineType} cuisine`,
+      text: `Matches your favorite ${matchingCuisines[0].split('_')[0]} cuisine`,
       priority: 2
+    };
+  }
+
+  return null;
+}
+
+function generateProteinReason(restaurant: RestaurantFeatures, preferences: UserPreferences): Reason | null {
+  if (!preferences.favorite_proteins?.length) return null;
+
+  // This is a simplified check - in reality, you'd want to analyze the menu items
+  const hasPreferredProtein = preferences.favorite_proteins.some(protein =>
+    restaurant.name.toLowerCase().includes(protein.toLowerCase()) ||
+    restaurant.types?.some(type => type.toLowerCase().includes(protein.toLowerCase()))
+  );
+
+  if (hasPreferredProtein) {
+    return {
+      emoji: "🍖",
+      text: "Features your preferred protein choices",
+      priority: 3
     };
   }
 
@@ -72,9 +91,16 @@ function generateAtmosphereReason(restaurant: RestaurantFeatures, preferences: U
   const matchingAtmosphere = preferences.atmosphere_preferences.find(pref => atmosphereMatches[pref]);
 
   if (matchingAtmosphere) {
+    const emojiMap = {
+      'Fine Dining': '✨',
+      'Casual Dining': '🍽️',
+      'Quick Bites': '⚡',
+      'Bar Scene': '🍷'
+    };
+
     return {
-      emoji: "✨",
-      text: `Perfect ${matchingAtmosphere.toLowerCase()} spot as you prefer`,
+      emoji: emojiMap[matchingAtmosphere],
+      text: `Perfect ${matchingAtmosphere.toLowerCase()} atmosphere as you prefer`,
       priority: 3
     };
   }
@@ -134,6 +160,7 @@ export function generateVerdict(
   const potentialReasons: (Reason | null)[] = [
     generateDietaryReason(restaurant, preferences, scores.dietaryScore),
     generateCuisineReason(restaurant, preferences, scores.cuisineScore),
+    generateProteinReason(restaurant, preferences),
     generateAtmosphereReason(restaurant, preferences, scores.atmosphereScore),
     generatePriceReason(restaurant, preferences, scores.priceScore),
   ];
@@ -149,26 +176,13 @@ export function generateVerdict(
   const meetsRestrictions = scores.dietaryScore >= 70;
 
   if (hasDietaryRestrictions && !meetsRestrictions) {
-    verdict = "CONSIDER WITH CARE";
+    verdict = "SKIP IT";
   } else if (weightedScore >= 85) {
-    verdict = "PERFECT MATCH";
+    verdict = "MUST VISIT";
   } else if (weightedScore >= 65) {
-    verdict = "WORTH EXPLORING";
+    verdict = "WORTH A TRY";
   } else {
-    verdict = "CONSIDER WITH CARE";
-  }
-
-  // If we don't have enough personalized reasons and it's worth exploring or better,
-  // we can add a rating-based reason
-  if (validReasons.length < 3 && 
-      verdict !== "CONSIDER WITH CARE" && 
-      restaurant.rating && 
-      restaurant.rating >= 4.5) {
-    validReasons.push({
-      emoji: "⭐",
-      text: `Well-loved by the community with ${restaurant.rating}/5 stars`,
-      priority: 5
-    });
+    verdict = "SKIP IT";
   }
 
   // Take top 3 reasons
