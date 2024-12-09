@@ -116,11 +116,38 @@ const ActionButtons = () => {
     }
   };
 
-  const handleShare = () => {
+  const handleShare = async () => {
     console.log("Share clicked");
-    toast("Share feature", {
-      description: "Coming soon!",
-    });
+    const shareUrl = window.location.href;
+
+    if (navigator.share && window.innerWidth <= 768) {
+      try {
+        await navigator.share({
+          title: restaurant?.name || 'Check out this restaurant!',
+          text: `Check out ${restaurant?.name} on our platform!`,
+          url: shareUrl
+        });
+        toast.success("Shared successfully!");
+      } catch (error) {
+        console.error("Error sharing:", error);
+        // Fallback to clipboard on share error
+        copyToClipboard(shareUrl);
+      }
+    } else {
+      copyToClipboard(shareUrl);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Link copied to clipboard!", {
+        description: "Share it with your friends!",
+      });
+    } catch (error) {
+      console.error("Error copying to clipboard:", error);
+      toast.error("Failed to copy link");
+    }
   };
 
   return (
