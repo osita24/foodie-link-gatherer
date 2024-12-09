@@ -7,16 +7,20 @@ const SavePrompt = () => {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    // Show prompt after a short delay
-    const timer = setTimeout(() => {
-      // Check if user has dismissed this prompt before
-      const hasSeenPrompt = localStorage.getItem('hasSeenSavePrompt');
-      if (!hasSeenPrompt) {
-        setShow(true);
-      }
-    }, 2000);
+    // Only show prompt on desktop
+    const isDesktop = window.innerWidth >= 640; // sm breakpoint
+    if (isDesktop) {
+      // Show prompt after a short delay
+      const timer = setTimeout(() => {
+        // Check if user has dismissed this prompt before
+        const hasSeenPrompt = localStorage.getItem('hasSeenSavePrompt');
+        if (!hasSeenPrompt) {
+          setShow(true);
+        }
+      }, 2000);
 
-    return () => clearTimeout(timer);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   const handleDismiss = () => {
@@ -27,10 +31,10 @@ const SavePrompt = () => {
   if (!show) return null;
 
   return (
-    <Alert className="fixed bottom-24 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-background/95 backdrop-blur-sm shadow-lg border-primary/20 animate-fade-up">
+    <Alert className="fixed bottom-28 right-6 w-72 bg-background/95 backdrop-blur-sm shadow-lg border-primary/20 animate-fade-up hidden sm:block">
       <AlertDescription className="flex items-center justify-between">
         <span className="text-sm text-muted-foreground">
-          Save this restaurant to your collection for easy access later!
+          Click here to save this restaurant to your collection!
         </span>
         <Button
           variant="ghost"

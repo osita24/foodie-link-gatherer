@@ -141,30 +141,30 @@ const ActionButtons = () => {
 
   return (
     <>
-      <div className="fixed bottom-4 left-4 right-4 flex flex-col sm:flex-row gap-2 z-50">
+      <div className="fixed bottom-6 right-6 flex flex-col sm:flex-row gap-3 z-50">
         <Button
           size="lg"
-          className={`bg-primary text-white hover:bg-primary/90 transition-all duration-300 w-full sm:w-auto shadow-lg
+          className={`bg-primary text-white hover:bg-primary/90 transition-all duration-300 w-full sm:w-auto shadow-lg text-base px-6
             ${isSaving ? 'scale-105 bg-green-500' : ''}`}
           onClick={handleSave}
           disabled={isSaving}
         >
           {isSaving ? (
-            <Check className="mr-2 h-5 w-5 animate-[scale-in_0.2s_ease-out]" />
+            <Check className="mr-2 h-6 w-6 animate-[scale-in_0.2s_ease-out]" />
           ) : isSaved ? (
-            <BookmarkCheck className="mr-2 h-5 w-5" />
+            <BookmarkCheck className="mr-2 h-6 w-6" />
           ) : (
-            <BookmarkPlus className="mr-2 h-5 w-5" />
+            <BookmarkPlus className="mr-2 h-6 w-6" />
           )}
           {isSaving ? 'Saving...' : isSaved ? 'Saved' : 'Save'}
         </Button>
         <Button
           variant="outline"
           size="lg"
-          className="bg-white/80 backdrop-blur-sm hover:bg-white w-full sm:w-auto shadow-lg"
+          className="bg-white/80 backdrop-blur-sm hover:bg-white w-full sm:w-auto shadow-lg text-base px-6"
           onClick={handleShare}
         >
-          <Share2 className="mr-2 h-5 w-5" />
+          <Share2 className="mr-2 h-6 w-6" />
           Share
         </Button>
       </div>
