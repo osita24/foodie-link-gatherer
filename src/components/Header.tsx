@@ -30,20 +30,28 @@ const Header = () => {
 
   useEffect(() => {
     console.log("🔄 Setting up auth state change listener");
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
-      console.log("🔐 Auth state changed:", event, currentSession?.user?.id);
+    let subscription: { unsubscribe: () => void } | null = null;
+
+    const setupAuthListener = async () => {
+      const { data } = await supabase.auth.onAuthStateChange((event, currentSession) => {
+        console.log("🔐 Auth state changed:", event, currentSession?.user?.id);
+        
+        if (event === 'SIGNED_IN') {
+          toast({
+            title: "Welcome back!",
+            description: "Successfully signed in",
+          });
+        }
+      });
       
-      if (event === 'SIGNED_IN') {
-        toast({
-          title: "Welcome back!",
-          description: "Successfully signed in",
-        });
-      }
-    });
+      subscription = data.subscription;
+    };
+
+    setupAuthListener();
 
     return () => {
       console.log("♻️ Cleaning up auth state change listener");
-      subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, [supabase.auth]);
 

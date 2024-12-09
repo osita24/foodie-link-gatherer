@@ -45,7 +45,7 @@ export interface RestaurantDetails {
   userRatingsTotal?: number;
   utcOffset?: number;
   googleReviews?: Review[];
-  cuisine?: string; // Added this field
+  cuisine?: string;
   businessStatus?: string;
   curbsidePickup?: boolean;
   delivery?: boolean;
