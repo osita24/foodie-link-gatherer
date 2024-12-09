@@ -57,7 +57,9 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
     <div 
       className={cn(
         "group relative p-4 rounded-lg transition-all duration-300",
-        "hover:shadow-md animate-fade-in-up",
+        "hover:shadow-md animate-fade-in-up cursor-pointer",
+        "hover:scale-[1.02] active:scale-[0.98]",
+        "hover:bg-opacity-100 hover:backdrop-blur-sm",
         getMatchStyle(matchDetails?.matchType)
       )}
     >
@@ -69,7 +71,7 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 space-y-2">
           <div className="flex items-start gap-2 flex-wrap">
-            <h3 className="text-base font-medium text-gray-900">
+            <h3 className="text-base font-medium text-gray-900 group-hover:text-primary transition-colors">
               {cleanName}
             </h3>
             
@@ -77,7 +79,7 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div>
+                    <div className="transition-transform group-hover:scale-110">
                       <MenuItemMatchBadge 
                         score={matchDetails.score}
                         matchType={matchDetails.matchType}
@@ -113,12 +115,12 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
           {matchDetails && (matchDetails.reason || matchDetails.warning) && (
             <div className="flex items-center gap-2 flex-wrap animate-fade-in-up">
               {matchDetails.matchType !== 'warning' && matchDetails.reason && (
-                <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50">
+                <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50 group-hover:scale-105 transition-transform">
                   {matchDetails.reason} ✨
                 </Badge>
               )}
               {matchDetails.matchType === 'warning' && matchDetails.warning && (
-                <Badge variant="outline" className="text-red-700 border-red-200 bg-red-50">
+                <Badge variant="outline" className="text-red-700 border-red-200 bg-red-50 group-hover:scale-105 transition-transform">
                   {matchDetails.warning} ⚠️
                 </Badge>
               )}
