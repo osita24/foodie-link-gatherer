@@ -1,20 +1,49 @@
-import { RestaurantFeatures, UserPreferences, MatchScores } from "./types.ts";
+import { RestaurantFeatures, UserPreferences } from "./types.ts";
 
 export function calculateDietaryScore(restaurant: RestaurantFeatures, preferences: UserPreferences): number {
+  console.log("🥗 Calculating dietary score for:", restaurant.name);
+  console.log("👤 User dietary preferences:", preferences.dietary_restrictions);
+
+  // Start with neutral score
   let score = 70;
 
-  if (preferences.dietary_restrictions?.includes('Vegetarian')) {
-    if (restaurant.servesVegetarianFood) {
+  // Critical dietary restrictions check
+  if (preferences.dietary_restrictions?.length) {
+    // Vegetarian/Vegan checks
+    if (preferences.dietary_restrictions.includes('Vegetarian') || 
+        preferences.dietary_restrictions.includes('Vegan')) {
+      if (!restaurant.servesVegetarianFood) {
+        console.log("❌ Restaurant doesn't serve vegetarian food");
+        return 0; // Complete rejection
+      }
       score += 30;
-    } else {
+    }
+
+    // Other dietary restrictions
+    const hasConflictingTypes = restaurant.types?.some(type => {
+      const lowerType = type.toLowerCase();
+      return (
+        (preferences.dietary_restrictions.includes('Gluten-Free') && 
+         (lowerType.includes('pasta') || lowerType.includes('pizza') || lowerType.includes('bakery'))) ||
+        (preferences.dietary_restrictions.includes('Dairy-Free') && 
+         (lowerType.includes('cheese') || lowerType.includes('ice cream')))
+      );
+    });
+
+    if (hasConflictingTypes) {
+      console.log("⚠️ Restaurant type conflicts with dietary restrictions");
       score -= 40;
     }
   }
 
+  console.log("📊 Final dietary score:", Math.min(100, Math.max(0, score)));
   return Math.min(100, Math.max(0, score));
 }
 
 export function calculateCuisineScore(restaurant: RestaurantFeatures, preferences: UserPreferences): number {
+  console.log("🍽️ Calculating cuisine score for:", restaurant.name);
+  console.log("👤 User cuisine preferences:", preferences.cuisine_preferences);
+
   if (!preferences.cuisine_preferences?.length) return 75;
 
   const restaurantCuisines = restaurant.types?.filter(type => 
@@ -27,21 +56,34 @@ export function calculateCuisineScore(restaurant: RestaurantFeatures, preference
     )
   ).length;
 
-  return matchCount > 0 ? Math.min(100, 70 + (matchCount * 15)) : 60;
+  const score = matchCount > 0 ? Math.min(100, 70 + (matchCount * 15)) : 60;
+  console.log("📊 Cuisine match count:", matchCount, "Score:", score);
+  return score;
 }
 
 export function calculateProteinScore(restaurant: RestaurantFeatures, preferences: UserPreferences): number {
-  if (!preferences.favorite_proteins?.length || preferences.favorite_proteins.includes("Doesn't Apply")) {
+  console.log("🥩 Calculating protein score for:", restaurant.name);
+  
+  // Skip protein scoring for vegetarian/vegan users
+  if (preferences.dietary_restrictions?.includes('Vegetarian') || 
+      preferences.dietary_restrictions?.includes('Vegan')) {
+    console.log("🌱 User is vegetarian/vegan - skipping protein score");
+    return 75;
+  }
+
+  if (!preferences.favorite_proteins?.length || 
+      preferences.favorite_proteins.includes("Doesn't Apply")) {
     return 75;
   }
 
   const proteinMatches = {
-    'Beef': ['steakhouse', 'burger'],
-    'Chicken': ['chicken', 'poultry'],
-    'Fish': ['seafood', 'fish'],
-    'Pork': ['bbq', 'pork'],
-    'Lamb': ['mediterranean', 'greek'],
-    'Tofu': ['vegetarian', 'asian'],
+    'Beef': ['steakhouse', 'burger', 'bbq'],
+    'Chicken': ['chicken', 'poultry', 'wings'],
+    'Fish': ['seafood', 'fish', 'sushi'],
+    'Pork': ['bbq', 'pork', 'korean'],
+    'Lamb': ['mediterranean', 'greek', 'indian'],
+    'Tofu': ['vegetarian', 'asian', 'chinese'],
+    'Turkey': ['sandwich', 'deli', 'american'],
   };
 
   const matchCount = preferences.favorite_proteins.filter(protein =>
@@ -52,7 +94,9 @@ export function calculateProteinScore(restaurant: RestaurantFeatures, preference
     )
   ).length;
 
-  return matchCount > 0 ? Math.min(100, 70 + (matchCount * 15)) : 60;
+  const score = matchCount > 0 ? Math.min(100, 70 + (matchCount * 15)) : 60;
+  console.log("📊 Protein match count:", matchCount, "Score:", score);
+  return score;
 }
 
 export function calculatePriceScore(restaurant: RestaurantFeatures, preferences: UserPreferences): number {

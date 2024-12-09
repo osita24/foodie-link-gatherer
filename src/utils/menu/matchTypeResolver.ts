@@ -11,10 +11,11 @@ export const resolveMatchType = (
 ): MatchResult => {
   console.log('🎯 Resolving match type for score:', score, 'with factors:', factors);
 
-  if (score <= 30) {
+  // Complete rejection for scores of 0 (dietary conflicts or avoided foods)
+  if (score === 0) {
     return {
       matchType: 'warning',
-      warning: 'May not match your preferences'
+      warning: 'Does not match your dietary preferences'
     };
   }
 
