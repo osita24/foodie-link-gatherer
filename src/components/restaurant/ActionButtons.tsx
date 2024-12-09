@@ -116,16 +116,32 @@ const ActionButtons = () => {
     }
   };
 
-  const handleShare = () => {
-    console.log("Share clicked");
-    toast("Share feature", {
-      description: "Coming soon!",
-    });
+  const handleShare = async () => {
+    const url = window.location.href;
+    
+    // Check if running on mobile
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      try {
+        await navigator.share({
+          title: restaurant?.name || 'Check out this restaurant',
+          text: 'I found this great restaurant!',
+          url: url
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+      }
+    } else {
+      // Desktop fallback - copy to clipboard
+      navigator.clipboard.writeText(url);
+      toast("Link copied!", {
+        description: "Restaurant link copied to clipboard",
+      });
+    }
   };
 
   return (
     <>
-      <div className="fixed bottom-4 left-4 right-4 flex flex-col sm:flex-row gap-2 z-50 md:absolute md:bottom-4 md:right-4 md:left-auto">
+      <div className="fixed bottom-4 left-4 right-4 flex flex-col sm:flex-row gap-2 z-50 md:static md:mt-4 md:mb-6">
         <Button
           size="lg"
           className={`bg-primary text-white hover:bg-primary/90 transition-all duration-300 w-full sm:w-auto shadow-lg
