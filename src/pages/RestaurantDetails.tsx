@@ -13,7 +13,7 @@ import ProfileCompletionNudge from "@/components/restaurant/ProfileCompletionNud
 const RestaurantDetails = () => {
   const { placeId } = useParams();
   const session = useSession();
-  const { restaurant, isLoading, error } = useRestaurantData(placeId);
+  const { data: restaurant, isLoading, error } = useRestaurantData(placeId!);
 
   if (error) {
     return (

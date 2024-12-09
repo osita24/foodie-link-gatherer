@@ -1,13 +1,13 @@
 import { RestaurantDetails } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
 
-export const fetchRestaurantDetails = async (inputUrl: string): Promise<RestaurantDetails> => {
-  console.log('🔍 Starting restaurant details fetch for:', inputUrl);
+export const fetchRestaurantDetails = async (placeId: string): Promise<RestaurantDetails> => {
+  console.log('🔍 Starting restaurant details fetch for placeId:', placeId);
 
   try {
-    console.log('🌐 Calling Edge Function with URL:', inputUrl);
+    console.log('🌐 Calling Edge Function with placeId:', placeId);
     const { data, error } = await supabase.functions.invoke('google-maps-proxy', {
-      body: { url: inputUrl }
+      body: { placeId }
     });
 
     if (error) {
