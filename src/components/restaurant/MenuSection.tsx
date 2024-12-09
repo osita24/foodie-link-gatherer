@@ -57,6 +57,8 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
     if (isProcessing) return;
     
     setIsProcessing(true);
+    console.log("📤 Processing restaurant data with:", { menuUrl, photosCount: photos?.length, reviewsCount: reviews?.length });
+    
     try {
       const payload = {
         menuUrl: menuUrl || null,
@@ -73,7 +75,12 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
         body: payload
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("❌ Menu processor error:", error);
+        throw error;
+      }
+
+      console.log("✅ Menu processor response:", data);
 
       if (!data?.menuSections?.length) {
         console.log("⚠️ No menu sections generated");
@@ -101,7 +108,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
       console.log("🔄 Processing available data sources");
       processRestaurantData();
     }
-  }, [menu, processRestaurantData]);
+  }, [menu, menuUrl, photos, reviews, processRestaurantData]);
 
   // Memoize the top match calculation
   useEffect(() => {
@@ -125,7 +132,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
   );
 
   if (isProcessing) return <MenuLoadingState isProcessing />;
-  if (!processedMenu || processedMenu.length === 0) return <MenuLoadingState />;
+  if (!menuToDisplay || menuToDisplay.length === 0) return <MenuLoadingState />;
 
   return (
     <div className="space-y-6">
