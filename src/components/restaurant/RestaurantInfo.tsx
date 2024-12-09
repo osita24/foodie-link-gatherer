@@ -1,5 +1,6 @@
-import { MapPin, Clock, DollarSign, Users, Utensils, WifiIcon, Accessibility, Coffee } from "lucide-react";
+import { Phone, MapPin, Clock, Globe, DollarSign } from "lucide-react";
 import { RestaurantDetails } from "@/types/restaurant";
+import { formatPhoneNumber } from "@/utils/formatPhoneNumber";
 import ServiceOptions from "./ServiceOptions";
 
 interface RestaurantInfoProps {
@@ -72,53 +73,6 @@ const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
     );
   };
 
-  const getCuisineTypes = () => {
-    if (!restaurant?.types) return null;
-    const relevantTypes = restaurant.types
-      .filter(type => !['restaurant', 'food', 'point_of_interest', 'establishment'].includes(type))
-      .map(type => type.replace(/_/g, ' '))
-      .map(type => type.charAt(0).toUpperCase() + type.slice(1));
-    
-    if (relevantTypes.length === 0) return null;
-    
-    return (
-      <div className="flex flex-wrap gap-2">
-        {relevantTypes.map(type => (
-          <span 
-            key={type}
-            className="px-3 py-1 bg-accent/20 rounded-full text-sm text-secondary"
-          >
-            {type}
-          </span>
-        ))}
-      </div>
-    );
-  };
-
-  const getAdditionalFeatures = () => {
-    const features = [];
-    
-    if (restaurant?.servesBreakfast) features.push({ icon: Coffee, text: "Serves Breakfast" });
-    if (restaurant?.servesBrunch) features.push({ icon: Coffee, text: "Serves Brunch" });
-    if (restaurant?.servesLunch) features.push({ icon: Utensils, text: "Serves Lunch" });
-    if (restaurant?.servesDinner) features.push({ icon: Utensils, text: "Serves Dinner" });
-    if (restaurant?.servesVegetarianFood) features.push({ icon: Utensils, text: "Vegetarian Options" });
-    if (restaurant?.wheelchairAccessible) features.push({ icon: Accessibility, text: "Wheelchair Accessible" });
-    
-    if (features.length === 0) return null;
-    
-    return (
-      <div className="flex flex-wrap gap-3 mt-4">
-        {features.map(({ icon: Icon, text }, index) => (
-          <div key={index} className="flex items-center gap-1.5 text-sm text-secondary">
-            <Icon className="w-4 h-4" />
-            <span>{text}</span>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   console.log("Restaurant data in RestaurantInfo:", restaurant);
 
   return (
@@ -132,29 +86,44 @@ const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
           </span>
           {getPriceRangeDisplay(restaurant?.priceLevel)}
         </div>
-        {getCuisineTypes()}
-        <div className="mt-4">
-          <ServiceOptions 
-            delivery={restaurant?.delivery}
-            takeout={restaurant?.takeout}
-            dineIn={restaurant?.dineIn}
-            reservable={restaurant?.reservable}
-          />
-        </div>
-        {getAdditionalFeatures()}
+        <ServiceOptions 
+          delivery={restaurant?.delivery}
+          takeout={restaurant?.takeout}
+          dineIn={restaurant?.dineIn}
+          reservable={restaurant?.reservable}
+        />
       </div>
 
       <div className="space-y-3">
         {restaurant?.address && (
-          <div className="flex items-start gap-2 text-secondary">
+          <div className="flex items-start gap-2 hover:text-primary transition-colors">
             <MapPin className="w-5 h-5 mt-1 shrink-0" />
             <span className="text-left">{restaurant.address}</span>
           </div>
         )}
-        <div className="flex items-start gap-2 text-secondary">
+        <div className="flex items-start gap-2 hover:text-primary transition-colors">
           <Clock className="w-5 h-5 mt-1 shrink-0" />
           <span className="text-left">{getTodayHours(restaurant?.hours)}</span>
         </div>
+        {restaurant?.phone && (
+          <div className="flex items-start gap-2 hover:text-primary transition-colors">
+            <Phone className="w-5 h-5 mt-1 shrink-0" />
+            <span className="text-left">{formatPhoneNumber(restaurant.phone)}</span>
+          </div>
+        )}
+        {restaurant?.website && (
+          <div className="flex items-start gap-2 hover:text-primary transition-colors">
+            <Globe className="w-5 h-5 mt-1 shrink-0" />
+            <a
+              href={restaurant.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline text-left"
+            >
+              Visit website
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );

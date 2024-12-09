@@ -1,9 +1,8 @@
-import { ExternalLink, Phone, Globe } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRestaurantData } from "@/hooks/useRestaurantData";
 import { useParams } from "react-router-dom";
-import { formatPhoneNumber } from "@/utils/formatPhoneNumber";
 
 const OrderSection = () => {
   const { id: placeId } = useParams();
@@ -12,25 +11,9 @@ const OrderSection = () => {
   return (
     <Card className="bg-white hover:shadow-lg transition-shadow duration-300 mt-6">
       <CardHeader>
-        <CardTitle>Get a Seat</CardTitle>
+        <CardTitle>Book Now</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {restaurant?.phone && (
-          <Button
-            variant="outline"
-            className="w-full justify-between hover:bg-primary/5"
-            asChild
-          >
-            <a href={`tel:${restaurant.phone}`}>
-              <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4" />
-                <span>{formatPhoneNumber(restaurant.phone)}</span>
-              </div>
-              <ExternalLink className="w-4 h-4" />
-            </a>
-          </Button>
-        )}
-        
+      <CardContent>
         <Button
           variant="outline"
           className="w-full justify-between hover:bg-primary/5"
@@ -43,10 +26,7 @@ const OrderSection = () => {
             rel="noopener noreferrer"
             className="flex items-center justify-between w-full"
           >
-            <div className="flex items-center gap-2">
-              <Globe className="w-4 h-4" />
-              <span>Visit Website</span>
-            </div>
+            Visit Website
             <ExternalLink className="w-4 h-4" />
           </a>
         </Button>
