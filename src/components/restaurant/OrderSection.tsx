@@ -8,6 +8,8 @@ const OrderSection = () => {
   const { id: placeId } = useParams();
   const { data: restaurant } = useRestaurantData(placeId);
 
+  console.log("🌐 Restaurant website URL:", restaurant?.website);
+
   return (
     <Card className="bg-white hover:shadow-lg transition-shadow duration-300 mt-6">
       <CardHeader>
