@@ -44,16 +44,20 @@ const ActionButtons = () => {
 
   const checkIfSaved = async (userId: string) => {
     try {
-      console.log("Checking if restaurant is saved...");
+      console.log("🔍 Checking if restaurant is saved for user:", userId);
       const { data, error } = await supabase
         .from('saved_restaurants')
         .select('id')
         .eq('user_id', userId)
-        .eq('place_id', placeId)
-        .single();
+        .eq('place_id', placeId);
 
-      if (error) throw error;
-      setIsSaved(!!data);
+      if (error) {
+        console.error("❌ Error checking saved status:", error);
+        throw error;
+      }
+
+      console.log("✅ Found saved restaurant data:", data);
+      setIsSaved(data && data.length > 0);
     } catch (error) {
       console.error("Error checking saved status:", error);
     }
