@@ -19,6 +19,7 @@ import DesktopNav from "./navigation/DesktopNav";
 import MobileNav from "./navigation/MobileNav";
 
 const Header = () => {
+  console.log("🎯 Header component rendering");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
@@ -27,8 +28,8 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Add effect to listen for auth state changes
   useEffect(() => {
+    console.log("🔄 Setting up auth state change listener");
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
       console.log("🔐 Auth state changed:", event, currentSession?.user?.id);
       
@@ -41,6 +42,7 @@ const Header = () => {
     });
 
     return () => {
+      console.log("♻️ Cleaning up auth state change listener");
       subscription.unsubscribe();
     };
   }, [supabase.auth]);
