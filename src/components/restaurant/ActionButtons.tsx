@@ -143,6 +143,15 @@ const ActionButtons = () => {
     <>
       <div className="fixed bottom-6 right-6 flex flex-col sm:flex-row gap-3 z-50">
         <Button
+          variant="outline"
+          size="lg"
+          className="bg-white/80 backdrop-blur-sm hover:bg-white w-full sm:w-auto shadow-lg text-base px-6"
+          onClick={handleShare}
+        >
+          <Share2 className="mr-2 h-6 w-6" />
+          Share
+        </Button>
+        <Button
           size="lg"
           className={`bg-primary text-white hover:bg-primary/90 transition-all duration-300 w-full sm:w-auto shadow-lg text-base px-6
             ${isSaving ? 'scale-105 bg-green-500' : ''}`}
@@ -157,15 +166,6 @@ const ActionButtons = () => {
             <BookmarkPlus className="mr-2 h-6 w-6" />
           )}
           {isSaving ? 'Saving...' : isSaved ? 'Saved' : 'Save'}
-        </Button>
-        <Button
-          variant="outline"
-          size="lg"
-          className="bg-white/80 backdrop-blur-sm hover:bg-white w-full sm:w-auto shadow-lg text-base px-6"
-          onClick={handleShare}
-        >
-          <Share2 className="mr-2 h-6 w-6" />
-          Share
         </Button>
       </div>
 

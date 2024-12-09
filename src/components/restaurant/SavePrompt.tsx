@@ -1,58 +1,37 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { X, ArrowDownRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowDownRight } from "lucide-react";
 
 const SavePrompt = () => {
-  const [show, setShow] = useState(false);
+  const [shouldShow, setShouldShow] = useState(false);
 
   useEffect(() => {
-    // Only show prompt on desktop
-    const isDesktop = window.innerWidth >= 640; // sm breakpoint
-    if (isDesktop) {
-      // Show prompt after a short delay
-      const timer = setTimeout(() => {
-        // Check if user has dismissed this prompt before
-        const hasSeenPrompt = localStorage.getItem('hasSeenSavePrompt');
-        if (!hasSeenPrompt) {
-          setShow(true);
-        }
-      }, 2000);
+    const timer = setTimeout(() => {
+      setShouldShow(true);
+    }, 1000);
 
-      return () => clearTimeout(timer);
-    }
+    return () => clearTimeout(timer);
   }, []);
 
   const handleDismiss = () => {
-    setShow(false);
-    localStorage.setItem('hasSeenSavePrompt', 'true');
+    setShouldShow(false);
   };
 
-  if (!show) return null;
+  if (!shouldShow) return null;
 
   return (
     <>
-      <Alert className="fixed bottom-28 right-6 w-72 bg-primary/5 backdrop-blur-sm shadow-lg border-primary/20 animate-fade-up hidden sm:flex items-center gap-3">
-        <div className="flex-1">
-          <AlertDescription className="text-sm font-medium text-primary">
-            Save this restaurant to your collection!
-          </AlertDescription>
-          <AlertDescription className="text-xs text-muted-foreground mt-1">
-            Click the button below to save for later
-          </AlertDescription>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 hover:bg-primary/10"
-          onClick={handleDismiss}
-        >
-          <X className="h-4 w-4" />
-        </Button>
+      <Alert 
+        className="fixed bottom-[88px] right-6 w-[280px] bg-white/95 backdrop-blur border-primary/20 shadow-lg animate-fade-up hidden sm:flex"
+        onClick={handleDismiss}
+      >
+        <AlertDescription className="text-sm text-primary">
+          Save this restaurant to view it later in your profile
+        </AlertDescription>
       </Alert>
 
       {/* Visual arrow connecting to save button */}
-      <div className="fixed bottom-[88px] right-[104px] hidden sm:block animate-fade-up">
+      <div className="fixed bottom-[88px] right-6 hidden sm:block animate-fade-up">
         <ArrowDownRight className="h-8 w-8 text-primary animate-pulse" />
       </div>
     </>
