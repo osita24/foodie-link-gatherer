@@ -113,14 +113,12 @@ const RestaurantDetails = () => {
         <Header />
         <div className="animate-fade-up space-y-4 p-4">
           <div className="w-full h-[40vh] bg-gray-200 animate-pulse rounded-lg" />
-          <div className="container mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-6">
-                <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-                  <div className="h-8 bg-gray-200 animate-pulse rounded w-3/4" />
-                  <div className="h-4 bg-gray-200 animate-pulse rounded w-1/2" />
-                  <div className="h-4 bg-gray-200 animate-pulse rounded w-2/3" />
-                </div>
+          <div className="container mx-auto max-w-4xl">
+            <div className="space-y-6">
+              <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+                <div className="h-8 bg-gray-200 animate-pulse rounded w-3/4" />
+                <div className="h-4 bg-gray-200 animate-pulse rounded w-1/2" />
+                <div className="h-4 bg-gray-200 animate-pulse rounded w-2/3" />
               </div>
             </div>
           </div>
@@ -150,26 +148,24 @@ const RestaurantDetails = () => {
 
       <SavePrompt />
 
-      <div className="container mx-auto px-4 -mt-10 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <RestaurantInfo restaurant={restaurant} />
-            </div>
-
-            <RestaurantSummary restaurant={restaurant} />
-            
-            <MenuSection 
-              menu={restaurant?.menu} 
-              photos={restaurant?.photos}
-              reviews={restaurant?.googleReviews}
-              menuUrl={restaurant?.website}
-            />
-
-            <AdditionalInfo restaurant={restaurant} />
-            {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}
-            {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
+      <div className="container mx-auto px-4 -mt-10 relative z-10 max-w-4xl">
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <RestaurantInfo restaurant={restaurant} />
           </div>
+
+          <RestaurantSummary restaurant={restaurant} />
+          
+          <MenuSection 
+            menu={restaurant?.menu} 
+            photos={restaurant?.photos}
+            reviews={restaurant?.googleReviews}
+            menuUrl={restaurant?.website}
+          />
+
+          <AdditionalInfo restaurant={restaurant} />
+          {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}
+          {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
         </div>
       </div>
     </div>
