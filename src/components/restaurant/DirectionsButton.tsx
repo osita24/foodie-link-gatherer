@@ -1,5 +1,4 @@
 import { MapPin } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface DirectionsButtonProps {
   address: string;
@@ -13,14 +12,13 @@ const DirectionsButton = ({ address, name }: DirectionsButtonProps) => {
   };
 
   return (
-    <Button 
+    <div 
       onClick={handleGetDirections}
-      className="w-full md:w-auto"
-      variant="secondary"
+      className="inline-flex items-center gap-2 text-primary hover:text-primary/80 cursor-pointer transition-colors"
     >
-      <MapPin className="w-4 h-4" />
-      Get Directions
-    </Button>
+      <MapPin className="w-5 h-5" />
+      <span className="text-sm font-medium">Directions</span>
+    </div>
   );
 };
 
