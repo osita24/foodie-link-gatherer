@@ -25,18 +25,32 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
   const { itemMatchDetails, analyzedMenu } = useMenuAnalysis(processedMenu);
   const [session, setSession] = useState<any>(null);
   const [topMatchId, setTopMatchId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     console.log("🔍 Initializing MenuSection with restaurant:", restaurant?.name);
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("🔐 Auth session loaded:", session?.user?.id);
-      setSession(session);
-    });
+    
+    const loadSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log("🔐 Auth session loaded:", session?.user?.id);
+        setSession(session);
+      } catch (err) {
+        console.error("❌ Error loading session:", err);
+        setError("Failed to load user session");
+      }
+    };
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    loadSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log("🔄 Auth state changed:", session?.user?.id);
       setSession(session);
     });
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -50,7 +64,6 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
   }, [menu, photos, reviews, menuUrl]);
 
   useEffect(() => {
-    // Find the item with the highest match score
     if (session && itemMatchDetails) {
       const scores = Object.entries(itemMatchDetails).map(([id, details]) => ({
         id,
@@ -64,6 +77,8 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
 
   const processRestaurantData = async () => {
     setIsProcessing(true);
+    setError(null);
+    
     try {
       const payload = {
         menuUrl: menuUrl || null,
@@ -76,11 +91,11 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
 
       console.log("📤 Sending payload to menu processor:", payload);
       
-      const { data, error } = await supabase.functions.invoke('menu-processor', {
+      const { data, error: processingError } = await supabase.functions.invoke('menu-processor', {
         body: payload
       });
 
-      if (error) throw error;
+      if (processingError) throw processingError;
 
       if (!data?.menuSections?.length) {
         toast.info("Could not generate menu information");
@@ -91,13 +106,23 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
       setProcessedMenu(data.menuSections);
       toast.success(`Found ${data.menuSections[0].items.length} menu items`);
       
-    } catch (error) {
-      console.error("❌ Error processing restaurant data:", error);
+    } catch (err) {
+      console.error("❌ Error processing restaurant data:", err);
+      setError("Failed to generate menu information");
       toast.error("Failed to generate menu information");
     } finally {
       setIsProcessing(false);
     }
   };
+
+  if (error) {
+    return (
+      <Card className="p-6 text-center bg-white/80 backdrop-blur-sm border-none shadow-lg">
+        <p className="text-error mb-2">{error}</p>
+        <p className="text-muted-foreground text-sm">Please try again later</p>
+      </Card>
+    );
+  }
 
   if (isProcessing) return <MenuLoadingState isProcessing />;
   if (!processedMenu || processedMenu.length === 0) return <MenuLoadingState />;
@@ -116,7 +141,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
           <div className="relative">
             <MenuHeader menuUrl={menuUrl} />
             <div className="p-4 md:p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 {menuToDisplay[0].items.map((item) => (
                   <MenuItem
                     key={item.id}

@@ -1,33 +1,42 @@
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface MenuItemDescriptionProps {
   description: string;
 }
 
-export const MenuItemDescription = ({ description }: MenuItemDescriptionProps) => {
+const MenuItemDescription = ({ description }: MenuItemDescriptionProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const isLongDescription = description && description.length > 100;
-  const displayDescription = isExpanded ? description : description?.substring(0, 100);
+  const shouldTruncate = description.length > 100;
+
+  const truncatedText = shouldTruncate && !isExpanded
+    ? `${description.slice(0, 100)}...`
+    : description;
 
   return (
-    <div className="mt-1">
-      <p className="text-sm text-gray-500 leading-relaxed">
-        {displayDescription}
-        {isLongDescription && !isExpanded && "..."}
+    <div className="space-y-2">
+      <p className="text-muted-foreground text-sm leading-relaxed break-words">
+        {truncatedText}
       </p>
-      {isLongDescription && (
-        <button
+      
+      {shouldTruncate && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 px-2 text-xs"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="mt-1 text-xs text-primary hover:text-primary/80 flex items-center gap-1"
         >
           {isExpanded ? (
-            <>Show less <ChevronUp className="w-3 h-3" /></>
+            <ChevronUp className="h-4 w-4 mr-1" />
           ) : (
-            <>Show more <ChevronDown className="w-3 h-3" /></>
+            <ChevronDown className="h-4 w-4 mr-1" />
           )}
-        </button>
+          {isExpanded ? "Show less" : "Read more"}
+        </Button>
       )}
     </div>
   );
 };
+
+export default MenuItemDescription;
