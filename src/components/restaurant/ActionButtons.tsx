@@ -116,33 +116,19 @@ const ActionButtons = () => {
     }
   };
 
-  const handleShare = async () => {
+  const handleShare = () => {
     console.log("Share clicked");
-    try {
-      const shareUrl = window.location.href;
-      if (navigator.share) {
-        await navigator.share({
-          title: restaurant?.name || 'Check out this restaurant!',
-          text: `Check out ${restaurant?.name} on our platform!`,
-          url: shareUrl,
-        });
-        toast.success("Shared successfully!");
-      } else {
-        await navigator.clipboard.writeText(shareUrl);
-        toast.success("Link copied to clipboard!");
-      }
-    } catch (error) {
-      console.error("Error sharing:", error);
-      toast.error("Failed to share");
-    }
+    toast("Share feature", {
+      description: "Coming soon!",
+    });
   };
 
   return (
     <>
-      <div className="fixed bottom-4 left-4 right-4 flex flex-col sm:flex-row gap-2 z-50 md:static md:flex-col md:gap-3">
+      <div className="fixed bottom-4 left-4 right-4 flex flex-col sm:flex-row gap-2 z-50 md:absolute md:bottom-4 md:right-4 md:left-auto">
         <Button
           size="lg"
-          className={`bg-primary text-white hover:bg-primary/90 transition-all duration-300 w-full shadow-lg
+          className={`bg-primary text-white hover:bg-primary/90 transition-all duration-300 w-full sm:w-auto shadow-lg
             ${isSaving ? 'scale-105 bg-green-500' : ''}`}
           onClick={handleSave}
           disabled={isSaving}
@@ -159,7 +145,7 @@ const ActionButtons = () => {
         <Button
           variant="outline"
           size="lg"
-          className="bg-white/80 backdrop-blur-sm hover:bg-white w-full shadow-lg"
+          className="bg-white/80 backdrop-blur-sm hover:bg-white w-full sm:w-auto shadow-lg"
           onClick={handleShare}
         >
           <Share2 className="mr-2 h-5 w-5" />
