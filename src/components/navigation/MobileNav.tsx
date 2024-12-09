@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { navigationItems } from "./NavigationItems";
+import { NavigationItems } from "./NavigationItems";
 import { useNavigate } from "react-router-dom";
 import { useProfile } from "@/hooks/useProfile";
 
@@ -14,6 +14,7 @@ interface MobileNavProps {
 const MobileNav = ({ session, onAuthClick, onSignOutClick, isActive, onClose }: MobileNavProps) => {
   const navigate = useNavigate();
   const { userName } = useProfile();
+  const navigationItems = NavigationItems();
 
   return (
     <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-100 md:hidden">

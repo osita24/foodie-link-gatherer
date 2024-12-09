@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { navigationItems } from "./NavigationItems";
+import { NavigationItems } from "./NavigationItems";
 import { useNavigate } from "react-router-dom";
 import { useProfile } from "@/hooks/useProfile";
 
@@ -13,6 +13,7 @@ interface DesktopNavProps {
 const DesktopNav = ({ session, onAuthClick, onSignOutClick, isActive }: DesktopNavProps) => {
   const navigate = useNavigate();
   const { userName } = useProfile();
+  const navigationItems = NavigationItems();
 
   return (
     <nav className="hidden md:flex items-center space-x-6">
