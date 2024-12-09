@@ -22,6 +22,7 @@ const RestaurantPreferences = () => {
   const { toast } = useToast();
   const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
   const [completionPercentage, setCompletionPercentage] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const loadPreferences = async () => {
@@ -78,7 +79,7 @@ const RestaurantPreferences = () => {
 
   useEffect(() => {
     let completed = 0;
-    let total = 5; // Updated to include protein preferences
+    let total = 5;
 
     if (preferences.cuisinePreferences.length > 0) completed++;
     if (preferences.dietaryRestrictions.length > 0) completed++;
@@ -91,6 +92,7 @@ const RestaurantPreferences = () => {
 
   const handleSave = async () => {
     try {
+      setIsSaving(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.error("No authenticated user found");
@@ -140,8 +142,8 @@ const RestaurantPreferences = () => {
 
       console.log("Preferences saved successfully");
       toast({
-        title: "Preferences saved",
-        description: "Your restaurant preferences have been updated.",
+        title: "Success! 🎉",
+        description: "Your preferences have been saved. We'll use these to find the perfect restaurants for you.",
       });
     } catch (error) {
       console.error('Error saving preferences:', error);
@@ -150,6 +152,8 @@ const RestaurantPreferences = () => {
         description: "Failed to save preferences. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -163,6 +167,7 @@ const RestaurantPreferences = () => {
       <PreferencesSaveButton 
         onClick={handleSave}
         disabled={completionPercentage === 0}
+        loading={isSaving}
       />
     </div>
   );
