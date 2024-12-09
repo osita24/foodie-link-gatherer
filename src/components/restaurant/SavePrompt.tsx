@@ -52,7 +52,7 @@ const SavePrompt = () => {
       </Alert>
 
       {/* Visual arrow connecting to save button */}
-      <div className="fixed bottom-[88px] right-24 hidden sm:block animate-fade-up">
+      <div className="fixed bottom-[88px] right-[104px] hidden sm:block animate-fade-up">
         <ArrowDownRight className="h-8 w-8 text-primary animate-pulse" />
       </div>
     </>
