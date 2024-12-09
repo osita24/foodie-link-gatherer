@@ -11,8 +11,8 @@ export const MenuItemDescription = ({ description }: MenuItemDescriptionProps) =
   const displayDescription = isExpanded ? description : description?.substring(0, 100);
 
   return (
-    <div className="w-full">
-      <p className="text-sm text-gray-500 leading-relaxed break-words">
+    <div className="mt-1">
+      <p className="text-sm text-gray-500 leading-relaxed">
         {displayDescription}
         {isLongDescription && !isExpanded && "..."}
       </p>

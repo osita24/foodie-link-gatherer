@@ -58,30 +58,26 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
       className={cn(
         "group relative p-4 rounded-lg transition-all duration-300",
         "hover:shadow-md animate-fade-in-up",
-        "hover:scale-[1.02] active:scale-[0.98]",
-        "hover:bg-opacity-100 hover:backdrop-blur-sm",
-        "min-h-[120px] flex flex-col justify-between",
         getMatchStyle(matchDetails?.matchType)
       )}
     >
       {isTopMatch && (
-        <div className="absolute -top-2 -right-2 bg-primary text-white px-2 py-1 rounded-full text-xs font-semibold shadow-lg animate-bounce z-10">
+        <div className="absolute -top-2 -right-2 bg-primary text-white px-2 py-1 rounded-full text-xs font-semibold shadow-lg animate-bounce">
           Top Match
         </div>
       )}
-
-      <div className="space-y-2">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="text-base font-medium text-gray-900 group-hover:text-primary transition-colors break-words flex-1">
-            {cleanName}
-          </h3>
-          
-          {matchDetails && (
-            <div className="flex-shrink-0">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 space-y-2">
+          <div className="flex items-start gap-2 flex-wrap">
+            <h3 className="text-base font-medium text-gray-900">
+              {cleanName}
+            </h3>
+            
+            {matchDetails && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="transition-transform group-hover:scale-110">
+                    <div>
                       <MenuItemMatchBadge 
                         score={matchDetails.score}
                         matchType={matchDetails.matchType}
@@ -109,37 +105,27 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+            )}
+          </div>
+          
+          {description && <MenuItemDescription description={description} />}
+          
+          {matchDetails && (matchDetails.reason || matchDetails.warning) && (
+            <div className="flex items-center gap-2 flex-wrap animate-fade-in-up">
+              {matchDetails.matchType !== 'warning' && matchDetails.reason && (
+                <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50">
+                  {matchDetails.reason} ✨
+                </Badge>
+              )}
+              {matchDetails.matchType === 'warning' && matchDetails.warning && (
+                <Badge variant="outline" className="text-red-700 border-red-200 bg-red-50">
+                  {matchDetails.warning} ⚠️
+                </Badge>
+              )}
             </div>
           )}
         </div>
-        
-        {description && (
-          <div className="max-w-full">
-            <MenuItemDescription description={description} />
-          </div>
-        )}
       </div>
-      
-      {matchDetails && (matchDetails.reason || matchDetails.warning) && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {matchDetails.matchType !== 'warning' && matchDetails.reason && (
-            <Badge 
-              variant="outline" 
-              className="text-emerald-700 border-emerald-200 bg-emerald-50 group-hover:scale-105 transition-transform text-xs whitespace-normal"
-            >
-              {matchDetails.reason} ✨
-            </Badge>
-          )}
-          {matchDetails.matchType === 'warning' && matchDetails.warning && (
-            <Badge 
-              variant="outline" 
-              className="text-red-700 border-red-200 bg-red-50 group-hover:scale-105 transition-transform text-xs whitespace-normal"
-            >
-              {matchDetails.warning} ⚠️
-            </Badge>
-          )}
-        </div>
-      )}
     </div>
   );
 };

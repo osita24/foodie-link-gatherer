@@ -50,6 +50,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
   }, [menu, photos, reviews, menuUrl]);
 
   useEffect(() => {
+    // Find the item with the highest match score
     if (session && itemMatchDetails) {
       const scores = Object.entries(itemMatchDetails).map(([id, details]) => ({
         id,
@@ -115,7 +116,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
           <div className="relative">
             <MenuHeader menuUrl={menuUrl} />
             <div className="p-4 md:p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-[100vw] overflow-x-hidden">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {menuToDisplay[0].items.map((item) => (
                   <MenuItem
                     key={item.id}
