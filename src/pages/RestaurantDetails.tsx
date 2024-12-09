@@ -7,7 +7,6 @@ import MenuSection from "@/components/restaurant/MenuSection";
 import PhotosSection from "@/components/restaurant/PhotosSection";
 import ReviewsSection from "@/components/restaurant/ReviewsSection";
 import ActionButtons from "@/components/restaurant/ActionButtons";
-import OrderSection from "@/components/restaurant/OrderSection";
 import AdditionalInfo from "@/components/restaurant/AdditionalInfo";
 import { RestaurantDetails as RestaurantDetailsType } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
@@ -167,19 +166,9 @@ const RestaurantDetails = () => {
               menuUrl={restaurant?.website}
             />
 
-            <div className="block lg:hidden">
-              <OrderSection />
-            </div>
-
             <AdditionalInfo restaurant={restaurant} />
             {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}
             {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
-          </div>
-
-          <div className="hidden lg:block">
-            <div className="sticky top-24">
-              <OrderSection />
-            </div>
           </div>
         </div>
       </div>
