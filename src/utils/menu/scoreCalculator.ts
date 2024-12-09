@@ -21,16 +21,16 @@ export const calculateMenuItemScore = (
     preparationMatch: 0
   };
 
-  // CRITICAL CHECKS FIRST - These are deal-breakers
+  // CRITICAL CHECKS FIRST - These are absolute deal-breakers
   
   // 1. Check dietary restrictions (e.g., vegetarian, vegan)
   const dietaryConflict = checkDietaryConflicts(itemContent, preferences);
   if (dietaryConflict) {
-    console.log("❌ Dietary conflict found:", dietaryConflict);
+    console.log("❌ Critical dietary conflict found:", dietaryConflict);
     return { score: 0, factors }; // Complete rejection for dietary conflicts
   }
 
-  // 2. Check foods to avoid
+  // 2. Check foods to avoid (allergies, etc.)
   const avoidanceConflict = checkFoodsToAvoid(itemContent, preferences);
   if (avoidanceConflict) {
     console.log("❌ Contains food to avoid:", avoidanceConflict);
@@ -86,20 +86,25 @@ const checkDietaryConflicts = (itemContent: string, preferences: any): string | 
   const restrictionKeywords: Record<string, string[]> = {
     'Vegetarian': [
       'meat', 'chicken', 'beef', 'pork', 'fish', 'seafood', 'lamb', 'turkey',
-      'bacon', 'prosciutto', 'ham', 'salami', 'pepperoni'
+      'bacon', 'prosciutto', 'ham', 'salami', 'pepperoni', 'anchovy',
+      'duck', 'veal', 'foie gras', 'chorizo', 'sausage'
     ],
     'Vegan': [
       'meat', 'chicken', 'beef', 'pork', 'fish', 'seafood', 'lamb', 'turkey',
       'cheese', 'cream', 'milk', 'egg', 'butter', 'honey', 'yogurt', 'mayo',
-      'bacon', 'prosciutto', 'ham', 'salami', 'pepperoni'
+      'bacon', 'prosciutto', 'ham', 'salami', 'pepperoni', 'anchovy',
+      'duck', 'veal', 'foie gras', 'chorizo', 'sausage', 'gelatin',
+      'whey', 'casein', 'ghee', 'lard', 'aioli'
     ],
     'Gluten-Free': [
       'bread', 'pasta', 'flour', 'wheat', 'tortilla', 'breaded', 'crusted',
-      'battered', 'soy sauce', 'teriyaki', 'noodles', 'ramen', 'udon'
+      'battered', 'soy sauce', 'teriyaki', 'noodles', 'ramen', 'udon',
+      'couscous', 'barley', 'malt', 'seitan', 'panko'
     ],
     'Dairy-Free': [
       'cheese', 'cream', 'milk', 'butter', 'yogurt', 'mayo',
-      'parmesan', 'mozzarella', 'ricotta', 'alfredo'
+      'parmesan', 'mozzarella', 'ricotta', 'alfredo', 'béchamel',
+      'queso', 'crema', 'burrata', 'mascarpone', 'provolone'
     ]
   };
 
@@ -118,16 +123,15 @@ const checkDietaryConflicts = (itemContent: string, preferences: any): string | 
 const checkFoodsToAvoid = (itemContent: string, preferences: any): string | null => {
   const foodsToAvoid = preferences.foodsToAvoid || [];
   
-  // Extended keywords for common allergens and preferences
   const avoidanceKeywords: Record<string, string[]> = {
-    'Shellfish': ['shrimp', 'crab', 'lobster', 'clam', 'mussel', 'oyster', 'scallop'],
-    'Peanuts': ['peanut', 'goober', 'groundnut'],
-    'Tree Nuts': ['almond', 'cashew', 'walnut', 'pecan', 'pistachio'],
-    'Soy': ['soy', 'tofu', 'edamame', 'tempeh'],
-    'Mushrooms': ['mushroom', 'shiitake', 'portobello', 'truffle'],
-    'Bell Peppers': ['bell pepper', 'capsicum', 'sweet pepper'],
-    'Raw Fish': ['sushi', 'sashimi', 'raw', 'tartare', 'ceviche'],
-    'Very Spicy': ['spicy', 'hot', 'chili', 'jalapeno', 'habanero', 'sriracha']
+    'Shellfish': ['shrimp', 'crab', 'lobster', 'clam', 'mussel', 'oyster', 'scallop', 'crawfish', 'prawn'],
+    'Peanuts': ['peanut', 'goober', 'groundnut', 'arachis'],
+    'Tree Nuts': ['almond', 'cashew', 'walnut', 'pecan', 'pistachio', 'macadamia', 'hazelnut', 'pine nut'],
+    'Soy': ['soy', 'tofu', 'edamame', 'tempeh', 'miso', 'tamari'],
+    'Mushrooms': ['mushroom', 'shiitake', 'portobello', 'truffle', 'porcini', 'cremini', 'enoki'],
+    'Bell Peppers': ['bell pepper', 'capsicum', 'sweet pepper', 'paprika'],
+    'Raw Fish': ['sushi', 'sashimi', 'raw', 'tartare', 'ceviche', 'crudo', 'poke'],
+    'Very Spicy': ['spicy', 'hot', 'chili', 'jalapeno', 'habanero', 'sriracha', 'wasabi', 'cayenne']
   };
 
   for (const food of foodsToAvoid) {
