@@ -108,7 +108,6 @@ const RestaurantDetails = () => {
   }, [id, navigate]);
 
   if (isLoading) {
-    console.log("🔄 Rendering loading state");
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -128,19 +127,15 @@ const RestaurantDetails = () => {
     );
   }
 
-  if (!restaurant) {
-    console.log("⚠️ No restaurant data available");
-    return null;
-  }
+  if (!restaurant) return null;
 
-  console.log("🎉 Rendering restaurant details:", restaurant.name);
   return (
-    <div className="min-h-screen bg-background pb-20 animate-fade-up">
+    <div className="min-h-screen bg-background pb-32 animate-fade-up">
       <Header />
       <div className="w-full h-[30vh] sm:h-[40vh] md:h-[50vh] relative">
         <img 
           src={restaurant?.photos?.[0] || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4"}
-          alt="Restaurant hero"
+          alt={`${restaurant.name} hero image`}
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -149,9 +144,9 @@ const RestaurantDetails = () => {
 
       <SavePrompt />
 
-      <div className="container mx-auto px-4 -mt-10 relative z-10 max-w-3xl">
-        <div className="space-y-6">
-          <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="container mx-auto px-4 sm:px-6 -mt-10 relative z-10 max-w-3xl">
+        <div className="space-y-8">
+          <div className="bg-white rounded-xl shadow-sm p-6 sm:p-8">
             <RestaurantInfo restaurant={restaurant} />
             <div className="mt-6">
               <DirectionsButton 
@@ -172,8 +167,17 @@ const RestaurantDetails = () => {
 
           <AmenitiesSection restaurant={restaurant} />
           
-          {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}
-          {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
+          {restaurant?.photos && (
+            <div className="bg-white rounded-xl shadow-sm p-6 sm:p-8">
+              <PhotosSection photos={restaurant.photos} />
+            </div>
+          )}
+          
+          {restaurant?.googleReviews && (
+            <div className="bg-white rounded-xl shadow-sm p-6 sm:p-8">
+              <ReviewsSection reviews={restaurant.googleReviews} />
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -78,8 +78,10 @@ const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
   return (
     <div className="space-y-6 text-left">
       <div>
-        <h1 className="text-4xl font-bold mb-4 text-left">{restaurant?.name ?? 'Restaurant Name Not Available'}</h1>
-        <div className="flex items-center gap-4 mb-4 flex-wrap">
+        <h1 className="text-3xl sm:text-4xl font-bold mb-4 text-left leading-tight">
+          {restaurant?.name ?? 'Restaurant Name Not Available'}
+        </h1>
+        <div className="flex items-center gap-4 mb-6 flex-wrap">
           <RatingStars rating={restaurant?.rating} />
           <span className="text-muted-foreground">
             {formatReviewCount(restaurant?.reviews)} reviews
@@ -94,26 +96,26 @@ const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
         />
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {restaurant?.address && (
-          <div className="flex items-start gap-2 hover:text-primary transition-colors">
-            <MapPin className="w-5 h-5 mt-1 shrink-0" />
+          <div className="flex items-start gap-3 hover:text-primary transition-colors group">
+            <MapPin className="w-5 h-5 mt-1 shrink-0 group-hover:text-primary" />
             <span className="text-left">{restaurant.address}</span>
           </div>
         )}
-        <div className="flex items-start gap-2 hover:text-primary transition-colors">
-          <Clock className="w-5 h-5 mt-1 shrink-0" />
+        <div className="flex items-start gap-3 hover:text-primary transition-colors group">
+          <Clock className="w-5 h-5 mt-1 shrink-0 group-hover:text-primary" />
           <span className="text-left">{getTodayHours(restaurant?.hours)}</span>
         </div>
         {restaurant?.phone && (
-          <div className="flex items-start gap-2 hover:text-primary transition-colors">
-            <Phone className="w-5 h-5 mt-1 shrink-0" />
+          <div className="flex items-start gap-3 hover:text-primary transition-colors group">
+            <Phone className="w-5 h-5 mt-1 shrink-0 group-hover:text-primary" />
             <span className="text-left">{formatPhoneNumber(restaurant.phone)}</span>
           </div>
         )}
         {restaurant?.website && (
-          <div className="flex items-start gap-2 hover:text-primary transition-colors">
-            <Globe className="w-5 h-5 mt-1 shrink-0" />
+          <div className="flex items-start gap-3 hover:text-primary transition-colors group">
+            <Globe className="w-5 h-5 mt-1 shrink-0 group-hover:text-primary" />
             <a
               href={restaurant.website}
               target="_blank"
