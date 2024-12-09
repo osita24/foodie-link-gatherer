@@ -13,6 +13,8 @@ import RestaurantSummary from "@/components/restaurant/RestaurantSummary";
 import SavePrompt from "@/components/restaurant/SavePrompt";
 import DirectionsButton from "@/components/restaurant/DirectionsButton";
 import AmenitiesSection from "@/components/restaurant/AmenitiesSection";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const RestaurantDetails = () => {
   const [restaurant, setRestaurant] = useState<RestaurantDetailsType | null>(null);
@@ -112,13 +114,13 @@ const RestaurantDetails = () => {
       <div className="min-h-screen bg-background">
         <Header />
         <div className="animate-fade-up space-y-4 p-4">
-          <div className="w-full h-[40vh] bg-gray-200 animate-pulse rounded-lg" />
+          <Skeleton className="w-full h-[40vh] rounded-lg" />
           <div className="container mx-auto max-w-4xl">
             <div className="space-y-6">
               <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-                <div className="h-8 bg-gray-200 animate-pulse rounded w-3/4" />
-                <div className="h-4 bg-gray-200 animate-pulse rounded w-1/2" />
-                <div className="h-4 bg-gray-200 animate-pulse rounded w-2/3" />
+                <Skeleton className="h-8 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-4 w-2/3" />
               </div>
             </div>
           </div>
@@ -132,54 +134,68 @@ const RestaurantDetails = () => {
   return (
     <div className="min-h-screen bg-background pb-32 animate-fade-up">
       <Header />
-      <div className="w-full h-[30vh] sm:h-[40vh] md:h-[50vh] relative">
-        <img 
-          src={restaurant?.photos?.[0] || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4"}
-          alt={`${restaurant.name} hero image`}
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        <ActionButtons />
-      </div>
-
-      <SavePrompt />
-
-      <div className="container mx-auto px-4 sm:px-6 -mt-10 relative z-10 max-w-3xl">
-        <div className="space-y-8">
-          <div className="bg-white rounded-xl shadow-sm p-6 sm:p-8">
-            <RestaurantInfo restaurant={restaurant} />
-            <div className="mt-6">
-              <DirectionsButton 
-                address={restaurant.address} 
-                name={restaurant.name} 
-              />
-            </div>
-          </div>
-
-          <RestaurantSummary restaurant={restaurant} />
-          
-          <MenuSection 
-            menu={restaurant?.menu} 
-            photos={restaurant?.photos}
-            reviews={restaurant?.googleReviews}
-            menuUrl={restaurant?.website}
+      <ErrorBoundary>
+        <div className="w-full h-[30vh] sm:h-[40vh] md:h-[50vh] relative">
+          <img 
+            src={restaurant?.photos?.[0] || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4"}
+            alt={`${restaurant.name} hero image`}
+            className="w-full h-full object-cover"
           />
-
-          <AmenitiesSection restaurant={restaurant} />
-          
-          {restaurant?.photos && (
-            <div className="bg-white rounded-xl shadow-sm p-6 sm:p-8">
-              <PhotosSection photos={restaurant.photos} />
-            </div>
-          )}
-          
-          {restaurant?.googleReviews && (
-            <div className="bg-white rounded-xl shadow-sm p-6 sm:p-8">
-              <ReviewsSection reviews={restaurant.googleReviews} />
-            </div>
-          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+          <ActionButtons />
         </div>
-      </div>
+
+        <SavePrompt />
+
+        <div className="container mx-auto px-4 sm:px-6 -mt-10 relative z-10 max-w-3xl">
+          <div className="space-y-8">
+            <ErrorBoundary>
+              <div className="bg-white rounded-xl shadow-sm p-6 sm:p-8">
+                <RestaurantInfo restaurant={restaurant} />
+                <div className="mt-6">
+                  <DirectionsButton 
+                    address={restaurant.address} 
+                    name={restaurant.name} 
+                  />
+                </div>
+              </div>
+            </ErrorBoundary>
+
+            <ErrorBoundary>
+              <RestaurantSummary restaurant={restaurant} />
+            </ErrorBoundary>
+            
+            <ErrorBoundary>
+              <MenuSection 
+                menu={restaurant?.menu} 
+                photos={restaurant?.photos}
+                reviews={restaurant?.googleReviews}
+                menuUrl={restaurant?.website}
+              />
+            </ErrorBoundary>
+
+            <ErrorBoundary>
+              <AmenitiesSection restaurant={restaurant} />
+            </ErrorBoundary>
+            
+            {restaurant?.photos && (
+              <ErrorBoundary>
+                <div className="bg-white rounded-xl shadow-sm p-6 sm:p-8">
+                  <PhotosSection photos={restaurant.photos} />
+                </div>
+              </ErrorBoundary>
+            )}
+            
+            {restaurant?.googleReviews && (
+              <ErrorBoundary>
+                <div className="bg-white rounded-xl shadow-sm p-6 sm:p-8">
+                  <ReviewsSection reviews={restaurant.googleReviews} />
+                </div>
+              </ErrorBoundary>
+            )}
+          </div>
+        </div>
+      </ErrorBoundary>
     </div>
   );
 };
