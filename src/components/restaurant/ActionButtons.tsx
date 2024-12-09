@@ -119,8 +119,9 @@ const ActionButtons = () => {
   const handleShare = async () => {
     console.log("Share clicked");
     const shareUrl = window.location.href;
+    const isMobile = window.innerWidth <= 768;
 
-    if (navigator.share && window.innerWidth <= 768) {
+    if (navigator.share && isMobile) {
       try {
         await navigator.share({
           title: restaurant?.name || 'Check out this restaurant!',
@@ -130,32 +131,28 @@ const ActionButtons = () => {
         toast.success("Shared successfully!");
       } catch (error) {
         console.error("Error sharing:", error);
-        // Fallback to clipboard on share error
-        copyToClipboard(shareUrl);
       }
     } else {
-      copyToClipboard(shareUrl);
-    }
-  };
-
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success("Link copied to clipboard!", {
-        description: "Share it with your friends!",
-      });
-    } catch (error) {
-      console.error("Error copying to clipboard:", error);
-      toast.error("Failed to copy link");
+      // Desktop only - copy to clipboard
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success("Link copied to clipboard!", {
+          description: "Share it with your friends!",
+        });
+      } catch (error) {
+        console.error("Error copying to clipboard:", error);
+        toast.error("Failed to copy link");
+      }
     }
   };
 
   return (
     <>
-      <div className="fixed bottom-4 left-4 right-4 flex flex-col sm:flex-row gap-2 z-50 md:absolute md:bottom-4 md:right-4 md:left-auto">
+      <div className="fixed bottom-4 left-4 right-4 flex flex-col sm:flex-row gap-2 z-50 md:static md:flex-row md:justify-end md:gap-3 md:mb-6">
         <Button
           size="lg"
           className={`bg-primary text-white hover:bg-primary/90 transition-all duration-300 w-full sm:w-auto shadow-lg
+            md:px-8 md:py-6 md:text-base md:font-medium
             ${isSaving ? 'scale-105 bg-green-500' : ''}`}
           onClick={handleSave}
           disabled={isSaving}
@@ -172,7 +169,8 @@ const ActionButtons = () => {
         <Button
           variant="outline"
           size="lg"
-          className="bg-white/80 backdrop-blur-sm hover:bg-white w-full sm:w-auto shadow-lg"
+          className="bg-white/80 backdrop-blur-sm hover:bg-white w-full sm:w-auto shadow-lg
+            md:px-8 md:py-6 md:text-base md:font-medium"
           onClick={handleShare}
         >
           <Share2 className="mr-2 h-5 w-5" />
