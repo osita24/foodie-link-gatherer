@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AuthModal from "../auth/AuthModal";
 import { useParams } from "react-router-dom";
 import { useRestaurantData } from "@/hooks/useRestaurantData";
+import ReservationSection from "./ReservationSection";
 
 const ActionButtons = () => {
   const [isSaving, setIsSaving] = useState(false);
@@ -16,7 +17,6 @@ const ActionButtons = () => {
   const { data: restaurant } = useRestaurantData(placeId);
 
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log("Initial session:", session);
       setSession(session);
@@ -25,7 +25,6 @@ const ActionButtons = () => {
       }
     });
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -72,7 +71,6 @@ const ActionButtons = () => {
       console.log("Saving restaurant...", restaurant);
 
       if (isSaved) {
-        // Remove from saved
         const { error } = await supabase
           .from('saved_restaurants')
           .delete()
@@ -86,7 +84,6 @@ const ActionButtons = () => {
           description: "Restaurant removed from your saved list!",
         });
       } else {
-        // Add to saved with enhanced details
         const { error } = await supabase
           .from('saved_restaurants')
           .insert({
@@ -116,41 +113,68 @@ const ActionButtons = () => {
     }
   };
 
-  const handleShare = () => {
-    console.log("Share clicked");
-    toast("Share feature", {
-      description: "Coming soon!",
-    });
+  const handleShare = async () => {
+    const url = window.location.href;
+    
+    // For mobile devices, use native share
+    if (navigator.share && window.innerWidth < 768) {
+      try {
+        await navigator.share({
+          title: restaurant?.name || 'Restaurant Details',
+          url: url
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+      }
+    } else {
+      // For desktop, copy to clipboard
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied to clipboard!");
+      } catch (error) {
+        console.error('Error copying to clipboard:', error);
+        toast.error("Failed to copy link");
+      }
+    }
   };
 
   return (
     <>
-      <div className="fixed bottom-4 left-4 right-4 flex flex-col sm:flex-row gap-2 z-50 md:absolute md:bottom-4 md:right-4 md:left-auto">
-        <Button
-          size="lg"
-          className={`bg-primary text-white hover:bg-primary/90 transition-all duration-300 w-full sm:w-auto shadow-lg
-            ${isSaving ? 'scale-105 bg-green-500' : ''}`}
-          onClick={handleSave}
-          disabled={isSaving}
-        >
-          {isSaving ? (
-            <Check className="mr-2 h-5 w-5 animate-[scale-in_0.2s_ease-out]" />
-          ) : isSaved ? (
-            <BookmarkCheck className="mr-2 h-5 w-5" />
-          ) : (
-            <BookmarkPlus className="mr-2 h-5 w-5" />
-          )}
-          {isSaving ? 'Saving...' : isSaved ? 'Saved' : 'Save'}
-        </Button>
-        <Button
-          variant="outline"
-          size="lg"
-          className="bg-white/80 backdrop-blur-sm hover:bg-white w-full sm:w-auto shadow-lg"
-          onClick={handleShare}
-        >
-          <Share2 className="mr-2 h-5 w-5" />
-          Share
-        </Button>
+      <div className="fixed bottom-4 left-4 right-4 flex flex-col gap-2 z-50 md:static md:flex-row md:gap-4">
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <Button
+            size="lg"
+            className={`bg-primary text-white hover:bg-primary/90 transition-all duration-300 w-full md:w-[140px] shadow-lg
+              ${isSaving ? 'scale-105 bg-green-500' : ''}`}
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <Check className="mr-2 h-5 w-5 animate-[scale-in_0.2s_ease-out]" />
+            ) : isSaved ? (
+              <BookmarkCheck className="mr-2 h-5 w-5" />
+            ) : (
+              <BookmarkPlus className="mr-2 h-5 w-5" />
+            )}
+            {isSaving ? 'Saving...' : isSaved ? 'Saved' : 'Save'}
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            className="bg-white/80 backdrop-blur-sm hover:bg-white w-full md:w-[140px] shadow-lg"
+            onClick={handleShare}
+          >
+            <Share2 className="mr-2 h-5 w-5" />
+            Share
+          </Button>
+        </div>
+        <div className="hidden md:block w-full max-w-[300px]">
+          <ReservationSection website={restaurant?.website} />
+        </div>
+      </div>
+
+      <div className="block md:hidden w-full">
+        <ReservationSection website={restaurant?.website} />
       </div>
 
       <AuthModal 
