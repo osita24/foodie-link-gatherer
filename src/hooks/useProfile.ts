@@ -63,5 +63,5 @@ export const useProfile = () => {
     fetchUserProfile();
   }, [session]);
 
-  return { userName, isLoadingProfile };
+  return { userName, isLoadingProfile, session };
 };
