@@ -7,11 +7,12 @@ import MenuSection from "@/components/restaurant/MenuSection";
 import PhotosSection from "@/components/restaurant/PhotosSection";
 import ReviewsSection from "@/components/restaurant/ReviewsSection";
 import ActionButtons from "@/components/restaurant/ActionButtons";
-import AdditionalInfo from "@/components/restaurant/AdditionalInfo";
 import { RestaurantDetails as RestaurantDetailsType } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
 import RestaurantSummary from "@/components/restaurant/RestaurantSummary";
 import SavePrompt from "@/components/restaurant/SavePrompt";
+import DirectionsButton from "@/components/restaurant/DirectionsButton";
+import AmenitiesSection from "@/components/restaurant/AmenitiesSection";
 
 const RestaurantDetails = () => {
   const [restaurant, setRestaurant] = useState<RestaurantDetailsType | null>(null);
@@ -148,10 +149,16 @@ const RestaurantDetails = () => {
 
       <SavePrompt />
 
-      <div className="container mx-auto px-4 -mt-10 relative z-10 max-w-4xl">
+      <div className="container mx-auto px-4 -mt-10 relative z-10 max-w-3xl">
         <div className="space-y-6">
           <div className="bg-white rounded-xl shadow-sm p-6">
             <RestaurantInfo restaurant={restaurant} />
+            <div className="mt-6">
+              <DirectionsButton 
+                address={restaurant.address} 
+                name={restaurant.name} 
+              />
+            </div>
           </div>
 
           <RestaurantSummary restaurant={restaurant} />
@@ -163,7 +170,8 @@ const RestaurantDetails = () => {
             menuUrl={restaurant?.website}
           />
 
-          <AdditionalInfo restaurant={restaurant} />
+          <AmenitiesSection restaurant={restaurant} />
+          
           {restaurant?.photos && <PhotosSection photos={restaurant.photos} />}
           {restaurant?.googleReviews && <ReviewsSection reviews={restaurant.googleReviews} />}
         </div>
