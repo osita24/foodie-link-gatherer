@@ -68,10 +68,10 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
           Top Match
         </div>
       )}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 space-y-2">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex-1 min-w-[200px] space-y-2">
           <div className="flex items-start gap-2 flex-wrap">
-            <h3 className="text-base font-medium text-gray-900 group-hover:text-primary transition-colors">
+            <h3 className="text-base font-medium text-gray-900 group-hover:text-primary transition-colors break-words">
               {cleanName}
             </h3>
             
@@ -110,7 +110,11 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
             )}
           </div>
           
-          {description && <MenuItemDescription description={description} />}
+          {description && (
+            <div className="max-w-prose">
+              <MenuItemDescription description={description} />
+            </div>
+          )}
           
           {matchDetails && (matchDetails.reason || matchDetails.warning) && (
             <div className="flex items-center gap-2 flex-wrap animate-fade-in-up">
