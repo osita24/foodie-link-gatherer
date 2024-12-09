@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Circle } from "lucide-react";
 
 const ProfileSettings = () => {
   const [userDetails, setUserDetails] = useState({
@@ -12,6 +13,7 @@ const ProfileSettings = () => {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [completionPercentage, setCompletionPercentage] = useState(0);
 
   useEffect(() => {
     const getUser = async () => {
@@ -24,10 +26,31 @@ const ProfileSettings = () => {
           .eq('id', user.id)
           .single();
 
+        // Fetch preferences to calculate completion
+        const { data: preferences } = await supabase
+          .from('user_preferences')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
         setUserDetails({
           name: profile?.full_name || "",
           email: user.email || "",
         });
+
+        // Calculate completion percentage
+        if (preferences) {
+          let completed = 0;
+          let total = 5;
+
+          if (preferences.cuisine_preferences?.length > 0) completed++;
+          if (preferences.dietary_restrictions?.length > 0) completed++;
+          if (preferences.favorite_ingredients?.length > 0) completed++;
+          if (preferences.atmosphere_preferences?.length > 0) completed++;
+          if (preferences.favorite_proteins?.length > 0) completed++;
+
+          setCompletionPercentage((completed / total) * 100);
+        }
       }
     };
 
@@ -62,6 +85,19 @@ const ProfileSettings = () => {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <h2 className="text-lg font-semibold">Profile Settings</h2>
+        {completionPercentage < 100 && (
+          <div className="relative flex items-center">
+            <Circle 
+              className="w-3 h-3 fill-green-500 text-green-500" 
+              aria-label="Profile incomplete"
+            />
+            <div className="absolute -right-1 -top-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+          </div>
+        )}
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="name">Name</Label>
         {isEditing ? (
