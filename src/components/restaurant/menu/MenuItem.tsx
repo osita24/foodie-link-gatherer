@@ -1,8 +1,5 @@
-import { useState, useEffect } from "react";
-import { ChevronDown, ChevronUp, ThumbsUp, AlertTriangle, Sparkles, ArrowRight, Crown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
 import {
   Tooltip,
   TooltipContent,
@@ -10,6 +7,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Progress } from "@/components/ui/progress";
+import { MenuItemMatchBadge } from "./MenuItemMatchBadge";
+import { MenuItemDescription } from "./MenuItemDescription";
 
 interface MenuItemProps {
   item: {
@@ -28,42 +27,6 @@ interface MenuItemProps {
 }
 
 const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [matchMessage, setMatchMessage] = useState<string>("");
-
-  useEffect(() => {
-    const generateMatchMessage = async () => {
-      if (!matchDetails) return;
-
-      try {
-        console.log('🎯 Generating match message for:', item.name);
-        const { data, error } = await supabase.functions.invoke('generate-match-message', {
-          body: {
-            matchType: matchDetails.matchType,
-            score: matchDetails.score,
-            itemDetails: {
-              name: item.name,
-              description: item.description
-            },
-            preferences: {} // We'll get this from context in a future update
-          }
-        });
-
-        if (error) throw error;
-        
-        console.log('✨ Generated match message:', data.message);
-        setMatchMessage(data.message);
-      } catch (error) {
-        console.error('❌ Error generating match message:', error);
-        setMatchMessage(matchDetails.matchType === 'warning' ? 'Check ingredients ⚠️' : 'Possible match 🤔');
-      }
-    };
-
-    if (matchDetails) {
-      generateMatchMessage();
-    }
-  }, [matchDetails, item.name, item.description]);
-
   const cleanName = item.name
     .replace(/^\d+\.\s*/, '')
     .replace(/\*\*/g, '')
@@ -72,9 +35,6 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
   const description = item.name.includes(' - ') 
     ? item.name.split(' - ')[1].replace(/\*\*/g, '').trim()
     : item.description;
-
-  const isLongDescription = description && description.length > 100;
-  const displayDescription = isExpanded ? description : description?.substring(0, 100);
 
   const getMatchStyle = (matchType: string = 'neutral') => {
     const baseStyle = isTopMatch 
@@ -90,33 +50,6 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
         return cn(baseStyle, isTopMatch ? "" : "border-red-400 bg-gradient-to-r from-red-50 to-transparent");
       default:
         return cn(baseStyle, isTopMatch ? "" : "border-gray-200");
-    }
-  };
-
-  const getScoreColor = (matchType: string = 'neutral') => {
-    switch (matchType) {
-      case 'perfect':
-        return "text-emerald-700 bg-emerald-100";
-      case 'good':
-        return "text-blue-700 bg-blue-100";
-      case 'warning':
-        return "text-red-700 bg-red-100";
-      default:
-        return "text-gray-700 bg-gray-100";
-    }
-  };
-
-  const getMatchIcon = (matchType: string = 'neutral') => {
-    if (isTopMatch) return <Crown className="w-3 h-3 ml-1 text-primary animate-bounce" />;
-    switch (matchType) {
-      case 'perfect':
-        return <Sparkles className="w-3 h-3 ml-1" />;
-      case 'good':
-        return <ThumbsUp className="w-3 h-3 ml-1" />;
-      case 'warning':
-        return <AlertTriangle className="w-3 h-3 ml-1" />;
-      default:
-        return <ArrowRight className="w-3 h-3 ml-1" />;
     }
   };
 
@@ -144,15 +77,13 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge 
-                      className={cn(
-                        "animate-fade-in-up cursor-help transition-colors",
-                        getScoreColor(matchDetails.matchType)
-                      )}
-                    >
-                      {matchMessage}
-                      {getMatchIcon(matchDetails.matchType)}
-                    </Badge>
+                    <div>
+                      <MenuItemMatchBadge 
+                        score={matchDetails.score}
+                        matchType={matchDetails.matchType}
+                        isTopMatch={isTopMatch}
+                      />
+                    </div>
                   </TooltipTrigger>
                   <TooltipContent className="w-64 p-3">
                     <div className="space-y-2">
@@ -177,26 +108,7 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
             )}
           </div>
           
-          {description && (
-            <div className="mt-1">
-              <p className="text-sm text-gray-500 leading-relaxed">
-                {displayDescription}
-                {isLongDescription && !isExpanded && "..."}
-              </p>
-              {isLongDescription && (
-                <button
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className="mt-1 text-xs text-primary hover:text-primary/80 flex items-center gap-1"
-                >
-                  {isExpanded ? (
-                    <>Show less <ChevronUp className="w-3 h-3" /></>
-                  ) : (
-                    <>Show more <ChevronDown className="w-3 h-3" /></>
-                  )}
-                </button>
-              )}
-            </div>
-          )}
+          {description && <MenuItemDescription description={description} />}
           
           {matchDetails && (matchDetails.reason || matchDetails.warning) && (
             <div className="flex items-center gap-2 flex-wrap animate-fade-in-up">
