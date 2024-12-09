@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/tooltip";
 import { MenuItem as MenuItemType } from "@/types/restaurant";
 import MenuItemDescription from "./MenuItemDescription";
-import MenuItemMatchBadge from "./MenuItemMatchBadge";
+import { MenuItemMatchBadge } from "./MenuItemMatchBadge";
 import { Crown } from "lucide-react";
 
 interface MenuItemProps {
@@ -50,8 +50,8 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
           {matchDetails && (
             <MenuItemMatchBadge
               score={matchDetails.score}
-              reason={matchDetails.reason}
-              warning={matchDetails.warning}
+              matchType={matchDetails.matchType as 'perfect' | 'good' | 'neutral' | 'warning'}
+              isTopMatch={isTopMatch}
             />
           )}
           
