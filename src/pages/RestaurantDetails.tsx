@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Helmet } from "react-helmet";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import RestaurantInfo from "@/components/restaurant/RestaurantInfo";
@@ -109,9 +110,23 @@ const RestaurantDetails = () => {
     fetchRestaurantDetails();
   }, [id, navigate]);
 
+  const getMetaDescription = (restaurant: RestaurantDetailsType | null) => {
+    if (!restaurant) return "";
+    return `Explore ${restaurant.name}'s menu with personalized recommendations. ${
+      restaurant.cuisine ? `Featuring ${restaurant.cuisine} cuisine. ` : ""
+    }${restaurant.rating ? `Rated ${restaurant.rating}/5 by diners. ` : ""}Find your perfect dish with Cilantro's AI-powered menu analysis.`;
+  };
+
+  const getMetaImage = (restaurant: RestaurantDetailsType | null) => {
+    return restaurant?.photos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9";
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
+        <Helmet>
+          <title>Loading Restaurant Details | Cilantro</title>
+        </Helmet>
         <Header />
         <div className="animate-fade-up space-y-4 p-4">
           <Skeleton className="w-full h-[40vh] rounded-lg" />
@@ -133,6 +148,18 @@ const RestaurantDetails = () => {
 
   return (
     <div className="min-h-screen bg-background pb-32 animate-fade-up">
+      <Helmet>
+        <title>{`${restaurant.name} - Menu & Recommendations | Cilantro`}</title>
+        <meta name="description" content={getMetaDescription(restaurant)} />
+        <meta property="og:title" content={`${restaurant.name} - Personalized Menu Recommendations`} />
+        <meta property="og:description" content={getMetaDescription(restaurant)} />
+        <meta property="og:image" content={getMetaImage(restaurant)} />
+        <meta property="twitter:title" content={`${restaurant.name} - Personalized Menu Recommendations`} />
+        <meta property="twitter:description" content={getMetaDescription(restaurant)} />
+        <meta property="twitter:image" content={getMetaImage(restaurant)} />
+        <meta name="keywords" content={`${restaurant.name}, ${restaurant.cuisine || 'restaurant'}, menu recommendations, personalized dining, ${restaurant.address || ''}`} />
+      </Helmet>
+
       <Header />
       <ErrorBoundary>
         <div className="w-full h-[30vh] sm:h-[40vh] md:h-[50vh] relative">
