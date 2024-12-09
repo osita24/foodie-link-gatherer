@@ -7,6 +7,6 @@ export const useRestaurantData = (placeId: string, initialData?: RestaurantDetai
     queryKey: ['restaurant', placeId],
     queryFn: () => fetchRestaurantDetails(placeId),
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    initialData: initialData,
+    initialData: initialData, // Use the data passed from navigation if available
   });
 };
