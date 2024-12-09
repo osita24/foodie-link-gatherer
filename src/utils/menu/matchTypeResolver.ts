@@ -97,13 +97,33 @@ const determineNeutralMatchReason = (factors: any, itemContent: string): string 
     return 'Flavorful spicy dish 🌶️';
   }
 
-  // More engaging default messages
+  // More engaging default messages based on common menu terms
+  if (itemContent.includes('roasted')) {
+    return 'Slow-roasted for flavor 🔥';
+  }
+  if (itemContent.includes('fried')) {
+    return 'Crispy house favorite 🍗';
+  }
+  if (itemContent.includes('baked')) {
+    return 'Fresh from the oven 🥖';
+  }
+  if (itemContent.includes('stir')) {
+    return 'Wok-fired classic 🥢';
+  }
+  if (itemContent.includes('sauce') || itemContent.includes('gravy')) {
+    return 'Rich, flavorful sauce 🥄';
+  }
+  if (itemContent.includes('vegetable') || itemContent.includes('veggies')) {
+    return 'Garden-fresh vegetables 🥬';
+  }
+
+  // Randomized engaging default messages if no specific characteristics found
   const defaultMessages = [
-    'Worth exploring 🍽️',
+    'Classic dish with a twist 🎯',
+    'Chef-crafted specialty 👨‍🍳',
     'Traditional favorite 🏆',
-    'Classic dish 👌',
-    'Local specialty 🏠',
-    'Chef recommended 👨‍🍳'
+    'House specialty dish 🏠',
+    'Fresh daily preparation 🌟'
   ];
 
   return defaultMessages[Math.floor(Math.random() * defaultMessages.length)];
