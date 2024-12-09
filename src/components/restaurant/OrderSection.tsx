@@ -12,7 +12,7 @@ const OrderSection = () => {
   return (
     <Card className="bg-white hover:shadow-lg transition-shadow duration-300 mt-6">
       <CardHeader>
-        <CardTitle>Contact & Booking</CardTitle>
+        <CardTitle>Get a Seat</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {restaurant?.phone && (

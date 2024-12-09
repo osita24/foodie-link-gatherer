@@ -1,4 +1,4 @@
-import { MapPin, Clock, DollarSign } from "lucide-react";
+import { MapPin, Clock, DollarSign, Users, Utensils, WifiIcon, Wheelchair, Coffee } from "lucide-react";
 import { RestaurantDetails } from "@/types/restaurant";
 import ServiceOptions from "./ServiceOptions";
 
@@ -95,6 +95,30 @@ const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
     );
   };
 
+  const getAdditionalFeatures = () => {
+    const features = [];
+    
+    if (restaurant?.servesBreakfast) features.push({ icon: Coffee, text: "Serves Breakfast" });
+    if (restaurant?.servesBrunch) features.push({ icon: Coffee, text: "Serves Brunch" });
+    if (restaurant?.servesLunch) features.push({ icon: Utensils, text: "Serves Lunch" });
+    if (restaurant?.servesDinner) features.push({ icon: Utensils, text: "Serves Dinner" });
+    if (restaurant?.servesVegetarianFood) features.push({ icon: Utensils, text: "Vegetarian Options" });
+    if (restaurant?.wheelchairAccessible) features.push({ icon: Wheelchair, text: "Wheelchair Accessible" });
+    
+    if (features.length === 0) return null;
+    
+    return (
+      <div className="flex flex-wrap gap-3 mt-4">
+        {features.map(({ icon: Icon, text }, index) => (
+          <div key={index} className="flex items-center gap-1.5 text-sm text-secondary">
+            <Icon className="w-4 h-4" />
+            <span>{text}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   console.log("Restaurant data in RestaurantInfo:", restaurant);
 
   return (
@@ -117,6 +141,7 @@ const RestaurantInfo = ({ restaurant }: RestaurantInfoProps) => {
             reservable={restaurant?.reservable}
           />
         </div>
+        {getAdditionalFeatures()}
       </div>
 
       <div className="space-y-3">
