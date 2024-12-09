@@ -21,6 +21,7 @@ interface MenuSectionProps {
 const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSectionProps) => {
   const [processedMenu, setProcessedMenu] = useState<MenuCategory[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { categories } = useRestaurantMatch(restaurant);
   const { itemMatchDetails, analyzedMenu } = useMenuAnalysis(processedMenu);
   const [session, setSession] = useState<any>(null);
@@ -28,15 +29,26 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
 
   useEffect(() => {
     console.log("🔍 Initializing MenuSection with restaurant:", restaurant?.name);
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("🔐 Auth session loaded:", session?.user?.id);
-      setSession(session);
-    });
+    
+    const setupAuth = async () => {
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        console.log("🔐 Auth session loaded:", currentSession?.user?.id);
+        setSession(currentSession);
 
-    supabase.auth.onAuthStateChange((_event, session) => {
-      console.log("🔄 Auth state changed:", session?.user?.id);
-      setSession(session);
-    });
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+          console.log("🔄 Auth state changed:", session?.user?.id);
+          setSession(session);
+        });
+
+        return () => subscription.unsubscribe();
+      } catch (error) {
+        console.error("❌ Auth error:", error);
+        toast.error("Authentication error occurred");
+      }
+    };
+
+    setupAuth();
   }, []);
 
   useEffect(() => {
@@ -50,7 +62,6 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
   }, [menu, photos, reviews, menuUrl]);
 
   useEffect(() => {
-    // Find the item with the highest match score
     if (session && itemMatchDetails) {
       const scores = Object.entries(itemMatchDetails).map(([id, details]) => ({
         id,
@@ -64,6 +75,8 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
 
   const processRestaurantData = async () => {
     setIsProcessing(true);
+    setError(null);
+    
     try {
       const payload = {
         menuUrl: menuUrl || null,
@@ -83,8 +96,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
       if (error) throw error;
 
       if (!data?.menuSections?.length) {
-        toast.info("Could not generate menu information");
-        return;
+        throw new Error("No menu data generated");
       }
 
       console.log("✅ Menu sections generated:", data.menuSections);
@@ -93,6 +105,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
       
     } catch (error) {
       console.error("❌ Error processing restaurant data:", error);
+      setError("Failed to load menu information");
       toast.error("Failed to generate menu information");
     } finally {
       setIsProcessing(false);
@@ -100,6 +113,19 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
   };
 
   if (isProcessing) return <MenuLoadingState isProcessing />;
+  if (error) {
+    return (
+      <Card className="p-6 text-center">
+        <p className="text-red-500">{error}</p>
+        <button 
+          onClick={processRestaurantData}
+          className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+        >
+          Retry
+        </button>
+      </Card>
+    );
+  }
   if (!processedMenu || processedMenu.length === 0) return <MenuLoadingState />;
 
   const menuToDisplay = session ? (analyzedMenu || processedMenu) : processedMenu;

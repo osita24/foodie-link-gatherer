@@ -13,66 +13,67 @@ const ActionButtons = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [session, setSession] = useState(null);
   const { id: placeId } = useParams();
-  const { data: restaurant } = useRestaurantData(placeId);
+  const { data: restaurant, error: restaurantError } = useRestaurantData(placeId);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("Initial session:", session);
-      setSession(session);
-      if (session) {
-        checkIfSaved(session.user.id);
-      }
-    });
+    const setupAuth = async () => {
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        setSession(currentSession);
+        if (currentSession) {
+          checkIfSaved(currentSession.user.id);
+        }
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log("Auth state changed:", _event, session);
-      setSession(session);
-      if (session) {
-        setShowAuthModal(false);
-        checkIfSaved(session.user.id);
-        toast("Successfully signed in!", {
-          description: `Welcome ${session.user.email}`,
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+          setSession(session);
+          if (session) {
+            setShowAuthModal(false);
+            checkIfSaved(session.user.id);
+          }
         });
-      }
-    });
 
-    return () => subscription.unsubscribe();
+        return () => subscription.unsubscribe();
+      } catch (error) {
+        console.error("Auth error:", error);
+        toast.error("Failed to load authentication state");
+      }
+    };
+
+    setupAuth();
   }, [placeId]);
 
   const checkIfSaved = async (userId: string) => {
-    console.log("Checking if restaurant is saved...");
-    const { data, error } = await supabase
-      .from('saved_restaurants')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('place_id', placeId);
+    try {
+      console.log("Checking if restaurant is saved...");
+      const { data, error } = await supabase
+        .from('saved_restaurants')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('place_id', placeId)
+        .single();
 
-    if (error) {
+      if (error) throw error;
+      setIsSaved(!!data);
+    } catch (error) {
       console.error("Error checking saved status:", error);
-      return;
     }
-
-    setIsSaved(data.length > 0);
-    console.log("Restaurant saved status:", data.length > 0);
   };
 
   const handleSave = async () => {
     if (!session) {
-      console.log("No session, showing auth modal");
       setShowAuthModal(true);
+      return;
+    }
+
+    if (!restaurant) {
+      toast.error("Restaurant information not available");
       return;
     }
 
     try {
       setIsSaving(true);
-      console.log("Saving restaurant...", restaurant);
 
       if (isSaved) {
-        // Remove from saved
         const { error } = await supabase
           .from('saved_restaurants')
           .delete()
@@ -82,35 +83,28 @@ const ActionButtons = () => {
         if (error) throw error;
 
         setIsSaved(false);
-        toast("Restaurant removed", {
-          description: "Restaurant removed from your saved list!",
-        });
+        toast.success("Restaurant removed from your saved list");
       } else {
-        // Add to saved with enhanced details
         const { error } = await supabase
           .from('saved_restaurants')
           .insert({
             user_id: session.user.id,
             place_id: placeId,
-            name: restaurant?.name || "Unknown Restaurant",
-            image_url: restaurant?.photos?.[0] || null,
-            cuisine: restaurant?.types?.[0] || null,
-            rating: restaurant?.rating || null,
-            address: restaurant?.address || null,
+            name: restaurant.name,
+            image_url: restaurant.photos?.[0] || null,
+            cuisine: restaurant.types?.[0] || null,
+            rating: restaurant.rating || null,
+            address: restaurant.address || null,
           });
 
         if (error) throw error;
 
         setIsSaved(true);
-        toast("Restaurant saved!", {
-          description: "Find it in your saved tab.",
-        });
+        toast.success("Restaurant saved to your list!");
       }
     } catch (error) {
       console.error("Error saving restaurant:", error);
-      toast("Failed to save", {
-        description: "Failed to save restaurant. Please try again.",
-      });
+      toast.error("Failed to update saved restaurants");
     } finally {
       setIsSaving(false);
     }
@@ -119,25 +113,27 @@ const ActionButtons = () => {
   const handleShare = async () => {
     const url = window.location.href;
     
-    // Check if running on mobile
-    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-      try {
+    try {
+      if (navigator.share && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
         await navigator.share({
           title: restaurant?.name || 'Check out this restaurant',
           text: 'I found this great restaurant!',
           url: url
         });
-      } catch (error) {
-        console.error('Error sharing:', error);
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied to clipboard!");
       }
-    } else {
-      // Desktop fallback - copy to clipboard
-      navigator.clipboard.writeText(url);
-      toast("Link copied!", {
-        description: "Restaurant link copied to clipboard",
-      });
+    } catch (error) {
+      console.error('Error sharing:', error);
+      toast.error("Failed to share restaurant");
     }
   };
+
+  if (restaurantError) {
+    toast.error("Failed to load restaurant information");
+    return null;
+  }
 
   return (
     <>
