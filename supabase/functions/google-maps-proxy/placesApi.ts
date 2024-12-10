@@ -19,12 +19,29 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
       throw new Error('No URL or place ID provided');
     }
 
-    // Handle shortened URLs first
+    // Clean and validate the URL
     let finalUrl = url;
-    if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
-      console.log('📎 Expanding shortened URL:', url);
+    try {
+      // Remove any trailing colons without port numbers
+      finalUrl = finalUrl.replace(/:\/?$/, '');
+      
+      // Ensure the URL has a valid protocol
+      if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+        finalUrl = `https://${finalUrl}`;
+      }
+
+      // Validate URL format
+      new URL(finalUrl);
+    } catch (error) {
+      console.error('❌ Invalid URL format:', error);
+      throw new Error('Invalid URL format provided');
+    }
+
+    // Handle shortened URLs
+    if (finalUrl.includes('goo.gl') || finalUrl.includes('maps.app.goo.gl')) {
+      console.log('📎 Expanding shortened URL:', finalUrl);
       try {
-        const response = await fetch(url, { 
+        const response = await fetch(finalUrl, { 
           redirect: 'follow',
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -41,7 +58,7 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
       }
     }
 
-    // Try to extract place ID from URL first
+    // Try to extract place ID from URL
     try {
       const urlObj = new URL(finalUrl);
       const searchParams = new URLSearchParams(urlObj.search);
@@ -54,7 +71,6 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
       }
     } catch (error) {
       console.error('❌ Error parsing URL:', error);
-      // Don't throw here, continue with text search
       console.log('⚠️ Continuing with text search...');
     }
 
