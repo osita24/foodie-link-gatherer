@@ -8,8 +8,8 @@ export async function cleanMenuText(text: string): Promise<string[]> {
       throw new Error('OpenAI API key is not configured');
     }
 
-    // Limit text length to avoid token limit issues
-    const maxLength = 16000;
+    // Increase max length to capture more potential menu items
+    const maxLength = 32000; // Doubled from previous 16000
     const truncatedText = text.slice(0, maxLength);
     console.log('📝 Truncated text length:', truncatedText.length);
 
@@ -20,21 +20,25 @@ export async function cleanMenuText(text: string): Promise<string[]> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4',
         messages: [
           {
             role: 'system',
-            content: `You are a menu item extractor. Extract menu items from the provided text and format them consistently.
+            content: `You are a menu item extractor. Extract as many menu items as possible from the provided text and format them consistently.
             Rules:
             - Each item should be on a new line
             - Include the full item name and any key ingredients or description
             - Remove prices and other non-essential information
             - Ensure items are complete and make sense
             - Format should be consistent: "Item Name - Brief Description"
-            - If an item doesn't have a description, skip it
+            - If an item doesn't have a description, try to generate one based on context
             - Remove any duplicate items
             - Remove any items that don't seem to be actual menu items
             - Minimum 5 words per item including description
+            - Look for menu items in reviews and photos as well
+            - Try to identify section headers and categorize items
+            - Extract items from special menus (lunch, dinner, etc.)
+            - Include dietary indicators (V, GF, etc.) in descriptions
             
             Example output:
             Margherita Pizza - Fresh mozzarella, basil, and tomato sauce on hand-tossed dough
@@ -44,7 +48,7 @@ export async function cleanMenuText(text: string): Promise<string[]> {
           { role: 'user', content: truncatedText }
         ],
         temperature: 0.3,
-        max_tokens: 1000
+        max_tokens: 2000 // Doubled from previous 1000
       }),
     });
 
