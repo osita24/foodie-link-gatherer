@@ -1,4 +1,4 @@
-export type Verdict = "MUST VISIT" | "WORTH A TRY" | "SKIP IT";
+export type Verdict = "PERFECT MATCH" | "WORTH EXPLORING" | "CONSIDER ALTERNATIVES";
 
 export interface VerdictReason {
   emoji: string;

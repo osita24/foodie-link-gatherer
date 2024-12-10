@@ -11,7 +11,7 @@ interface RestaurantSummaryProps {
 }
 
 interface SummaryResponse {
-  verdict: "SKIP IT" | "WORTH A TRY" | "MUST VISIT";
+  verdict: "PERFECT MATCH" | "WORTH EXPLORING" | "CONSIDER ALTERNATIVES";
   reasons: Array<{
     emoji: string;
     text: string;
@@ -59,12 +59,12 @@ const RestaurantSummary = ({ restaurant }: RestaurantSummaryProps) => {
 
   const getVerdictStyles = (verdict: string) => {
     switch (verdict) {
-      case "MUST VISIT":
+      case "PERFECT MATCH":
         return "bg-success/10 text-success border-success/20 shadow-[0_0_15px_rgba(104,160,99,0.15)]";
-      case "WORTH A TRY":
+      case "WORTH EXPLORING":
         return "bg-warning/10 text-warning border-warning/20 shadow-[0_0_15px_rgba(197,165,114,0.15)]";
-      case "SKIP IT":
-        return "bg-error/10 text-error border-error/20 shadow-[0_0_15px_rgba(181,65,65,0.15)]";
+      case "CONSIDER ALTERNATIVES":
+        return "bg-muted/10 text-muted-foreground border-muted/20 shadow-[0_0_15px_rgba(120,120,120,0.15)]";
       default:
         return "bg-primary/10 text-primary border-primary/20 shadow-[0_0_15px_rgba(74,103,65,0.15)]";
     }
