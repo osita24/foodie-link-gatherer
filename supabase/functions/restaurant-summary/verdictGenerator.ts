@@ -4,6 +4,7 @@ import { MatchScores, Verdict, VerdictResult } from "./types/verdictTypes.ts";
 function generateMustVisitReasons(restaurant: RestaurantFeatures, preferences: UserPreferences): Array<{ emoji: string; text: string }> {
   const reasons = [];
   
+  // Cuisine match with specific details
   if (preferences.cuisine_preferences?.length) {
     const matchingCuisine = preferences.cuisine_preferences.find(cuisine => 
       restaurant.types?.some(type => type.toLowerCase().includes(cuisine.toLowerCase()))
@@ -12,41 +13,39 @@ function generateMustVisitReasons(restaurant: RestaurantFeatures, preferences: U
     if (matchingCuisine) {
       reasons.push({
         emoji: "🎯",
-        text: `Perfect match for your ${matchingCuisine.toLowerCase()} cravings - this is exactly what you're looking for!`
+        text: `${restaurant.name} specializes in ${matchingCuisine.toLowerCase()} cuisine - exactly what you love!`
       });
     }
   }
 
+  // Dietary preferences with restaurant-specific context
   if (preferences.dietary_restrictions?.length) {
     const restriction = preferences.dietary_restrictions[0];
     if (restaurant.servesVegetarianFood) {
       reasons.push({
         emoji: "🥗",
-        text: `Excellent ${restriction} options available - they're known for accommodating ${restriction.toLowerCase()} diets perfectly`
+        text: `They offer a dedicated ${restriction.toLowerCase()} menu with plenty of options like ${restaurant.types?.[0] || 'specialty dishes'}`
       });
     }
   }
 
+  // Protein preferences with specific menu items
   if (preferences.favorite_proteins?.length) {
     const protein = preferences.favorite_proteins[0];
+    const cuisineContext = restaurant.types?.[0] ? ` in their ${restaurant.types[0].toLowerCase()} style` : '';
     reasons.push({
       emoji: "🍖",
-      text: `They specialize in ${protein.toLowerCase()} dishes, which aligns perfectly with your protein preference`
+      text: `Known for their ${protein.toLowerCase()} dishes${cuisineContext}`
     });
   }
 
+  // Atmosphere match with specific details
   if (preferences.atmosphere_preferences?.length) {
     const atmosphere = preferences.atmosphere_preferences[0];
+    const ratingContext = restaurant.rating ? ` (${restaurant.rating}/5 stars)` : '';
     reasons.push({
       emoji: "✨",
-      text: `The ${atmosphere.toLowerCase()} atmosphere matches exactly what you look for in a dining experience`
-    });
-  }
-
-  if (restaurant.rating && restaurant.rating >= 4.5) {
-    reasons.push({
-      emoji: "⭐",
-      text: `Exceptional ${restaurant.rating}/5 rating from the community - this place consistently delivers outstanding experiences`
+      text: `Perfect ${atmosphere.toLowerCase()} spot${ratingContext} that matches your preferred dining style`
     });
   }
 
@@ -56,34 +55,30 @@ function generateMustVisitReasons(restaurant: RestaurantFeatures, preferences: U
 function generateWorthTryingReasons(restaurant: RestaurantFeatures, preferences: UserPreferences): Array<{ emoji: string; text: string }> {
   const reasons = [];
 
+  // Rating context with specific numbers
   if (restaurant.rating) {
     reasons.push({
       emoji: "⭐",
-      text: `Well-rated at ${restaurant.rating}/5 stars - many diners with similar preferences enjoyed their experience here`
+      text: `Solid ${restaurant.rating}/5 rating, particularly praised for their ${restaurant.types?.[0] || 'menu'}`
     });
   }
 
+  // Cuisine comparison with specific context
   if (preferences.cuisine_preferences?.length) {
     const preferredCuisine = preferences.cuisine_preferences[0];
+    const restaurantCuisine = restaurant.types?.[0] || 'unique';
     reasons.push({
       emoji: "🍽️",
-      text: `While different from your favorite ${preferredCuisine.toLowerCase()} spots, their unique menu offers flavors we think you'll appreciate`
+      text: `While you usually prefer ${preferredCuisine.toLowerCase()}, ${restaurant.name} offers ${restaurantCuisine.toLowerCase()} flavors worth exploring`
     });
   }
 
+  // Dietary accommodations with specific details
   if (preferences.dietary_restrictions?.length) {
     const restriction = preferences.dietary_restrictions[0];
     reasons.push({
       emoji: "✔️",
-      text: `They're experienced in adapting dishes for ${restriction.toLowerCase()} diets - just let your server know`
-    });
-  }
-
-  if (restaurant.priceLevel && preferences.price_range) {
-    const priceContext = restaurant.priceLevel <= 2 ? "budget-friendly" : "premium";
-    reasons.push({
-      emoji: "💰",
-      text: `${priceContext} pricing that aligns well with your usual dining preferences`
+      text: `${restaurant.name} can accommodate ${restriction.toLowerCase()} diets - just let them know when ordering`
     });
   }
 
@@ -93,34 +88,36 @@ function generateWorthTryingReasons(restaurant: RestaurantFeatures, preferences:
 function generateNotRecommendedReasons(restaurant: RestaurantFeatures, preferences: UserPreferences): Array<{ emoji: string; text: string }> {
   const reasons = [];
 
+  // Specific dietary limitations
   if (preferences.dietary_restrictions?.length && !restaurant.servesVegetarianFood) {
     const restriction = preferences.dietary_restrictions[0];
     reasons.push({
       emoji: "🔍",
-      text: `Limited options for ${restriction.toLowerCase()} diets - you might find better alternatives elsewhere`
+      text: `${restaurant.name} has limited ${restriction.toLowerCase()} options - their menu focuses on ${restaurant.types?.[0] || 'traditional dishes'}`
     });
   }
 
+  // Specific cuisine mismatch
   if (preferences.cuisine_preferences?.length) {
     const preferredCuisine = preferences.cuisine_preferences[0];
+    const actualCuisine = restaurant.types?.[0] || 'different';
     reasons.push({
       emoji: "🍽️",
-      text: `Different style from your preferred ${preferredCuisine.toLowerCase()} cuisine - might not match your usual taste`
+      text: `You typically enjoy ${preferredCuisine.toLowerCase()} restaurants, while ${restaurant.name} specializes in ${actualCuisine.toLowerCase()} cuisine`
     });
   }
 
+  // Specific atmosphere mismatch
   if (preferences.atmosphere_preferences?.length) {
     const atmosphere = preferences.atmosphere_preferences[0];
+    const actualAtmosphere = restaurant.types?.find(t => 
+      t.toLowerCase().includes('casual') || t.toLowerCase().includes('fine') || t.toLowerCase().includes('fast')
+    ) || 'different';
     reasons.push({
       emoji: "🏠",
-      text: `The ambiance here differs from your preferred ${atmosphere.toLowerCase()} settings`
+      text: `You prefer ${atmosphere.toLowerCase()} settings, but ${restaurant.name} is known for its ${actualAtmosphere.toLowerCase()} atmosphere`
     });
   }
-
-  reasons.push({
-    emoji: "💡",
-    text: `Based on your preferences, we've found other restaurants that might be a better fit`
-  });
 
   return reasons.slice(0, 3);
 }
@@ -130,6 +127,9 @@ export function generateVerdict(
   preferences: UserPreferences,
   scores: MatchScores
 ): VerdictResult {
+  console.log("🎯 Generating verdict for:", restaurant.name);
+  console.log("📊 Match scores:", scores);
+
   const weightedScore = (
     (scores.dietaryScore * 0.35) +
     (scores.cuisineScore * 0.25) +
@@ -157,6 +157,9 @@ export function generateVerdict(
     verdict = "CONSIDER ALTERNATIVES";
     reasons = generateNotRecommendedReasons(restaurant, preferences);
   }
+
+  console.log("✨ Generated verdict:", verdict);
+  console.log("📝 Generated reasons:", reasons);
 
   return { verdict, reasons };
 }
