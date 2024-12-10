@@ -91,32 +91,40 @@ function generateNotRecommendedReasons(restaurant: RestaurantFeatures, preferenc
   // Specific dietary limitations
   if (preferences.dietary_restrictions?.length && !restaurant.servesVegetarianFood) {
     const restriction = preferences.dietary_restrictions[0];
+    const cuisine = restaurant.types?.[0]?.toLowerCase().replace(/_/g, ' ') || 'traditional';
     reasons.push({
       emoji: "🔍",
-      text: `${restaurant.name} has limited ${restriction.toLowerCase()} options - their menu focuses on ${restaurant.types?.[0] || 'traditional dishes'}`
+      text: `Limited options for ${restriction.toLowerCase()} diets as they primarily serve ${cuisine} dishes`
     });
   }
 
   // Specific cuisine mismatch
   if (preferences.cuisine_preferences?.length) {
-    const preferredCuisine = preferences.cuisine_preferences[0];
-    const actualCuisine = restaurant.types?.[0] || 'different';
-    reasons.push({
-      emoji: "🍽️",
-      text: `You typically enjoy ${preferredCuisine.toLowerCase()} restaurants, while ${restaurant.name} specializes in ${actualCuisine.toLowerCase()} cuisine`
-    });
+    const preferredCuisine = preferences.cuisine_preferences[0].toLowerCase();
+    const actualCuisine = restaurant.types?.[0]?.toLowerCase().replace(/_/g, ' ') || 'different';
+    if (preferredCuisine !== actualCuisine) {
+      reasons.push({
+        emoji: "🍽️",
+        text: `This restaurant specializes in ${actualCuisine} cuisine, while you typically prefer ${preferredCuisine} restaurants`
+      });
+    }
   }
 
   // Specific atmosphere mismatch
   if (preferences.atmosphere_preferences?.length) {
-    const atmosphere = preferences.atmosphere_preferences[0];
+    const atmosphere = preferences.atmosphere_preferences[0].toLowerCase();
     const actualAtmosphere = restaurant.types?.find(t => 
-      t.toLowerCase().includes('casual') || t.toLowerCase().includes('fine') || t.toLowerCase().includes('fast')
-    ) || 'different';
-    reasons.push({
-      emoji: "🏠",
-      text: `You prefer ${atmosphere.toLowerCase()} settings, but ${restaurant.name} is known for its ${actualAtmosphere.toLowerCase()} atmosphere`
-    });
+      t.toLowerCase().includes('casual') || 
+      t.toLowerCase().includes('fine') || 
+      t.toLowerCase().includes('fast')
+    )?.toLowerCase().replace(/_/g, ' ') || 'different';
+    
+    if (atmosphere !== actualAtmosphere) {
+      reasons.push({
+        emoji: "🏠",
+        text: `You prefer ${atmosphere} dining, while this is more of a ${actualAtmosphere} establishment`
+      });
+    }
   }
 
   return reasons.slice(0, 3);
