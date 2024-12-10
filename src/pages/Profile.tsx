@@ -50,7 +50,6 @@ const Profile = () => {
         
         <div className="space-y-8">
           <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-6">Profile Settings</h2>
             <ProfileSettings />
           </Card>
 
