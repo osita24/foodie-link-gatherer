@@ -76,7 +76,7 @@ const RestaurantSummary = ({ restaurant }: RestaurantSummaryProps) => {
         <div className="flex items-center gap-2 mb-4">
           <Sparkles className="w-5 h-5 text-primary animate-pulse" />
           <div className="flex items-center gap-2">
-            <h3 className="text-lg font-semibold">Personalized Restaurant Analysis</h3>
+            <h3 className="text-lg font-semibold">Cilantro Says</h3>
             <span className="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">BETA</span>
           </div>
         </div>
@@ -99,7 +99,7 @@ const RestaurantSummary = ({ restaurant }: RestaurantSummaryProps) => {
       <div className="flex items-center gap-2 mb-6">
         <Sparkles className="w-5 h-5 text-primary animate-pulse" />
         <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold">Personalized Restaurant Analysis</h3>
+          <h3 className="text-lg font-semibold">Cilantro Says</h3>
           <span className="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full border border-primary/20">BETA</span>
         </div>
       </div>
