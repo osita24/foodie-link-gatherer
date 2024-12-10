@@ -70,11 +70,10 @@ const SimilarRestaurants = ({ placeId }: SimilarRestaurantsProps) => {
               id: restaurant.place_id,
               name: restaurant.name,
               rating: restaurant.rating,
-              reviews: restaurant.user_ratings_total,
               address: restaurant.formatted_address || restaurant.vicinity,
               photos: restaurant.photos?.map((photo: any) => 
                 `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${import.meta.env.VITE_GOOGLE_PLACES_API_KEY}`
-              ) || [],
+              ),
               priceLevel: restaurant.price_level,
             }}
             similarityScore={restaurant.similarity_score}
