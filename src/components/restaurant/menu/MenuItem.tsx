@@ -9,6 +9,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { MenuItemMatchBadge } from "./MenuItemMatchBadge";
 import { MenuItemDescription } from "./MenuItemDescription";
+import DietaryBadges from "./DietaryBadges";
 
 interface MenuItemProps {
   item: {
@@ -16,6 +17,7 @@ interface MenuItemProps {
     name: string;
     description?: string;
     category?: string;
+    dietaryInfo?: string[];
   };
   matchDetails: {
     score: number;
@@ -51,6 +53,21 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
       default:
         return cn(baseStyle, isTopMatch ? "" : "border-gray-200");
     }
+  };
+
+  // Determine dietary badges based on item description and name
+  const getDietaryBadges = () => {
+    const badges: string[] = [];
+    const content = `${item.name} ${item.description || ''}`.toLowerCase();
+
+    if (content.includes('vegetarian') || content.includes('veg ')) badges.push('vegetarian');
+    if (content.includes('vegan')) badges.push('vegan');
+    if (content.includes('gluten-free') || content.includes('gf')) badges.push('gluten-free');
+    if (content.includes('dairy-free') || content.includes('df')) badges.push('dairy-free');
+    if (content.includes('nut-free')) badges.push('nut-free');
+    if (content.includes('low-carb')) badges.push('low-carb');
+
+    return badges;
   };
 
   return (
@@ -109,6 +126,8 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
         </div>
         
         {description && <MenuItemDescription description={description} />}
+        
+        <DietaryBadges badges={getDietaryBadges()} />
         
         {matchDetails && (matchDetails.reason || matchDetails.warning) && (
           <div className="flex items-center gap-2 flex-wrap mt-3 animate-fade-in-up">

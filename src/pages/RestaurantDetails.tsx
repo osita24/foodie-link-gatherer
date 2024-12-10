@@ -16,6 +16,7 @@ import DirectionsButton from "@/components/restaurant/DirectionsButton";
 import AmenitiesSection from "@/components/restaurant/AmenitiesSection";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Skeleton } from "@/components/ui/skeleton";
+import SimilarRestaurants from "@/components/restaurant/SimilarRestaurants";
 
 const RestaurantDetails = () => {
   const [restaurant, setRestaurant] = useState<RestaurantDetailsType | null>(null);
@@ -199,6 +200,10 @@ const RestaurantDetails = () => {
                 reviews={restaurant?.googleReviews}
                 menuUrl={restaurant?.website}
               />
+            </ErrorBoundary>
+
+            <ErrorBoundary>
+              <SimilarRestaurants placeId={restaurant.id} />
             </ErrorBoundary>
 
             <ErrorBoundary>

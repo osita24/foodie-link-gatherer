@@ -63,6 +63,30 @@ export type Database = {
         }
         Relationships: []
       }
+      similar_restaurants: {
+        Row: {
+          created_at: string | null
+          id: string
+          place_id: string
+          similar_place_id: string
+          similarity_score: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          place_id: string
+          similar_place_id: string
+          similarity_score: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          place_id?: string
+          similar_place_id?: string
+          similarity_score?: number
+        }
+        Relationships: []
+      }
       user_last_visited: {
         Row: {
           id: string
