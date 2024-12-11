@@ -16,7 +16,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (email: string, password: string, name?: string) => {
+  const handleSubmit = async (email: string, password: string) => {
     setIsLoading(true);
     console.log("🔑 Attempting authentication...");
 
@@ -28,14 +28,16 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
           email,
           password,
           options: {
-            data: {
-              full_name: name
-            },
             emailRedirectTo: window.location.origin
           }
         });
 
         if (result.error) {
+          if (result.error.message.includes("password")) {
+            throw new Error("Password must be at least 6 characters long");
+          } else if (result.error.message.includes("email")) {
+            throw new Error("Please enter a valid email address");
+          }
           throw result.error;
         }
 
@@ -57,6 +59,9 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
         });
 
         if (result.error) {
+          if (result.error.message.includes("Invalid login credentials")) {
+            throw new Error("Incorrect email or password");
+          }
           throw result.error;
         }
 

@@ -7,36 +7,21 @@ import { Loader2 } from "lucide-react";
 interface AuthFormProps {
   isSignUp: boolean;
   isLoading: boolean;
-  onSubmit: (email: string, password: string, name?: string) => void;
+  onSubmit: (email: string, password: string) => void;
   onToggleMode: () => void;
 }
 
 const AuthForm = ({ isSignUp, isLoading, onSubmit, onToggleMode }: AuthFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(email, password, isSignUp ? name : undefined);
+    onSubmit(email, password);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {isSignUp && (
-        <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
-          <Input
-            id="name"
-            placeholder="Enter your name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required={isSignUp}
-            className="w-full"
-          />
-        </div>
-      )}
-
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input
