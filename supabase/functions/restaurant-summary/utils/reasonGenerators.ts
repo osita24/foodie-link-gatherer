@@ -7,12 +7,6 @@ export function generatePositiveReasons(
 ): Array<{ emoji: string; text: string }> {
   const reasons: Array<{ emoji: string; text: string }> = [];
 
-  // Check dietary compatibility first
-  const dietaryCheck = checkDietaryCompatibility(restaurant, preferences);
-  if (!dietaryCheck.isCompatible) {
-    return reasons;
-  }
-
   // Add dietary reason if applicable
   const dietaryReason = generateDietaryMatchReason(restaurant, preferences);
   if (dietaryReason) {
@@ -49,6 +43,30 @@ export function generatePositiveReasons(
     });
   }
 
+  // Add fallback positive reasons if we don't have enough
+  if (reasons.length < 3) {
+    const fallbackReasons = [
+      {
+        emoji: "🌟",
+        text: "Popular destination with diverse menu options"
+      },
+      {
+        emoji: "🏠",
+        text: "Welcoming atmosphere for all diners"
+      },
+      {
+        emoji: "✨",
+        text: "Known for quality ingredients and preparation"
+      }
+    ];
+
+    for (const reason of fallbackReasons) {
+      if (reasons.length < 3) {
+        reasons.push(reason);
+      }
+    }
+  }
+
   return reasons.slice(0, 3);
 }
 
@@ -65,19 +83,29 @@ export function generateNegativeReasons(
       emoji: "⚠️",
       text: dietaryCheck.reason || "May not accommodate your dietary preferences"
     });
-    return reasons;
   }
 
   // Add cuisine mismatch if applicable
   if (preferences.cuisine_preferences?.length) {
     const preferredCuisine = preferences.cuisine_preferences[0];
-    const restaurantCuisine = restaurant.types?.[0]?.toLowerCase().replace(/_/g, ' ') || 'different';
-    if (preferredCuisine.toLowerCase() !== restaurantCuisine) {
+    if (!restaurant.types?.some(type => 
+      type.toLowerCase().includes(preferredCuisine.toLowerCase())
+    )) {
       reasons.push({
         emoji: "🍽️",
         text: `Different cuisine style than your preferred ${preferredCuisine.toLowerCase()}`
       });
     }
+  }
+
+  // Check for food avoidance conflicts
+  if (preferences.favorite_ingredients?.some(item => 
+    ["Oily Foods", "Salty Foods"].includes(item)
+  )) {
+    reasons.push({
+      emoji: "🚫",
+      text: "Menu items may contain ingredients you prefer to avoid"
+    });
   }
 
   // Add atmosphere mismatch if applicable
@@ -89,6 +117,30 @@ export function generateNegativeReasons(
         emoji: "🏠",
         text: `Different dining style than your preferred ${atmosphere.toLowerCase()}`
       });
+    }
+  }
+
+  // Add fallback negative reasons if we don't have enough
+  if (reasons.length < 3) {
+    const fallbackReasons = [
+      {
+        emoji: "💭",
+        text: "Consider exploring other dining options that better match your preferences"
+      },
+      {
+        emoji: "📝",
+        text: "Limited menu information available for dietary assessment"
+      },
+      {
+        emoji: "⚠️",
+        text: "May not fully align with your dining preferences"
+      }
+    ];
+
+    for (const reason of fallbackReasons) {
+      if (reasons.length < 3) {
+        reasons.push(reason);
+      }
     }
   }
 
