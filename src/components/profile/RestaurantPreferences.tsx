@@ -34,35 +34,35 @@ const RestaurantPreferences = () => {
         }
 
         console.log("Loading preferences for user:", user.id);
-        const { data, error } = await supabase
+        
+        // First check if the user has any preferences
+        const { data: existingPrefs, error: checkError } = await supabase
           .from('user_preferences')
           .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle();
+          .eq('user_id', user.id);
 
-        if (error) {
-          console.error("Error loading preferences:", error);
-          toast({
-            title: "Error",
-            description: "Failed to load preferences. Please try again.",
-            variant: "destructive",
-          });
-          return;
+        if (checkError) {
+          console.error("Error checking preferences:", checkError);
+          throw checkError;
         }
 
-        if (data) {
-          console.log("Loaded preferences:", data);
+        // If user has preferences, use them
+        if (existingPrefs && existingPrefs.length > 0) {
+          console.log("Found existing preferences:", existingPrefs[0]);
           setPreferences({
-            cuisinePreferences: data.cuisine_preferences || [],
-            dietaryRestrictions: data.dietary_restrictions || [],
-            foodsToAvoid: data.favorite_ingredients || [],
-            atmospherePreferences: data.atmosphere_preferences || [],
+            cuisinePreferences: existingPrefs[0].cuisine_preferences || [],
+            dietaryRestrictions: existingPrefs[0].dietary_restrictions || [],
+            foodsToAvoid: existingPrefs[0].favorite_ingredients || [],
+            atmospherePreferences: existingPrefs[0].atmosphere_preferences || [],
             favoriteIngredients: [],
-            favoriteProteins: data.favorite_proteins || [],
-            spiceLevel: data.spice_level || 3,
-            priceRange: data.price_range || 'moderate',
-            specialConsiderations: data.special_considerations || "",
+            favoriteProteins: existingPrefs[0].favorite_proteins || [],
+            spiceLevel: existingPrefs[0].spice_level || 3,
+            priceRange: existingPrefs[0].price_range || 'moderate',
+            specialConsiderations: existingPrefs[0].special_considerations || "",
           });
+        } else {
+          console.log("No existing preferences found, using defaults");
+          setPreferences(defaultPreferences);
         }
       } catch (error) {
         console.error("Error in loadPreferences:", error);
@@ -101,17 +101,8 @@ const RestaurantPreferences = () => {
 
       console.log("Saving preferences for user:", user.id);
 
-      const { data: existingPrefs, error: fetchError } = await supabase
-        .from('user_preferences')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (fetchError) {
-        throw fetchError;
-      }
-
       const preferencesData = {
+        user_id: user.id,
         cuisine_preferences: preferences.cuisinePreferences,
         dietary_restrictions: preferences.dietaryRestrictions,
         favorite_ingredients: preferences.foodsToAvoid,
@@ -120,25 +111,11 @@ const RestaurantPreferences = () => {
         special_considerations: preferences.specialConsiderations,
       };
 
-      let result;
-      
-      if (existingPrefs) {
-        console.log("Updating existing preferences");
-        result = await supabase
-          .from('user_preferences')
-          .update(preferencesData)
-          .eq('user_id', user.id);
-      } else {
-        console.log("Creating new preferences record");
-        result = await supabase
-          .from('user_preferences')
-          .insert({
-            user_id: user.id,
-            ...preferencesData,
-          });
-      }
+      const { error } = await supabase
+        .from('user_preferences')
+        .upsert(preferencesData);
 
-      if (result.error) throw result.error;
+      if (error) throw error;
 
       console.log("Preferences saved successfully");
       toast({
