@@ -15,12 +15,14 @@ export async function analyzeMenuItem(
     console.log('🔍 Analyzing menu item:', item.name);
     
     const itemContent = `${item.name} ${item.description || ''}`.toLowerCase();
+    let score = 50; // Base score
+    let reasons: string[] = [];
     
-    // Check critical dietary restrictions first
+    // Check dietary preferences
     if (preferences.dietary_restrictions?.length > 0) {
       console.log('🥗 Checking dietary restrictions:', preferences.dietary_restrictions);
       
-      // Strict vegetarian check
+      // Handle vegetarian preferences
       if (preferences.dietary_restrictions.includes("Vegetarian")) {
         const meatKeywords = [
           'meat', 'chicken', 'beef', 'pork', 'fish', 'seafood', 'lamb', 
@@ -28,17 +30,26 @@ export async function analyzeMenuItem(
           'anchovy', 'duck', 'veal', 'foie gras', 'chorizo', 'sausage'
         ];
         
-        if (meatKeywords.some(keyword => itemContent.includes(keyword))) {
+        const containsMeat = meatKeywords.some(keyword => itemContent.includes(keyword));
+        
+        if (containsMeat) {
           console.log('❌ Item contains meat, not suitable for vegetarian diet');
           return {
             score: 0,
-            warning: "This item contains meat and isn't suitable for vegetarians",
+            warning: "Contains meat - not suitable for vegetarians",
             matchType: 'warning'
           };
+        } else {
+          // Boost score for vegetarian-friendly items
+          const vegetarianKeywords = ['vegetarian', 'veggie', 'meatless', 'plant-based'];
+          if (vegetarianKeywords.some(keyword => itemContent.includes(keyword))) {
+            score += 30;
+            reasons.push("Perfect for vegetarians");
+          }
         }
       }
       
-      // Strict vegan check
+      // Handle vegan preferences
       if (preferences.dietary_restrictions.includes("Vegan")) {
         const nonVeganKeywords = [
           'meat', 'chicken', 'beef', 'pork', 'fish', 'seafood', 'lamb',
@@ -48,17 +59,26 @@ export async function analyzeMenuItem(
           'gelatin', 'whey', 'casein', 'ghee', 'lard', 'aioli'
         ];
         
-        if (nonVeganKeywords.some(keyword => itemContent.includes(keyword))) {
+        const containsNonVegan = nonVeganKeywords.some(keyword => itemContent.includes(keyword));
+        
+        if (containsNonVegan) {
           console.log('❌ Item contains non-vegan ingredients');
           return {
             score: 0,
-            warning: "This item contains animal products and isn't suitable for vegans",
+            warning: "Contains animal products - not suitable for vegans",
             matchType: 'warning'
           };
+        } else {
+          // Boost score for vegan-friendly items
+          const veganKeywords = ['vegan', 'plant-based', 'dairy-free'];
+          if (veganKeywords.some(keyword => itemContent.includes(keyword))) {
+            score += 30;
+            reasons.push("Perfect for vegans");
+          }
         }
       }
       
-      // Gluten-free check
+      // Check gluten-free preferences
       if (preferences.dietary_restrictions.includes("Gluten-Free")) {
         const glutenKeywords = [
           'bread', 'pasta', 'flour', 'wheat', 'tortilla', 'breaded',
@@ -67,20 +87,15 @@ export async function analyzeMenuItem(
         ];
         
         if (glutenKeywords.some(keyword => itemContent.includes(keyword))) {
-          console.log('❌ Item contains gluten');
-          return {
-            score: 0,
-            warning: "This item likely contains gluten",
-            matchType: 'warning'
-          };
+          score -= 20; // Penalty but not automatic 0
+          reasons.push("May contain gluten");
+        } else if (itemContent.includes('gluten-free')) {
+          score += 20;
+          reasons.push("Gluten-free option");
         }
       }
     }
 
-    // If we pass dietary restrictions, continue with regular scoring
-    let score = 50;
-    let reasons: string[] = [];
-    
     // Check cuisine match
     const cuisineMatches = preferences.cuisine_preferences?.filter(
       (cuisine: string) => itemContent.includes(cuisine.toLowerCase())
