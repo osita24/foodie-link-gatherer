@@ -17,8 +17,9 @@ export async function analyzeMenuItem(
     const itemContent = `${item.name} ${item.description || ''}`.toLowerCase();
     let score = 50; // Base score
     let reasons: string[] = [];
+    let warnings: string[] = [];
     
-    // Check dietary preferences
+    // Check dietary preferences with weighted scoring
     if (preferences.dietary_restrictions?.length > 0) {
       console.log('🥗 Checking dietary restrictions:', preferences.dietary_restrictions);
       
@@ -48,12 +49,12 @@ export async function analyzeMenuItem(
           const vegetarianKeywords = ['vegetarian', 'veggie', 'meatless', 'plant-based'];
           if (vegetarianKeywords.some(keyword => itemContent.includes(keyword))) {
             score += 20;
-            reasons[0] = "Perfect for vegetarians"; // Update the reason
+            reasons[0] = "Perfect for vegetarians";
           }
         }
       }
       
-      // Handle vegan preferences
+      // Handle vegan preferences with more nuance
       if (preferences.dietary_restrictions.includes("Vegan")) {
         const nonVeganKeywords = [
           'meat', 'chicken', 'beef', 'pork', 'fish', 'seafood', 'lamb',
@@ -65,24 +66,27 @@ export async function analyzeMenuItem(
         
         const containsNonVegan = nonVeganKeywords.some(keyword => itemContent.includes(keyword));
         
-        if (containsNonVegan) {
-          console.log('❌ Item contains non-vegan ingredients');
-          return {
-            score: 0,
-            warning: "Contains animal products - not suitable for vegans",
-            matchType: 'warning'
-          };
-        } else {
-          // Start with higher base score for vegan-compatible items
-          score = 60;
-          reasons.push("Suitable for vegans");
-          
-          // Additional boost for explicitly vegan items
-          const veganKeywords = ['vegan', 'plant-based', 'dairy-free'];
-          if (veganKeywords.some(keyword => itemContent.includes(keyword))) {
-            score += 20;
-            reasons[0] = "Perfect for vegans"; // Update the reason
+        // If it's explicitly marked as vegan, give it a high score
+        if (itemContent.includes('vegan')) {
+          score = 90;
+          reasons.push("Certified vegan dish");
+        } else if (containsNonVegan) {
+          // If user has multiple dietary preferences, don't immediately disqualify
+          if (preferences.dietary_restrictions.length > 1) {
+            score = Math.max(30, score - 30); // Reduce score but don't zero it
+            warnings.push("Contains non-vegan ingredients");
+          } else {
+            // If vegan is the only restriction, then be strict
+            return {
+              score: 0,
+              warning: "Contains animal products - not suitable for vegans",
+              matchType: 'warning'
+            };
           }
+        } else {
+          // Potentially vegan items get a moderate score
+          score = Math.max(score, 60);
+          reasons.push("May be suitable for vegans - please verify");
         }
       }
       
@@ -94,12 +98,19 @@ export async function analyzeMenuItem(
           'ramen', 'udon', 'couscous', 'barley', 'malt', 'seitan', 'panko'
         ];
         
-        if (glutenKeywords.some(keyword => itemContent.includes(keyword))) {
-          score -= 20; // Penalty but not automatic 0
-          reasons.push("May contain gluten");
+        const containsGluten = glutenKeywords.some(keyword => itemContent.includes(keyword));
+        
+        if (containsGluten) {
+          if (preferences.dietary_restrictions.length > 1) {
+            score = Math.max(30, score - 20); // Reduce score but don't zero it
+            warnings.push("Contains gluten");
+          } else {
+            score = 20;
+            warnings.push("Contains gluten - not recommended for gluten-free diet");
+          }
         } else if (itemContent.includes('gluten-free')) {
           score += 20;
-          reasons.push("Gluten-free option");
+          reasons.push("Certified gluten-free");
         }
       }
     }
@@ -110,21 +121,8 @@ export async function analyzeMenuItem(
     );
     
     if (cuisineMatches?.length > 0) {
-      score += 20;
-      reasons.push(`Authentic ${cuisineMatches[0]} dish that matches your taste`);
-    }
-
-    // Check favorite proteins
-    const proteinMatches = preferences.favorite_proteins?.filter(
-      (protein: string) => {
-        if (protein === "Doesn't Apply") return false;
-        return itemContent.includes(protein.toLowerCase());
-      }
-    );
-    
-    if (proteinMatches?.length > 0) {
       score += 15;
-      reasons.push(`Features ${proteinMatches[0]}, one of your preferred proteins`);
+      reasons.push(`Authentic ${cuisineMatches[0]} dish`);
     }
 
     // Check favorite ingredients
@@ -134,7 +132,7 @@ export async function analyzeMenuItem(
 
     if (ingredientMatches?.length > 0) {
       score += 15;
-      reasons.push(`Contains ${ingredientMatches[0]}, which you love`);
+      reasons.push(`Contains ${ingredientMatches[0]}, which you enjoy`);
     }
 
     // Analyze cooking methods and ingredients
@@ -156,24 +154,25 @@ export async function analyzeMenuItem(
       }
     }
 
-    // Determine match type based on final score
+    // Determine match type based on final score and warnings
     let matchType: 'perfect' | 'good' | 'neutral' | 'warning' = 'neutral';
-    if (score >= 90) {
+    if (score >= 90 && warnings.length === 0) {
       matchType = 'perfect';
-    } else if (score >= 75) {
+    } else if (score >= 75 && warnings.length === 0) {
       matchType = 'good';
-    } else if (score < 40) {
+    } else if (warnings.length > 0 || score < 40) {
       matchType = 'warning';
     }
 
     // Cap score between 0 and 100
     score = Math.max(0, Math.min(100, score));
 
-    console.log('✅ Analysis complete:', { score, matchType, reason: reasons[0] });
+    console.log('✅ Analysis complete:', { score, matchType, reason: reasons[0], warning: warnings[0] });
 
     return {
       score,
       reason: reasons[0],
+      warning: warnings[0],
       matchType
     };
   } catch (error) {
