@@ -47,7 +47,7 @@ serve(async (req) => {
 
     if (!result) {
       console.error('❌ No result returned from search');
-      throw new Error('Failed to retrieve restaurant data');
+      throw new Error('Restaurant not found');
     }
 
     console.log('✅ Successfully found restaurant data');
@@ -60,13 +60,14 @@ serve(async (req) => {
       }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Edge function error:', error);
     
     const errorResponse = {
       error: error.message || 'Internal server error',
       details: error.stack,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      status: error.status || 500
     };
 
     return new Response(

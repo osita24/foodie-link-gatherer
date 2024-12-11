@@ -25,10 +25,15 @@ export async function analyzeMenuItem(
         const meatKeywords = [
           'meat', 'chicken', 'beef', 'pork', 'fish', 'seafood', 'lamb', 
           'turkey', 'bacon', 'prosciutto', 'ham', 'salami', 'pepperoni', 
-          'anchovy', 'duck', 'veal', 'foie gras', 'chorizo', 'sausage'
+          'anchovy', 'duck', 'veal', 'foie gras', 'chorizo', 'sausage',
+          'burger', // Unless explicitly marked as veggie/vegan
+          'meatball', 'steak', 'tuna', 'shrimp', 'crab', 'lobster'
         ];
         
-        if (meatKeywords.some(keyword => itemContent.includes(keyword))) {
+        // Only allow if explicitly marked as vegetarian
+        if (!itemContent.includes('vegetarian') && 
+            !itemContent.includes('veggie') && 
+            (meatKeywords.some(keyword => itemContent.includes(keyword)))) {
           console.log('❌ Item contains meat, not suitable for vegetarian diet');
           return {
             score: 0,
@@ -45,10 +50,14 @@ export async function analyzeMenuItem(
           'cheese', 'cream', 'milk', 'egg', 'butter', 'honey', 'yogurt',
           'mayo', 'bacon', 'prosciutto', 'ham', 'salami', 'pepperoni',
           'anchovy', 'duck', 'veal', 'foie gras', 'chorizo', 'sausage',
-          'gelatin', 'whey', 'casein', 'ghee', 'lard', 'aioli'
+          'gelatin', 'whey', 'casein', 'ghee', 'lard', 'aioli',
+          'burger', // Unless explicitly marked as vegan
+          'meatball', 'steak', 'parmesan', 'mozzarella', 'cheddar'
         ];
         
-        if (nonVeganKeywords.some(keyword => itemContent.includes(keyword))) {
+        // Only allow if explicitly marked as vegan
+        if (!itemContent.includes('vegan') && 
+            (nonVeganKeywords.some(keyword => itemContent.includes(keyword)))) {
           console.log('❌ Item contains non-vegan ingredients');
           return {
             score: 0,
@@ -63,10 +72,13 @@ export async function analyzeMenuItem(
         const glutenKeywords = [
           'bread', 'pasta', 'flour', 'wheat', 'tortilla', 'breaded',
           'crusted', 'battered', 'soy sauce', 'teriyaki', 'noodles',
-          'ramen', 'udon', 'couscous', 'barley', 'malt', 'seitan', 'panko'
+          'ramen', 'udon', 'couscous', 'barley', 'malt', 'seitan', 'panko',
+          'burger bun', 'sandwich', 'wrap', 'pizza', 'cake', 'pie'
         ];
         
-        if (glutenKeywords.some(keyword => itemContent.includes(keyword))) {
+        // Only allow if explicitly marked as gluten-free
+        if (!itemContent.includes('gluten-free') && !itemContent.includes('gf') &&
+            (glutenKeywords.some(keyword => itemContent.includes(keyword)))) {
           console.log('❌ Item contains gluten');
           return {
             score: 0,
@@ -77,10 +89,47 @@ export async function analyzeMenuItem(
       }
     }
 
+    // High sodium check
+    if (preferences.favorite_ingredients?.includes("High Sodium")) {
+      const highSodiumKeywords = [
+        'soy sauce', 'teriyaki', 'miso', 'pickled', 'cured', 'brined',
+        'salted', 'preserved', 'fish sauce', 'oyster sauce', 'processed',
+        'deli meat', 'bacon', 'ham', 'sausage', 'sodium', 'salt'
+      ];
+      
+      if (highSodiumKeywords.some(keyword => itemContent.includes(keyword))) {
+        console.log('⚠️ High sodium warning');
+        return {
+          score: 20,
+          warning: "This dish may be high in sodium",
+          matchType: 'warning'
+        };
+      }
+    }
+
     // If we pass dietary restrictions, continue with regular scoring
     let score = 50;
     let reasons: string[] = [];
     
+    // Check for explicit dietary matches
+    if (preferences.dietary_restrictions?.includes("Vegetarian") && 
+        (itemContent.includes('vegetarian') || itemContent.includes('veggie'))) {
+      score += 30;
+      reasons.push("Perfect for vegetarians");
+    }
+
+    if (preferences.dietary_restrictions?.includes("Vegan") && 
+        itemContent.includes('vegan')) {
+      score += 30;
+      reasons.push("Suitable for vegans");
+    }
+
+    if (preferences.dietary_restrictions?.includes("Gluten-Free") && 
+        (itemContent.includes('gluten-free') || itemContent.includes('gf'))) {
+      score += 30;
+      reasons.push("Gluten-free option");
+    }
+
     // Check cuisine match
     const cuisineMatches = preferences.cuisine_preferences?.filter(
       (cuisine: string) => itemContent.includes(cuisine.toLowerCase())
@@ -102,16 +151,6 @@ export async function analyzeMenuItem(
     if (proteinMatches?.length > 0) {
       score += 15;
       reasons.push(`Features ${proteinMatches[0]}, one of your preferred proteins`);
-    }
-
-    // Check favorite ingredients
-    const ingredientMatches = preferences.favorite_ingredients?.filter(
-      (ingredient: string) => itemContent.includes(ingredient.toLowerCase())
-    );
-
-    if (ingredientMatches?.length > 0) {
-      score += 15;
-      reasons.push(`Contains ${ingredientMatches[0]}, which you love`);
     }
 
     // Analyze cooking methods and ingredients

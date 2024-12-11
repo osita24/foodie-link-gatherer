@@ -30,24 +30,23 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a friendly AI food recommender. Generate a short, engaging message (max 4 words) about how well a menu item matches a user's preferences. 
-            Be creative and fun, but clear about the match quality. Include an appropriate emoji.
+            content: `You are a friendly AI food recommender. Generate a short, specific message (max 10 words) about why a menu item doesn't match user preferences. Focus on dietary restrictions and food preferences.
             
             Examples:
-            - "Perfect for you! 🎯"
-            - "Great protein match! 💪"
-            - "Matches your style! ✨"
-            - "Careful: contains dairy 🥛"`
+            - "High in oil content, which you typically avoid"
+            - "Contains dairy products - not suitable for vegans"
+            - "Very spicy dish - you prefer mild foods"
+            - "High sodium content - outside your preferences"`
           },
           {
             role: 'user',
-            content: `Generate a match message for a menu item with:
+            content: `Generate a specific warning message for a menu item with:
             Match type: ${matchType}
             Score: ${score}
             Item details: ${JSON.stringify(itemDetails)}
             User preferences: ${JSON.stringify(preferences)}
             
-            The message should reflect the match quality and any relevant dietary considerations.`
+            The message should be specific about why this item doesn't match their preferences.`
           }
         ],
         temperature: 0.7,

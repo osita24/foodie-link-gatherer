@@ -8,50 +8,146 @@ export const analyzeDietaryCompliance = async (
   console.log("🥗 Analyzing dietary compliance for:", itemContent);
   console.log("👤 User restrictions:", userRestrictions);
   
-  // Check for strict dietary violations
+  // Critical dietary checks
   const strictViolations = userRestrictions
     .filter(r => r.severity === 'strict')
-    .some(restriction => {
-      const matchesRestriction = semanticResults.mainIngredients
-        .some((ingredient: string) => 
-          ingredient.toLowerCase().includes(restriction.name.toLowerCase())
-        );
+    .map(restriction => {
+      const restrictionName = restriction.name.toLowerCase();
+      const content = itemContent.toLowerCase();
       
-      if (matchesRestriction) {
-        console.log(`❌ Found strict dietary violation: ${restriction.name}`);
-        return true;
-      }
-      return false;
-    });
+      // Vegetarian check
+      if (restrictionName === 'vegetarian') {
+        // First check if explicitly marked as vegetarian/veggie
+        if (content.includes('vegetarian') || content.includes('veggie')) {
+          return null; // Explicitly vegetarian items are always compliant
+        }
 
-  if (strictViolations) {
-    console.log("🚫 Item violates strict dietary restrictions");
+        const meatKeywords = [
+          'beef', 'chicken', 'pork', 'fish', 'seafood', 'lamb', 
+          'turkey', 'bacon', 'prosciutto', 'ham', 'salami', 'pepperoni', 
+          'anchovy', 'duck', 'veal', 'foie gras', 'chorizo', 'sausage',
+          'meatball', 'steak', 'tuna', 'shrimp', 'crab', 'lobster'
+        ];
+        
+        // Check for meat keywords but exclude "veggie burger", "plant-based burger" etc
+        if (meatKeywords.some(keyword => {
+          // Don't flag if it's part of a vegetarian phrase
+          const keywordIndex = content.indexOf(keyword);
+          if (keywordIndex === -1) return false;
+          
+          const nearbyText = content.slice(Math.max(0, keywordIndex - 20), 
+                                        keywordIndex + keyword.length + 20);
+          return !nearbyText.includes('veggie') && 
+                 !nearbyText.includes('vegetarian') && 
+                 !nearbyText.includes('plant-based') &&
+                 !nearbyText.includes('meat-free');
+        })) {
+          return "Contains meat - not suitable for vegetarians";
+        }
+        return null;
+      }
+      
+      // Vegan check
+      if (restrictionName === 'vegan') {
+        if (content.includes('vegan')) return null; // Explicitly vegan items are compliant
+        
+        const nonVeganKeywords = [
+          'meat', 'chicken', 'beef', 'pork', 'fish', 'seafood', 'lamb',
+          'cheese', 'cream', 'milk', 'egg', 'butter', 'honey', 'yogurt',
+          'mayo', 'bacon', 'prosciutto', 'ham', 'salami', 'pepperoni',
+          'anchovy', 'duck', 'veal', 'foie gras', 'chorizo', 'sausage',
+          'gelatin', 'whey', 'casein', 'ghee', 'lard', 'aioli',
+          'parmesan', 'mozzarella', 'cheddar'
+        ];
+        
+        const foundNonVegan = nonVeganKeywords.find(keyword => {
+          const keywordIndex = content.indexOf(keyword);
+          if (keywordIndex === -1) return false;
+          
+          const nearbyText = content.slice(Math.max(0, keywordIndex - 20), 
+                                        keywordIndex + keyword.length + 20);
+          return !nearbyText.includes('vegan') && 
+                 !nearbyText.includes('plant-based') &&
+                 !nearbyText.includes('dairy-free');
+        });
+
+        if (foundNonVegan) {
+          return `Contains ${foundNonVegan} - not suitable for vegans`;
+        }
+        return null;
+      }
+      
+      // Gluten-free check
+      if (restrictionName === 'gluten-free') {
+        if (content.includes('gluten-free') || content.includes('gf')) return null;
+        
+        const glutenKeywords = [
+          'bread', 'pasta', 'flour', 'wheat', 'tortilla', 'breaded',
+          'crusted', 'battered', 'soy sauce', 'teriyaki', 'noodles',
+          'ramen', 'udon', 'couscous', 'barley', 'malt', 'seitan'
+        ];
+        
+        if (glutenKeywords.some(keyword => content.includes(keyword))) {
+          return "Contains gluten - not gluten-free";
+        }
+        return null;
+      }
+
+      return null;
+    })
+    .filter(Boolean);
+
+  if (strictViolations.length > 0) {
+    console.log("🚫 Item violates strict dietary restrictions:", strictViolations[0]);
     return {
       compliant: false,
       score: 0,
-      reason: "Violates dietary restrictions"
+      reason: strictViolations[0]
     };
   }
 
   // Score preference-based restrictions
-  const preferenceViolations = userRestrictions
+  let score = 100;
+  let reasons: string[] = [];
+
+  userRestrictions
     .filter(r => r.severity === 'preference')
-    .reduce((score, restriction) => {
-      const matchesRestriction = semanticResults.mainIngredients
-        .some((ingredient: string) => 
-          ingredient.toLowerCase().includes(restriction.name.toLowerCase())
-        );
+    .forEach(restriction => {
+      const restrictionName = restriction.name.toLowerCase();
       
-      if (matchesRestriction) {
-        console.log(`⚠️ Found preference violation: ${restriction.name}`);
-        return score - 20;
+      if (restrictionName === 'low-sodium' && 
+          semanticResults.mainIngredients.includes('highSodium')) {
+        score -= 30;
+        reasons.push("High sodium content");
       }
-      return score;
-    }, 100);
+
+      if (restrictionName === 'low-oil' && 
+          (semanticResults.prepMethod === 'fried' || 
+           semanticResults.mainIngredients.includes('oily'))) {
+        score -= 25;
+        reasons.push("Fried/oily preparation");
+      }
+    });
+
+  // Add positive dietary indicators
+  if (itemContent.toLowerCase().includes('vegetarian')) {
+    score = Math.min(100, score + 20);
+    reasons.push("Vegetarian-friendly");
+  }
+
+  if (itemContent.toLowerCase().includes('vegan')) {
+    score = Math.min(100, score + 20);
+    reasons.push("Vegan-friendly");
+  }
+
+  if (itemContent.toLowerCase().includes('gluten-free')) {
+    score = Math.min(100, score + 20);
+    reasons.push("Gluten-free option");
+  }
 
   return {
     compliant: true,
-    score: Math.max(0, preferenceViolations),
-    reason: preferenceViolations < 100 ? "Contains some non-preferred ingredients" : "Meets dietary preferences"
+    score: Math.max(0, score),
+    reason: reasons.join("; ") || "Meets your dietary preferences"
   };
 };

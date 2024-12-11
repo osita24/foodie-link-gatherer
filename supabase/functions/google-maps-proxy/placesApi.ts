@@ -16,20 +16,19 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
     }
 
     if (!url) {
+      console.error('❌ No URL or place ID provided');
       throw new Error('No URL or place ID provided');
     }
 
     // Clean and validate the URL
-    let finalUrl = url.trim();
-    console.log('🔍 Processing URL:', finalUrl);
-
-    // Handle direct place IDs that might be passed as URLs
-    if (finalUrl.startsWith('ChIJ')) {
-      console.log('🎯 Direct place ID detected:', finalUrl);
-      return await getPlaceDetails(finalUrl);
-    }
-
+    let finalUrl = url;
     try {
+      // Check if the string is actually a place ID
+      if (url.startsWith('ChIJ')) {
+        console.log('🎯 Detected place ID in URL:', url);
+        return await getPlaceDetails(url);
+      }
+
       // Remove any trailing colons without port numbers
       finalUrl = finalUrl.replace(/:\/?$/, '');
       
@@ -40,66 +39,91 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
 
       // Validate URL format
       new URL(finalUrl);
+      console.log('✅ Validated URL:', finalUrl);
     } catch (error) {
+      // If URL validation fails, check if it might be a place ID
+      if (url.includes('ChIJ')) {
+        const placeIdMatch = url.match(/ChIJ[a-zA-Z0-9_-]+/);
+        if (placeIdMatch) {
+          console.log('🎯 Extracted place ID from invalid URL:', placeIdMatch[0]);
+          return await getPlaceDetails(placeIdMatch[0]);
+        }
+      }
       console.error('❌ Invalid URL format:', error);
       throw new Error('Invalid URL format provided');
+    }
+
+    // Handle shortened URLs
+    if (finalUrl.includes('goo.gl') || finalUrl.includes('maps.app.goo.gl')) {
+      console.log('📎 Expanding shortened URL:', finalUrl);
+      try {
+        const response = await fetch(finalUrl, { 
+          redirect: 'follow',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to expand URL: ${response.status}`);
+        }
+        finalUrl = response.url;
+        console.log('📎 Expanded URL:', finalUrl);
+      } catch (error) {
+        console.error('❌ Error expanding shortened URL:', error);
+        throw new Error('Failed to process shortened URL');
+      }
     }
 
     // Try to extract place ID from URL
     try {
       const urlObj = new URL(finalUrl);
       const searchParams = new URLSearchParams(urlObj.search);
-      
-      // Check for place_id in URL parameters
-      const extractedPlaceId = searchParams.get('place_id');
-      if (extractedPlaceId) {
-        console.log('🎯 Found place ID in URL parameters:', extractedPlaceId);
+      const extractedPlaceId = searchParams.get('place_id') || 
+                              finalUrl.match(/place\/[^/]+\/([^/?]+)/)?.[1];
+
+      if (extractedPlaceId?.startsWith('ChIJ')) {
+        console.log('🎯 Found place ID in URL:', extractedPlaceId);
         return await getPlaceDetails(extractedPlaceId);
       }
-
-      // Check for place ID in URL path
-      const placeMatch = finalUrl.match(/place\/[^/]+\/([^/?]+)/);
-      if (placeMatch && placeMatch[1]?.startsWith('ChIJ')) {
-        console.log('🎯 Found place ID in URL path:', placeMatch[1]);
-        return await getPlaceDetails(placeMatch[1]);
-      }
-
-      // Extract search text for fallback
-      const searchText = extractSearchText(finalUrl);
-      console.log('🔍 Falling back to text search with:', searchText);
-
-      const searchUrl = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json');
-      searchUrl.searchParams.set('key', GOOGLE_API_KEY);
-      searchUrl.searchParams.set('query', searchText);
-      searchUrl.searchParams.set('type', 'restaurant');
-      
-      console.log('🌐 Making text search request');
-      const response = await fetch(searchUrl.toString());
-      
-      if (!response.ok) {
-        console.error('❌ Places API request failed:', response.status);
-        throw new Error(`Places API request failed with status ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('📊 Search response status:', data.status);
-      
-      if (data.status === 'ZERO_RESULTS') {
-        throw new Error(`No restaurant found matching: ${searchText}`);
-      }
-      
-      if (data.status !== 'OK' || !data.results?.[0]) {
-        console.error('❌ Places API error:', data);
-        throw new Error(`Places API error: ${data.status}`);
-      }
-      
-      const foundPlaceId = data.results[0].place_id;
-      console.log('✅ Found place ID:', foundPlaceId);
-      return await getPlaceDetails(foundPlaceId);
     } catch (error) {
-      console.error('❌ Error processing URL:', error);
-      throw error;
+      console.error('❌ Error parsing URL:', error);
+      console.log('⚠️ Continuing with text search...');
     }
+
+    // Extract search text and try text search
+    const searchText = extractSearchText(finalUrl);
+    console.log('🔍 Searching with text:', searchText);
+
+    const searchUrl = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json');
+    searchUrl.searchParams.set('key', GOOGLE_API_KEY);
+    searchUrl.searchParams.set('query', searchText);
+    searchUrl.searchParams.set('type', 'restaurant');
+    
+    console.log('🌐 Making text search request to:', searchUrl.toString());
+    const response = await fetch(searchUrl.toString());
+    
+    if (!response.ok) {
+      console.error('❌ Places API request failed:', response.status);
+      throw new Error(`Places API request failed with status ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('📊 Search response:', data);
+    
+    if (data.status === 'ZERO_RESULTS') {
+      console.error('❌ No results found for search:', searchText);
+      throw new Error(`No restaurant found matching: ${searchText}`);
+    }
+    
+    if (data.status !== 'OK' || !data.results?.[0]) {
+      console.error('❌ Places API error:', data);
+      throw new Error(`Places API error: ${data.status}`);
+    }
+    
+    const foundPlaceId = data.results[0].place_id;
+    console.log('✅ Found place ID:', foundPlaceId);
+    return await getPlaceDetails(foundPlaceId);
+
   } catch (error) {
     console.error('❌ Error in searchRestaurant:', error);
     throw error;
@@ -162,6 +186,7 @@ async function getPlaceDetails(placeId: string): Promise<any> {
   }
   
   const data = await response.json();
+  console.log('📊 Place details response:', data);
   
   if (data.status !== 'OK') {
     console.error('❌ Place Details API error:', data);

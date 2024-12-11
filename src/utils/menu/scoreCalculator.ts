@@ -17,7 +17,7 @@ export const calculateMenuItemScore = async (
       name: r,
       severity: 'strict'
     })),
-    ...(preferences.foodsToAvoid || []).map((r: string) => ({
+    ...(preferences.favorite_ingredients || []).map((r: string) => ({
       name: r,
       severity: 'preference'
     }))
@@ -39,23 +39,27 @@ export const calculateMenuItemScore = async (
         cuisineMatch: 0,
         ingredientMatch: 0,
         preparationMatch: 0
-      }
+      },
+      warning: dietaryAnalysis.reason
     };
   }
 
+  // Calculate cuisine match
+  const cuisineScore = preferences.cuisine_preferences?.some(
+    (pref: string) => semanticResults.cuisineType.toLowerCase().includes(pref.toLowerCase())
+  ) ? 25 : 0;
+  
   // Calculate preparation method score
-  const prepScore = semanticResults.prepMethod.includes('fried') ? 0 : 20;
+  const prepScore = semanticResults.prepMethod === 'fried' ? 0 : 20;
   
   // Calculate final score components
   const factors: ScoreFactors = {
     dietaryMatch: dietaryAnalysis.score * 0.3,
     proteinMatch: preferences.favorite_proteins?.some(
-      (p: string) => semanticResults.mainIngredients.includes(p)
+      (p: string) => semanticResults.mainIngredients.includes(p.toLowerCase())
     ) ? 25 : 0,
-    cuisineMatch: preferences.cuisine_preferences?.includes(
-      semanticResults.cuisineType
-    ) ? 25 : 0,
-    ingredientMatch: 0, // Will be enhanced with ingredient semantic analysis
+    cuisineMatch: cuisineScore,
+    ingredientMatch: 0,
     preparationMatch: prepScore
   };
 
@@ -66,8 +70,13 @@ export const calculateMenuItemScore = async (
   console.log("📊 Final score calculation:", {
     factors,
     totalScore,
-    semanticResults
+    semanticResults,
+    dietaryAnalysis
   });
 
-  return { score: totalScore, factors };
+  return { 
+    score: totalScore, 
+    factors,
+    ...(dietaryAnalysis.reason !== "Meets dietary preferences" ? { warning: dietaryAnalysis.reason } : {})
+  };
 };
