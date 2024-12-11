@@ -77,6 +77,6 @@ export const calculateMenuItemScore = async (
   return { 
     score: totalScore, 
     factors,
-    warning: dietaryAnalysis.reason !== "Meets dietary preferences" ? dietaryAnalysis.reason : undefined
+    ...(dietaryAnalysis.reason !== "Meets dietary preferences" ? { warning: dietaryAnalysis.reason } : {})
   };
 };
