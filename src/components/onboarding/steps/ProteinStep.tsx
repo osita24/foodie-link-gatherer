@@ -1,20 +1,5 @@
-import { useState } from "react";
-import { Card } from "@/components/ui/card";
+import { Beef, Fish, Egg, Drumstick, Ban } from "lucide-react";
 import PreferenceCard from "@/components/profile/preferences/PreferenceCard";
-import { Beef, Fish, Egg, Drumstick, Salad } from "lucide-react";
-
-const PROTEIN_OPTIONS = [
-  { name: "Chicken", icon: <Drumstick /> },
-  { name: "Beef", icon: <Beef /> },
-  { name: "Fish", icon: <Fish /> },
-  { name: "Pork", icon: <Beef /> },
-  { name: "Tofu", icon: <Salad /> },
-  { name: "Eggs", icon: <Egg /> },
-  { name: "Turkey", icon: <Drumstick /> },
-  { name: "Lamb", icon: <Beef /> },
-  { name: "Shrimp", icon: <Fish /> },
-  { name: "Duck", icon: <Drumstick /> },
-];
 
 interface ProteinStepProps {
   selected: string[];
@@ -22,29 +7,49 @@ interface ProteinStepProps {
 }
 
 const ProteinStep = ({ selected, onChange }: ProteinStepProps) => {
-  const handleProteinToggle = (proteinName: string) => {
-    if (selected.includes(proteinName)) {
-      onChange(selected.filter((p) => p !== proteinName));
-    } else {
-      onChange([...selected, proteinName]);
+  const proteinTypes = [
+    { name: "Doesn't Apply", icon: <Ban />, description: "For vegetarians/vegans" },
+    { name: "Beef", icon: <Beef /> },
+    { name: "Chicken", icon: <Drumstick /> },
+    { name: "Fish", icon: <Fish /> },
+    { name: "Pork", icon: <Beef /> },
+    { name: "Eggs", icon: <Egg /> },
+    { name: "Tofu", icon: <Beef /> },
+    { name: "Lamb", icon: <Beef /> },
+    { name: "Turkey", icon: <Drumstick /> }
+  ];
+
+  const handleProteinToggle = (protein: string) => {
+    if (protein === "Doesn't Apply") {
+      // If selecting "Doesn't Apply", clear all other selections
+      onChange(["Doesn't Apply"]);
+      return;
     }
-    console.log("Updated protein preferences:", selected); // Log for debugging
+
+    // If selecting a specific protein, remove "Doesn't Apply" if it's selected
+    const newProteins = selected.includes(protein)
+      ? selected.filter(p => p !== protein)
+      : [...selected.filter(p => p !== "Doesn't Apply"), protein];
+    
+    onChange(newProteins);
+    console.log("Updated protein preferences:", newProteins); // Log for debugging
   };
 
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-center">Select Your Favorite Proteins 🥩</h2>
-        <p className="text-muted-foreground text-center">
-          Choose the proteins you enjoy most. This helps us find restaurants that serve your preferred options.
+        <h2 className="text-2xl font-bold">Protein Preferences 🥩</h2>
+        <p className="text-muted-foreground">
+          Select your preferred protein sources to help us find the best dishes for you
         </p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {PROTEIN_OPTIONS.map((protein) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {proteinTypes.map((protein) => (
           <PreferenceCard
             key={protein.name}
             label={protein.name}
+            description={protein.description}
             icon={protein.icon}
             selected={selected.includes(protein.name)}
             onClick={() => handleProteinToggle(protein.name)}
