@@ -71,7 +71,14 @@
     @apply border-border;
   }
 
-  body {
+  html, body {
     @apply bg-background text-foreground min-h-screen w-full;
+    background-color: #FAFDF9; /* Explicit fallback for Safari */
+    min-height: -webkit-fill-available; /* iOS Safari fix */
+  }
+
+  #root {
+    @apply min-h-screen w-full bg-background;
+    min-height: -webkit-fill-available; /* iOS Safari fix */
   }
 }

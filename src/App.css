@@ -3,6 +3,9 @@
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+  background-color: #FAFDF9; /* Explicit background color */
+  min-height: 100vh;
+  min-height: -webkit-fill-available; /* iOS Safari fix */
 }
 
 .logo {
