@@ -33,6 +33,14 @@ export function generatePositiveReasons(
     }
   }
 
+  // Add vegetarian/vegan reason if applicable
+  if (preferences.dietary_restrictions?.includes("Vegetarian") && restaurant.servesVegetarianFood) {
+    reasons.push({
+      emoji: "🥗",
+      text: "Offers dedicated vegetarian options"
+    });
+  }
+
   // Add sodium preference reason if applicable
   if (preferences.favorite_ingredients?.includes("High Sodium")) {
     reasons.push({
@@ -76,6 +84,14 @@ export function generateNegativeReasons(
     return reasons;
   }
 
+  // Add vegetarian/vegan warning if applicable
+  if (preferences.dietary_restrictions?.includes("Vegetarian") && !restaurant.servesVegetarianFood) {
+    reasons.push({
+      emoji: "🥗",
+      text: "Limited vegetarian options available"
+    });
+  }
+
   // Add cuisine mismatch if applicable
   if (preferences.cuisine_preferences?.length) {
     const preferredCuisine = preferences.cuisine_preferences[0];
@@ -93,7 +109,7 @@ export function generateNegativeReasons(
       restaurant.types?.some(type => ['fast_food', 'chinese', 'korean'].includes(type.toLowerCase()))) {
     reasons.push({
       emoji: "🧂",
-      text: "This restaurant may have many high-sodium options"
+      text: "Many dishes at this restaurant may be high in sodium"
     });
   }
 
