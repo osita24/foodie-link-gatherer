@@ -16,6 +16,7 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
     }
 
     if (!url) {
+      console.error('❌ No URL or place ID provided');
       throw new Error('No URL or place ID provided');
     }
 
@@ -32,6 +33,7 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
 
       // Validate URL format
       new URL(finalUrl);
+      console.log('✅ Validated URL:', finalUrl);
     } catch (error) {
       console.error('❌ Invalid URL format:', error);
       throw new Error('Invalid URL format provided');
@@ -83,18 +85,20 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
     searchUrl.searchParams.set('query', searchText);
     searchUrl.searchParams.set('type', 'restaurant');
     
-    console.log('🌐 Making text search request');
+    console.log('🌐 Making text search request to:', searchUrl.toString());
     const response = await fetch(searchUrl.toString());
+    
     if (!response.ok) {
       console.error('❌ Places API request failed:', response.status);
       throw new Error(`Places API request failed with status ${response.status}`);
     }
     
     const data = await response.json();
-    console.log('📊 Search response status:', data.status);
+    console.log('📊 Search response:', data);
     
     if (data.status === 'ZERO_RESULTS') {
-      throw new Error('No restaurant found at this location');
+      console.error('❌ No results found for search:', searchText);
+      throw new Error(`No restaurant found matching: ${searchText}`);
     }
     
     if (data.status !== 'OK' || !data.results?.[0]) {
@@ -168,6 +172,7 @@ async function getPlaceDetails(placeId: string): Promise<any> {
   }
   
   const data = await response.json();
+  console.log('📊 Place details response:', data);
   
   if (data.status !== 'OK') {
     console.error('❌ Place Details API error:', data);
