@@ -28,20 +28,20 @@ export const VerdictDisplay = ({ verdict, reasons }: VerdictDisplayProps) => {
         {verdict}
       </div>
       
-      <div className="space-y-4">
+      <ul className="space-y-4 list-none">
         {reasons.map((reason, index) => (
-          <div 
+          <li 
             key={index}
             className="flex items-start gap-3 animate-fade-up"
             style={{ animationDelay: `${(index + 1) * 150}ms` }}
           >
-            <span className="text-2xl">{reason.emoji}</span>
+            <span className="text-2xl shrink-0">{reason.emoji}</span>
             <p className="text-muted-foreground leading-tight pt-1">
               {reason.text}
             </p>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 };

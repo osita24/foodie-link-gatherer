@@ -31,7 +31,6 @@ export const analyzeDietaryCompliance = async (
         
         // Check for meat keywords but exclude "veggie burger", "plant-based burger" etc
         if (meatKeywords.some(keyword => {
-          // Don't flag if it's part of a vegetarian phrase
           const keywordIndex = content.indexOf(keyword);
           if (keywordIndex === -1) return false;
           
@@ -42,7 +41,7 @@ export const analyzeDietaryCompliance = async (
                  !nearbyText.includes('plant-based') &&
                  !nearbyText.includes('meat-free');
         })) {
-          return "Contains meat - not suitable for vegetarians";
+          return "Contains meat products - not suitable for vegetarians";
         }
         return null;
       }
@@ -87,8 +86,9 @@ export const analyzeDietaryCompliance = async (
           'ramen', 'udon', 'couscous', 'barley', 'malt', 'seitan'
         ];
         
-        if (glutenKeywords.some(keyword => content.includes(keyword))) {
-          return "Contains gluten - not gluten-free";
+        const foundGluten = glutenKeywords.find(keyword => content.includes(keyword));
+        if (foundGluten) {
+          return `Contains ${foundGluten} - not gluten-free`;
         }
         return null;
       }
@@ -125,19 +125,19 @@ export const analyzeDietaryCompliance = async (
           (semanticResults.prepMethod === 'fried' || 
            semanticResults.mainIngredients.includes('oily'))) {
         score -= 25;
-        reasons.push("Fried/oily preparation");
+        reasons.push("Contains fried/oily ingredients");
       }
     });
 
   // Add positive dietary indicators
   if (itemContent.toLowerCase().includes('vegetarian')) {
     score = Math.min(100, score + 20);
-    reasons.push("Vegetarian-friendly");
+    reasons.push("Vegetarian-friendly option");
   }
 
   if (itemContent.toLowerCase().includes('vegan')) {
     score = Math.min(100, score + 20);
-    reasons.push("Vegan-friendly");
+    reasons.push("Vegan-friendly option");
   }
 
   if (itemContent.toLowerCase().includes('gluten-free')) {
