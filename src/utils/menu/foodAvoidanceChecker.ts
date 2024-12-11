@@ -23,19 +23,22 @@ export const avoidanceKeywords: Record<string, string[]> = {
   ]
 };
 
-export const checkFoodsToAvoid = (itemContent: string, preferences: any): string | null => {
+export const checkFoodsToAvoid = (itemContent: string, preferences: any): { matches: string[] } => {
   console.log("🔍 Checking foods to avoid for item:", itemContent);
   const foodsToAvoid = preferences.foodsToAvoid || [];
+  const matches: string[] = [];
   
   for (const food of foodsToAvoid) {
     const keywords = avoidanceKeywords[food] || [food.toLowerCase()];
     for (const keyword of keywords) {
       if (itemContent.toLowerCase().includes(keyword.toLowerCase())) {
-        console.log(`🚫 Found avoided food: ${food} (keyword: ${keyword})`);
-        return food;
+        console.log(`⚠️ Found avoided food: ${food} (keyword: ${keyword})`);
+        if (!matches.includes(food)) {
+          matches.push(food);
+        }
       }
     }
   }
 
-  return null;
+  return { matches };
 };

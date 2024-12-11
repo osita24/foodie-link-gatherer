@@ -7,6 +7,7 @@ interface ScoreFactors {
   cuisineMatch: number;
   ingredientMatch: number;
   preparationMatch: number;
+  avoidanceImpact: number;
 }
 
 export const calculateMenuItemScore = (
@@ -21,20 +22,23 @@ export const calculateMenuItemScore = (
     proteinMatch: 0,
     cuisineMatch: 0,
     ingredientMatch: 0,
-    preparationMatch: 0
+    preparationMatch: 0,
+    avoidanceImpact: 0
   };
 
-  // CRITICAL CHECKS FIRST
+  // CRITICAL DIETARY CHECKS FIRST (e.g., vegetarian, vegan)
   const dietaryConflict = checkDietaryConflicts(itemContent, preferences);
   if (dietaryConflict) {
     console.log("❌ Critical dietary conflict found:", dietaryConflict);
     return { score: 0, factors }; 
   }
 
-  const avoidanceConflict = checkFoodsToAvoid(itemContent, preferences);
-  if (avoidanceConflict) {
-    console.log("❌ Contains food to avoid:", avoidanceConflict);
-    return { score: 0, factors }; 
+  // FOOD AVOIDANCE PENALTIES
+  const avoidanceResult = checkFoodsToAvoid(itemContent, preferences);
+  if (avoidanceResult.matches.length > 0) {
+    console.log("⚠️ Found avoided foods:", avoidanceResult.matches);
+    // Apply a penalty based on how many avoided items are present
+    factors.avoidanceImpact = -20 * avoidanceResult.matches.length;
   }
 
   // PREFERENCE SCORING
@@ -63,7 +67,8 @@ export const calculateMenuItemScore = (
     factors.proteinMatch + 
     factors.cuisineMatch + 
     factors.ingredientMatch + 
-    factors.preparationMatch
+    factors.preparationMatch +
+    factors.avoidanceImpact // This can now reduce the score but not automatically set it to 0
   ));
 
   console.log("📊 Final score calculation:", {
