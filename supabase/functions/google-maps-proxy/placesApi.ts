@@ -23,6 +23,12 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
     // Clean and validate the URL
     let finalUrl = url;
     try {
+      // Check if the string is actually a place ID
+      if (url.startsWith('ChIJ')) {
+        console.log('🎯 Detected place ID in URL:', url);
+        return await getPlaceDetails(url);
+      }
+
       // Remove any trailing colons without port numbers
       finalUrl = finalUrl.replace(/:\/?$/, '');
       
@@ -35,6 +41,14 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
       new URL(finalUrl);
       console.log('✅ Validated URL:', finalUrl);
     } catch (error) {
+      // If URL validation fails, check if it might be a place ID
+      if (url.includes('ChIJ')) {
+        const placeIdMatch = url.match(/ChIJ[a-zA-Z0-9_-]+/);
+        if (placeIdMatch) {
+          console.log('🎯 Extracted place ID from invalid URL:', placeIdMatch[0]);
+          return await getPlaceDetails(placeIdMatch[0]);
+        }
+      }
       console.error('❌ Invalid URL format:', error);
       throw new Error('Invalid URL format provided');
     }
