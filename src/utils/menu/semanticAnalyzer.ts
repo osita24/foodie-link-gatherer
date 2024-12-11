@@ -1,65 +1,68 @@
-import { pipeline } from "@huggingface/transformers";
-
-let classifier: any = null;
-
-const initializeClassifier = async () => {
-  if (!classifier) {
-    console.log("🤖 Initializing food classifier...");
-    classifier = await pipeline(
-      "zero-shot-classification",
-      "facebook/bart-large-mnli",
-      { device: "cpu" }
-    );
-  }
-  return classifier;
-};
-
 export const analyzeDishSemantics = async (itemContent: string) => {
   console.log("🔍 Analyzing dish semantics for:", itemContent);
   
-  const classifier = await initializeClassifier();
+  const content = itemContent.toLowerCase();
   
   // Analyze preparation method
-  const prepMethods = await classifier(itemContent, [
-    "fried food",
-    "grilled food",
-    "baked food",
-    "steamed food",
-    "raw food"
-  ]);
-  
+  const prepMethods = {
+    fried: content.includes('fried') || content.includes('crispy'),
+    grilled: content.includes('grilled') || content.includes('char'),
+    baked: content.includes('baked') || content.includes('roasted'),
+    steamed: content.includes('steamed'),
+    raw: content.includes('raw') || content.includes('sushi')
+  };
+
+  const prepMethod = Object.entries(prepMethods)
+    .find(([_, isPresent]) => isPresent)?.[0] || 'unknown';
+
   // Analyze main ingredients
-  const ingredients = await classifier(itemContent, [
-    "contains meat",
-    "contains dairy",
-    "contains gluten",
-    "contains nuts",
-    "contains seafood",
-    "contains eggs",
-    "vegetarian dish",
-    "vegan dish"
-  ]);
-  
+  const ingredients = {
+    meat: content.includes('beef') || content.includes('burger') || 
+          content.includes('bacon') || content.includes('pork') || 
+          content.includes('ham') || content.includes('steak'),
+    dairy: content.includes('cheese') || content.includes('milk') || 
+          content.includes('cream') || content.includes('butter') ||
+          content.includes('yogurt'),
+    gluten: content.includes('bread') || content.includes('bun') || 
+           content.includes('pasta') || content.includes('flour') ||
+           content.includes('wheat'),
+    nuts: content.includes('nut') || content.includes('almond') || 
+          content.includes('cashew') || content.includes('peanut'),
+    seafood: content.includes('fish') || content.includes('shrimp') || 
+            content.includes('seafood') || content.includes('tuna'),
+    eggs: content.includes('egg') || content.includes('mayo'),
+    vegetarian: content.includes('veggie') || content.includes('vegetarian'),
+    vegan: content.includes('vegan') || content.includes('plant-based'),
+    highSodium: content.includes('salt') || content.includes('soy sauce') || 
+                content.includes('teriyaki') || content.includes('bbq') ||
+                content.includes('bacon') || content.includes('gravy')
+  };
+
   // Analyze cuisine type
-  const cuisine = await classifier(itemContent, [
-    "Italian cuisine",
-    "Asian cuisine",
-    "Mexican cuisine",
-    "Mediterranean cuisine",
-    "American cuisine"
-  ]);
+  const cuisineKeywords = {
+    'Italian': ['pasta', 'pizza', 'italian'],
+    'Asian': ['sushi', 'stir-fry', 'asian', 'teriyaki'],
+    'Mexican': ['taco', 'burrito', 'mexican'],
+    'Mediterranean': ['hummus', 'falafel', 'mediterranean'],
+    'American': ['burger', 'fries', 'american']
+  };
+
+  const cuisineType = Object.entries(cuisineKeywords)
+    .find(([_, keywords]) => keywords.some(keyword => content.includes(keyword)))?.[0] || 'Other';
 
   console.log("✨ Semantic analysis results:", {
-    prepMethods: prepMethods.scores,
-    ingredients: ingredients.scores,
-    cuisine: cuisine.scores
+    prepMethod,
+    ingredients,
+    cuisineType
   });
 
   return {
-    prepMethod: prepMethods.labels[0],
-    prepScore: prepMethods.scores[0],
-    mainIngredients: ingredients.labels.filter((_: string, i: number) => ingredients.scores[i] > 0.5),
-    cuisineType: cuisine.labels[0],
-    cuisineScore: cuisine.scores[0]
+    prepMethod,
+    prepScore: 1.0,
+    mainIngredients: Object.entries(ingredients)
+      .filter(([_, isPresent]) => isPresent)
+      .map(([name]) => name),
+    cuisineType,
+    cuisineScore: 1.0
   };
 };
