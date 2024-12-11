@@ -33,6 +33,14 @@ export function generatePositiveReasons(
     }
   }
 
+  // Add sodium preference reason if applicable
+  if (preferences.favorite_ingredients?.includes("High Sodium")) {
+    reasons.push({
+      emoji: "🧂",
+      text: "We'll help you identify lower-sodium options on the menu"
+    });
+  }
+
   // Add atmosphere reason if applicable
   if (preferences.atmosphere_preferences?.includes('Fine Dining') && restaurant.reservable) {
     reasons.push({
@@ -78,6 +86,15 @@ export function generateNegativeReasons(
         text: `Different cuisine style than your preferred ${preferredCuisine.toLowerCase()}`
       });
     }
+  }
+
+  // Add sodium warning if applicable
+  if (preferences.favorite_ingredients?.includes("High Sodium") && 
+      restaurant.types?.some(type => ['fast_food', 'chinese', 'korean'].includes(type.toLowerCase()))) {
+    reasons.push({
+      emoji: "🧂",
+      text: "This restaurant may have many high-sodium options"
+    });
   }
 
   // Add atmosphere mismatch if applicable

@@ -75,6 +75,24 @@ export async function analyzeMenuItem(
           };
         }
       }
+
+      // High sodium check
+      if (preferences.favorite_ingredients?.includes("High Sodium")) {
+        const highSodiumKeywords = [
+          'soy sauce', 'teriyaki', 'miso', 'pickled', 'cured', 'brined',
+          'salted', 'preserved', 'fish sauce', 'oyster sauce', 'processed',
+          'deli meat', 'bacon', 'ham', 'sausage', 'sodium', 'salt'
+        ];
+        
+        if (highSodiumKeywords.some(keyword => itemContent.includes(keyword))) {
+          console.log('❌ Item likely contains high sodium');
+          return {
+            score: 20,
+            warning: "This dish may be high in sodium",
+            matchType: 'warning'
+          };
+        }
+      }
     }
 
     // If we pass dietary restrictions, continue with regular scoring
