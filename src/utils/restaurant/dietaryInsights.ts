@@ -23,12 +23,12 @@ export const generateDietaryInsights = (restaurant: RestaurantDetails, preferenc
   }
 
   // Check cuisine style match
-  if (preferences.cuisine_preferences?.length) {
-    const matchingCuisine = preferences.cuisine_preferences.find(cuisine => 
+  if (preferences.cuisinePreferences?.length) {
+    const matchingCuisine = preferences.cuisinePreferences.find(cuisine => 
       restaurant.types?.some(type => type.toLowerCase().includes(cuisine.toLowerCase()))
     );
     if (!matchingCuisine) {
-      insights.push(`Different cuisine style than your preferred ${preferences.cuisine_preferences[0].toLowerCase()}`);
+      insights.push(`Different cuisine style than your preferred ${preferences.cuisinePreferences[0].toLowerCase()}`);
     }
   }
 

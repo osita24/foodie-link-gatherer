@@ -9,6 +9,7 @@ import { generateDietaryInsights } from "@/utils/restaurant/dietaryInsights";
 import { LoadingSummary } from "./summary/LoadingSummary";
 import { VerdictDisplay } from "./summary/VerdictDisplay";
 import { SummaryResponse } from "./types/summary";
+import { toast } from "sonner";
 
 interface RestaurantSummaryProps {
   restaurant: RestaurantDetails;
@@ -25,11 +26,16 @@ const RestaurantSummary = ({ restaurant }: RestaurantSummaryProps) => {
 
       console.log("🤖 Generating personalized summary for:", restaurant.name);
       try {
-        const { data: preferences } = await supabase
+        const { data: preferences, error: preferencesError } = await supabase
           .from("user_preferences")
           .select("*")
           .eq("user_id", session.user.id)
           .single();
+
+        if (preferencesError) {
+          console.error("❌ Error fetching preferences:", preferencesError);
+          throw preferencesError;
+        }
 
         console.log("👤 User preferences loaded:", preferences);
 
@@ -38,26 +44,35 @@ const RestaurantSummary = ({ restaurant }: RestaurantSummaryProps) => {
           return;
         }
 
+        // Map database columns to UserPreferences type
+        const mappedPreferences: UserPreferences = {
+          cuisinePreferences: preferences.cuisine_preferences || [],
+          dietaryRestrictions: preferences.dietary_restrictions || [],
+          foodsToAvoid: preferences.favorite_ingredients || [],
+          atmospherePreferences: preferences.atmosphere_preferences || [],
+          favoriteIngredients: [],
+          favoriteProteins: preferences.favorite_proteins || [],
+          spiceLevel: preferences.spice_level || 3,
+          priceRange: preferences.price_range || 'moderate',
+          specialConsiderations: preferences.special_considerations || "",
+        };
+
         // Generate dietary insights
-        const dietaryInsights = generateDietaryInsights(restaurant, preferences);
+        const dietaryInsights = generateDietaryInsights(restaurant, mappedPreferences);
 
         const { data, error } = await supabase.functions.invoke("restaurant-summary", {
           body: { 
             restaurant,
             preferences: {
-              ...preferences,
-              dietaryInsights,
-              cuisine_preferences: preferences.cuisine_preferences || [],
-              dietary_restrictions: preferences.dietary_restrictions || [],
-              favorite_ingredients: preferences.favorite_ingredients || [],
-              favorite_proteins: preferences.favorite_proteins || [],
-              atmosphere_preferences: preferences.atmosphere_preferences || [],
+              ...mappedPreferences,
+              dietaryInsights
             }
           }
         });
 
         if (error) {
           console.error("❌ Error generating summary:", error);
+          toast.error("Failed to generate restaurant summary");
           throw error;
         }
 
@@ -65,6 +80,7 @@ const RestaurantSummary = ({ restaurant }: RestaurantSummaryProps) => {
         setSummary(data);
       } catch (error) {
         console.error("❌ Error generating summary:", error);
+        toast.error("Failed to generate restaurant summary");
       } finally {
         setIsLoading(false);
       }
