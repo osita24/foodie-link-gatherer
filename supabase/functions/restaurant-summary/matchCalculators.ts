@@ -14,7 +14,7 @@ export function calculateDietaryScore(restaurant: RestaurantFeatures, preference
         preferences.dietary_restrictions.includes('Vegan')) {
       if (!restaurant.servesVegetarianFood) {
         console.log("❌ Restaurant doesn't serve vegetarian food");
-        return 0; // Complete rejection
+        return 30; // Less harsh penalty, was 0 before
       }
       score += 30;
     }
@@ -32,7 +32,7 @@ export function calculateDietaryScore(restaurant: RestaurantFeatures, preference
 
     if (hasConflictingTypes) {
       console.log("⚠️ Restaurant type conflicts with dietary restrictions");
-      score -= 40;
+      score -= 20; // Reduced penalty from 40
     }
   }
 

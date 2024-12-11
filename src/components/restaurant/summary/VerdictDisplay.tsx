@@ -19,6 +19,14 @@ const getVerdictStyles = (verdict: string) => {
 };
 
 export const VerdictDisplay = ({ verdict, reasons }: VerdictDisplayProps) => {
+  if (!verdict || !reasons?.length) {
+    return (
+      <div className="text-muted-foreground">
+        Unable to generate restaurant summary at this time.
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div 
