@@ -1,5 +1,7 @@
 import { RestaurantDetails } from "@/types/restaurant";
-import { UserPreferences } from "@/types/preferences";
+import { UserPreferences as BaseUserPreferences } from "@/types/preferences";
+
+export type UserPreferences = BaseUserPreferences;
 
 export interface RestaurantFeatures extends RestaurantDetails {
   types?: string[];
