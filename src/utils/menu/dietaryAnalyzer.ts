@@ -33,27 +33,20 @@ export const analyzeDietaryCompliance = async (
     };
   }
 
-  // Enhanced high sodium detection
-  const highSodiumKeywords = [
-    'salty', 'brined', 'cured', 'pickled', 'soy sauce', 'fish sauce', 
-    'teriyaki', 'miso', 'preserved', 'fermented', 'salt-cured',
-    'nam pla', 'ponzu', 'oyster sauce', 'MSG', 'bouillon',
-    'seasoning salt', 'garlic salt', 'celery salt'
-  ];
-
   // Score preference-based restrictions
   const preferenceViolations = userRestrictions
     .filter(r => r.severity === 'preference')
     .reduce((score, restriction) => {
-      // Enhanced high sodium check
+      // Special handling for high sodium
       if (restriction.name === 'High Sodium') {
+        const highSodiumKeywords = ['salty', 'brined', 'cured', 'pickled', 'soy sauce', 'fish sauce', 'teriyaki'];
         const hasHighSodiumIndicators = highSodiumKeywords.some(keyword => 
           itemContent.toLowerCase().includes(keyword)
         );
         
         if (hasHighSodiumIndicators) {
-          console.log("⚠️ Found multiple high sodium indicators");
-          return score - 40; // Increased penalty for high sodium
+          console.log("⚠️ Found high sodium indicators");
+          return score - 30;
         }
         return score;
       }
@@ -65,7 +58,7 @@ export const analyzeDietaryCompliance = async (
       
       if (matchesRestriction) {
         console.log(`⚠️ Found preference violation: ${restriction.name}`);
-        return score - 25; // Increased penalty for preference violations
+        return score - 20;
       }
       return score;
     }, 100);
@@ -73,8 +66,6 @@ export const analyzeDietaryCompliance = async (
   return {
     compliant: true,
     score: Math.max(0, preferenceViolations),
-    reason: preferenceViolations < 100 
-      ? "Contains some non-preferred ingredients" 
-      : "Meets dietary preferences"
+    reason: preferenceViolations < 100 ? "Contains some non-preferred ingredients" : "Meets dietary preferences"
   };
 };

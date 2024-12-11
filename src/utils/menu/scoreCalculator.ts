@@ -6,12 +6,12 @@ export const calculateMenuItemScore = async (
   itemContent: string,
   preferences: any
 ): Promise<MenuAnalysisResult> => {
-  console.log("🔍 Starting enhanced menu item analysis for:", itemContent);
+  console.log("🔍 Starting menu item analysis for:", itemContent);
   console.log("👤 User preferences:", preferences);
 
   const semanticResults = await analyzeDishSemantics(itemContent);
   
-  // Convert user preferences to dietary restrictions format with enhanced severity
+  // Convert user preferences to dietary restrictions format
   const dietaryRestrictions = [
     ...(preferences.dietary_restrictions || []).map((r: string) => ({
       name: r,
@@ -43,66 +43,28 @@ export const calculateMenuItemScore = async (
     };
   }
 
-  // Enhanced high sodium detection with more keywords
-  const highSodiumKeywords = [
-    'salty', 'brined', 'cured', 'pickled', 'soy sauce', 'fish sauce', 
-    'teriyaki', 'miso', 'preserved', 'fermented', 'salt-cured',
-    'nam pla', 'ponzu', 'oyster sauce', 'MSG', 'bouillon'
-  ];
-  
+  // Check for high sodium indicators
+  const highSodiumKeywords = ['salty', 'brined', 'cured', 'pickled', 'soy sauce', 'fish sauce', 'teriyaki'];
   const hasHighSodiumIndicators = highSodiumKeywords.some(keyword => 
     itemContent.toLowerCase().includes(keyword)
   );
 
-  // Enhanced sodium penalty based on preference strength
-  const sodiumPenalty = preferences.foodsToAvoid?.includes('High Sodium') && hasHighSodiumIndicators ? -40 : 0;
+  // Adjust score for high sodium preference
+  const sodiumPenalty = preferences.foodsToAvoid?.includes('High Sodium') && hasHighSodiumIndicators ? -30 : 0;
   
-  // Enhanced preparation method scoring
-  const healthyPreparationMethods = {
-    'grilled': 20,
-    'steamed': 20,
-    'baked': 15,
-    'roasted': 15,
-    'poached': 15,
-    'raw': 10,
-    'sautéed': 5
-  };
-
-  const unhealthyPreparationMethods = {
-    'fried': -20,
-    'deep-fried': -25,
-    'battered': -15,
-    'breaded': -10
-  };
-
-  let prepScore = 10; // Default score
+  // Calculate preparation method score
+  const prepScore = semanticResults.prepMethod.includes('fried') ? 0 : 20;
   
-  // Check for healthy preparation methods
-  Object.entries(healthyPreparationMethods).forEach(([method, score]) => {
-    if (semanticResults.prepMethod.includes(method)) {
-      prepScore += score;
-    }
-  });
-
-  // Check for unhealthy preparation methods
-  Object.entries(unhealthyPreparationMethods).forEach(([method, penalty]) => {
-    if (semanticResults.prepMethod.includes(method)) {
-      prepScore += penalty;
-    }
-  });
-  
-  // Calculate final score components with enhanced weights
+  // Calculate final score components
   const factors: ScoreFactors = {
-    dietaryMatch: dietaryAnalysis.score * 0.35, // Increased weight for dietary compliance
+    dietaryMatch: dietaryAnalysis.score * 0.3,
     proteinMatch: preferences.favorite_proteins?.some(
       (p: string) => semanticResults.mainIngredients.includes(p)
-    ) ? 30 : 0, // Increased protein match score
+    ) ? 25 : 0,
     cuisineMatch: preferences.cuisine_preferences?.includes(
       semanticResults.cuisineType
     ) ? 25 : 0,
-    ingredientMatch: preferences.favorite_ingredients?.some(
-      (i: string) => semanticResults.mainIngredients.includes(i)
-    ) ? 20 : 0,
+    ingredientMatch: 0,
     preparationMatch: prepScore
   };
 
@@ -110,7 +72,7 @@ export const calculateMenuItemScore = async (
     Object.values(factors).reduce((sum, score) => sum + score, 0) + sodiumPenalty
   ));
 
-  console.log("📊 Enhanced score calculation:", {
+  console.log("📊 Final score calculation:", {
     factors,
     sodiumPenalty,
     totalScore,

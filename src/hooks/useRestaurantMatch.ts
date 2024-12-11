@@ -3,10 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { RestaurantDetails } from '@/types/restaurant';
 import { mapSupabaseToUserPreferences } from '@/utils/preferencesMapper';
 import { 
-  calculateCuisineScore, 
-  calculateDietaryScore, 
-  calculateAtmosphereScore, 
-  calculatePriceScore,
+  calculateCuisineMatch, 
+  calculateDietaryMatch, 
+  calculateAtmosphereMatch, 
+  calculatePriceMatch,
+  MatchResult as CategoryMatchResult 
 } from './restaurant-match/matchCalculators';
 
 interface MatchCategory {
@@ -63,35 +64,35 @@ export const useRestaurantMatch = (restaurant: RestaurantDetails | null): MatchR
         
         const preferences = mapSupabaseToUserPreferences(preferencesData);
 
-        // Calculate matches using the utility functions with corrected names
-        const cuisineMatch = calculateCuisineScore(restaurant, preferences);
-        const dietaryMatch = calculateDietaryScore(restaurant, preferences);
-        const atmosphereMatch = calculateAtmosphereScore(restaurant, preferences);
-        const priceMatch = calculatePriceScore(restaurant, preferences);
+        // Calculate matches using the utility functions
+        const cuisineMatch = calculateCuisineMatch(restaurant, preferences);
+        const dietaryMatch = calculateDietaryMatch(restaurant, preferences);
+        const atmosphereMatch = calculateAtmosphereMatch(restaurant, preferences);
+        const priceMatch = calculatePriceMatch(restaurant, preferences);
 
         const categories: MatchCategory[] = [
           {
             category: "Cuisine",
-            score: cuisineMatch,
-            description: "Based on your cuisine preferences",
+            score: cuisineMatch.score,
+            description: cuisineMatch.description,
             icon: "🍽️"
           },
           {
             category: "Dietary",
-            score: dietaryMatch,
-            description: "Matches your dietary requirements",
+            score: dietaryMatch.score,
+            description: dietaryMatch.description,
             icon: "🥗"
           },
           {
             category: "Atmosphere",
-            score: atmosphereMatch,
-            description: "Fits your preferred dining atmosphere",
+            score: atmosphereMatch.score,
+            description: atmosphereMatch.description,
             icon: "✨"
           },
           {
             category: "Price",
-            score: priceMatch,
-            description: "Aligns with your budget preferences",
+            score: priceMatch.score,
+            description: priceMatch.description,
             icon: "💰"
           }
         ];
