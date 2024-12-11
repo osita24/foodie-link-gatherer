@@ -37,6 +37,27 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
       throw new Error('Invalid URL format provided');
     }
 
+    // Handle shortened URLs
+    if (finalUrl.includes('goo.gl') || finalUrl.includes('maps.app.goo.gl')) {
+      console.log('📎 Expanding shortened URL:', finalUrl);
+      try {
+        const response = await fetch(finalUrl, { 
+          redirect: 'follow',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to expand URL: ${response.status}`);
+        }
+        finalUrl = response.url;
+        console.log('📎 Expanded URL:', finalUrl);
+      } catch (error) {
+        console.error('❌ Error expanding shortened URL:', error);
+        throw new Error('Failed to process shortened URL');
+      }
+    }
+
     // Try to extract place ID from URL
     try {
       const urlObj = new URL(finalUrl);
@@ -134,22 +155,7 @@ async function getPlaceDetails(placeId: string): Promise<any> {
     'user_ratings_total',
     'utc_offset',
     'place_id',
-    'vicinity',
-    'business_status',
-    'curbside_pickup',
-    'delivery',
-    'dine_in',
-    'price_range',
-    'reservable',
-    'serves_beer',
-    'serves_breakfast',
-    'serves_brunch',
-    'serves_lunch',
-    'serves_dinner',
-    'serves_vegetarian_food',
-    'serves_wine',
-    'takeout',
-    'wheelchair_accessible_entrance'
+    'vicinity'
   ].join(','));
   detailsUrl.searchParams.set('key', GOOGLE_API_KEY);
   
@@ -163,7 +169,7 @@ async function getPlaceDetails(placeId: string): Promise<any> {
   
   const data = await response.json();
   
-  if (data.status !== 'OK' || !data.result) {
+  if (data.status !== 'OK') {
     console.error('❌ Place Details API error:', data);
     throw new Error(`Place Details API error: ${data.status}`);
   }

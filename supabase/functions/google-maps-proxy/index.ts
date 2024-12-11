@@ -28,33 +28,26 @@ serve(async (req) => {
 
     if (!url && !placeId) {
       console.error('❌ Missing required parameters');
-      return new Response(
-        JSON.stringify({
-          error: 'Either URL or placeId is required',
-          status: 400
-        }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      throw new Error('Either URL or placeId is required');
     }
 
+    // Set a timeout for the restaurant search
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        console.error('⏰ Request timed out');
+        reject(new Error('Request timed out after 25 seconds'));
+      }, 25000);
+    });
+
     console.log('🔎 Starting restaurant search...');
-    const result = await searchRestaurant(url, placeId);
+    const result = await Promise.race([
+      searchRestaurant(url, placeId),
+      timeoutPromise
+    ]);
 
     if (!result) {
       console.error('❌ No result returned from search');
-      return new Response(
-        JSON.stringify({
-          error: 'Restaurant not found',
-          status: 404
-        }),
-        { 
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      throw new Error('Failed to retrieve restaurant data');
     }
 
     console.log('✅ Successfully found restaurant data');
@@ -73,8 +66,7 @@ serve(async (req) => {
     const errorResponse = {
       error: error.message || 'Internal server error',
       details: error.stack,
-      timestamp: new Date().toISOString(),
-      status: error.status || 500
+      timestamp: new Date().toISOString()
     };
 
     return new Response(

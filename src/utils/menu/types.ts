@@ -9,7 +9,6 @@ export interface ScoreFactors {
 export interface MenuAnalysisResult {
   score: number;
   factors: ScoreFactors;
-  warning?: string; // Added warning as an optional property
 }
 
 export interface DietaryRestriction {
