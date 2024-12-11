@@ -26,49 +26,54 @@ export const calculateMenuItemScore = (
     avoidanceImpact: 0
   };
 
-  // CRITICAL DIETARY CHECKS FIRST (e.g., vegetarian, vegan)
+  // CRITICAL DIETARY CHECKS FIRST (e.g., vegetarian, vegan, allergies)
   const dietaryConflict = checkDietaryConflicts(itemContent, preferences);
   if (dietaryConflict) {
     console.log("❌ Critical dietary conflict found:", dietaryConflict);
-    return { score: 0, factors }; 
+    return { score: 0, factors }; // Immediate rejection for dietary conflicts
   }
 
-  // FOOD AVOIDANCE PENALTIES
+  // FOOD AVOIDANCE PENALTIES (allergies and strong dislikes)
   const avoidanceResult = checkFoodsToAvoid(itemContent, preferences);
   if (avoidanceResult.matches.length > 0) {
     console.log("⚠️ Found avoided foods:", avoidanceResult.matches);
-    // Apply a penalty based on how many avoided items are present
-    factors.avoidanceImpact = -20 * avoidanceResult.matches.length;
+    // Severe penalty for each avoided item
+    factors.avoidanceImpact = -25 * avoidanceResult.matches.length;
   }
 
-  // PREFERENCE SCORING
+  // WEIGHTED SCORING
+  // 1. Protein Preferences (20% weight)
   if (!preferences.dietary_restrictions?.includes('Vegetarian') && 
       !preferences.dietary_restrictions?.includes('Vegan')) {
     const proteinMatch = checkProteinMatch(itemContent, preferences);
-    factors.proteinMatch = proteinMatch ? 35 : 0;
+    factors.proteinMatch = proteinMatch ? 20 : 0;
     console.log("🥩 Protein match score:", factors.proteinMatch);
   }
 
+  // 2. Cuisine Preferences (25% weight)
   const cuisineMatch = checkCuisineMatch(itemContent, preferences);
   factors.cuisineMatch = cuisineMatch ? 25 : 0;
   console.log("🍽️ Cuisine match score:", factors.cuisineMatch);
 
+  // 3. Favorite Ingredients (15% weight)
   const ingredientMatch = checkIngredientMatch(itemContent, preferences);
-  factors.ingredientMatch = ingredientMatch ? 20 : 0;
+  factors.ingredientMatch = ingredientMatch ? 15 : 0;
   console.log("🌶️ Ingredient match score:", factors.ingredientMatch);
 
+  // 4. Preparation Methods (10% weight)
   const prepScore = analyzePreparationMethods(itemContent);
   factors.preparationMatch = prepScore;
   console.log("👨‍🍳 Preparation method score:", factors.preparationMatch);
 
-  const baseScore = 50;
+  // Base score (30%) + weighted factors
+  const baseScore = 30;
   const totalScore = Math.min(100, Math.max(0, 
     baseScore + 
     factors.proteinMatch + 
     factors.cuisineMatch + 
     factors.ingredientMatch + 
     factors.preparationMatch +
-    factors.avoidanceImpact // This can now reduce the score but not automatically set it to 0
+    factors.avoidanceImpact
   ));
 
   console.log("📊 Final score calculation:", {
