@@ -30,25 +30,25 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a friendly AI food recommender. Generate a short, personalized message (max 15 words) about how well a menu item matches a user's preferences. 
-            Be specific about why it matches or doesn't match, mentioning specific ingredients or preparations.
-            Include an appropriate emoji.
+            content: `You are a concise AI food recommender. Generate a very short message (max 25 characters) about how well a menu item matches user preferences. 
+            Focus on the most important single reason why it matches or doesn't match.
+            Include one emoji at the end.
             
             Examples:
-            - "Contains dairy and gluten - not suitable for your dietary needs 🚫"
-            - "Perfect match! Fresh vegetables align with your vegan preferences 🌱"
-            - "Spice level might be too high for your preference 🌶️"
-            - "Great choice! Matches your love of Vietnamese cuisine 🍜"`
+            - "Contains dairy 🚫"
+            - "Vegan friendly ✅"
+            - "Too spicy 🌶️"
+            - "Perfect match! 🎯"`
           },
           {
             role: 'user',
-            content: `Generate a match message for a menu item with:
+            content: `Generate a very short match message for a menu item with:
             Match type: ${matchType}
             Score: ${score}
             Item details: ${JSON.stringify(itemDetails)}
             User preferences: ${JSON.stringify(preferences)}
             
-            The message should be specific about why it matches or doesn't match the user's preferences.`
+            The message should be extremely concise, focusing on just one key reason.`
           }
         ],
         temperature: 0.7,
@@ -71,7 +71,7 @@ serve(async (req) => {
     console.error('Error generating match message:', error);
     return new Response(
       JSON.stringify({ 
-        message: matchType === 'warning' ? 'Not recommended for your dietary preferences ⚠️' : 'Possible match for your preferences 🤔'
+        message: matchType === 'warning' ? 'Not suitable ⚠️' : 'Good match ✅'
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
