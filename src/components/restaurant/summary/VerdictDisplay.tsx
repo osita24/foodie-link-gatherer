@@ -19,6 +19,13 @@ const getVerdictStyles = (verdict: string) => {
 };
 
 export const VerdictDisplay = ({ verdict, reasons }: VerdictDisplayProps) => {
+  if (!verdict || !reasons?.length) {
+    console.log("❌ Missing verdict or reasons:", { verdict, reasons });
+    return null;
+  }
+
+  console.log("✨ Rendering verdict with reasons:", { verdict, reasons });
+
   return (
     <div className="space-y-6">
       <div 
@@ -35,8 +42,8 @@ export const VerdictDisplay = ({ verdict, reasons }: VerdictDisplayProps) => {
             className="flex items-start gap-3 animate-fade-up"
             style={{ animationDelay: `${(index + 1) * 150}ms` }}
           >
-            <span className="text-2xl">{reason.emoji}</span>
-            <p className="text-muted-foreground leading-tight pt-1">
+            <span className="text-2xl min-w-[28px] text-center">{reason.emoji}</span>
+            <p className="text-muted-foreground leading-relaxed">
               {reason.text}
             </p>
           </div>
