@@ -34,7 +34,7 @@ const FAQ = () => {
               Is this service free?
             </AccordionTrigger>
             <AccordionContent className="text-sm md:text-base text-muted-foreground pb-4 animate-accordion-down">
-              Yes! The basic features are completely free to use. We also offer a premium plan with additional features for power users.
+              Yes! All features are free to use. Sign up to unlock a personalized dining experience tailored just for you.
             </AccordionContent>
           </AccordionItem>
         </Accordion>
