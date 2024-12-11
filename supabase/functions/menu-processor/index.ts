@@ -5,6 +5,7 @@ import { generateMenuItems } from "./menuGenerator.ts";
 console.log("Menu processor function started");
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -26,13 +27,14 @@ serve(async (req) => {
 
     if (!menuItems.length) {
       console.log("ℹ️ No menu items generated, using default items");
-      menuItems.push(
+      const defaultItems = [
         "House Special Roll - Fresh fish and vegetables wrapped in seasoned rice",
         "Teriyaki Chicken - Grilled chicken with house-made sauce",
         "Miso Soup - Traditional Japanese soup with tofu",
         "Vegetable Tempura - Assorted vegetables in crispy batter",
         "Green Tea Ice Cream - Creamy matcha dessert"
-      );
+      ];
+      menuItems.push(...defaultItems);
     }
 
     const formattedItems = menuItems.slice(0, 10).map((item, index) => {
