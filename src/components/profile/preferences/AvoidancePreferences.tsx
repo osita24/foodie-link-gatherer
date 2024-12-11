@@ -1,4 +1,4 @@
-import { Ban, Shell, Nut, Egg, Leaf, Fish, Flame, Check } from "lucide-react";
+import { Ban, Shell, Nut, Egg, Leaf, Fish, Flame, Check, Cookie, Oil } from "lucide-react";
 import PreferenceCard from "./PreferenceCard";
 
 interface AvoidancePreferencesProps {
@@ -17,7 +17,9 @@ const AvoidancePreferences = ({ selected, onChange }: AvoidancePreferencesProps)
     { name: "Mushrooms", icon: <Ban /> },
     { name: "Bell Peppers", icon: <Leaf /> },
     { name: "Raw Fish", icon: <Fish /> },
-    { name: "Very Spicy", icon: <Flame /> }
+    { name: "Very Spicy", icon: <Flame /> },
+    { name: "Sweet Foods", icon: <Cookie /> },
+    { name: "Oily Foods", icon: <Oil /> }
   ];
 
   const toggleItem = (item: string) => {

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import PreferenceCard from "@/components/profile/preferences/PreferenceCard";
-import { Shell, Nut, Egg, Leaf, Ban, Fish, Flame, Check } from "lucide-react";
+import { Shell, Nut, Egg, Leaf, Ban, Fish, Flame, Check, Cookie, Oil } from "lucide-react";
 
 interface AvoidanceStepProps {
   selected: string[];
@@ -18,7 +18,9 @@ const AvoidanceStep = ({ selected, onChange }: AvoidanceStepProps) => {
     { name: "Mushrooms", icon: <Ban className="w-5 h-5" /> },
     { name: "Bell Peppers", icon: <Leaf className="w-5 h-5" /> },
     { name: "Raw Fish", icon: <Fish className="w-5 h-5" /> },
-    { name: "Very Spicy", icon: <Flame className="w-5 h-5" /> }
+    { name: "Very Spicy", icon: <Flame className="w-5 h-5" /> },
+    { name: "Sweet Foods", icon: <Cookie className="w-5 h-5" /> },
+    { name: "Oily Foods", icon: <Oil className="w-5 h-5" /> }
   ];
 
   const toggleItem = (item: string) => {
