@@ -87,24 +87,29 @@ const checkDietaryConflicts = (itemContent: string, preferences: any): string | 
     'Vegetarian': [
       'meat', 'chicken', 'beef', 'pork', 'fish', 'seafood', 'lamb', 'turkey',
       'bacon', 'prosciutto', 'ham', 'salami', 'pepperoni', 'anchovy',
-      'duck', 'veal', 'foie gras', 'chorizo', 'sausage'
+      'duck', 'veal', 'foie gras', 'chorizo', 'sausage', 'shrimp', 'crab',
+      'lobster', 'oyster', 'mussel', 'clam', 'scallop'
     ],
     'Vegan': [
       'meat', 'chicken', 'beef', 'pork', 'fish', 'seafood', 'lamb', 'turkey',
       'cheese', 'cream', 'milk', 'egg', 'butter', 'honey', 'yogurt', 'mayo',
       'bacon', 'prosciutto', 'ham', 'salami', 'pepperoni', 'anchovy',
       'duck', 'veal', 'foie gras', 'chorizo', 'sausage', 'gelatin',
-      'whey', 'casein', 'ghee', 'lard', 'aioli'
+      'whey', 'casein', 'ghee', 'lard', 'aioli', 'parmesan', 'mozzarella',
+      'ricotta', 'cheddar', 'dairy', 'buttermilk', 'custard'
     ],
     'Gluten-Free': [
       'bread', 'pasta', 'flour', 'wheat', 'tortilla', 'breaded', 'crusted',
       'battered', 'soy sauce', 'teriyaki', 'noodles', 'ramen', 'udon',
-      'couscous', 'barley', 'malt', 'seitan', 'panko'
+      'couscous', 'barley', 'malt', 'seitan', 'panko', 'tempura', 'farro',
+      'semolina', 'durum', 'bulgur', 'orzo', 'crouton', 'breadcrumb'
     ],
     'Dairy-Free': [
       'cheese', 'cream', 'milk', 'butter', 'yogurt', 'mayo',
       'parmesan', 'mozzarella', 'ricotta', 'alfredo', 'béchamel',
-      'queso', 'crema', 'burrata', 'mascarpone', 'provolone'
+      'queso', 'crema', 'burrata', 'mascarpone', 'provolone',
+      'dairy', 'buttermilk', 'custard', 'ice cream', 'whey',
+      'casein', 'ghee', 'au gratin', 'creamy'
     ]
   };
 
@@ -112,6 +117,7 @@ const checkDietaryConflicts = (itemContent: string, preferences: any): string | 
     const keywords = restrictionKeywords[restriction] || [restriction.toLowerCase()];
     for (const keyword of keywords) {
       if (itemContent.toLowerCase().includes(keyword.toLowerCase())) {
+        console.log(`🚫 Found dietary restriction conflict: ${restriction} (keyword: ${keyword})`);
         return restriction;
       }
     }
@@ -124,21 +130,49 @@ const checkFoodsToAvoid = (itemContent: string, preferences: any): string | null
   const foodsToAvoid = preferences.foodsToAvoid || [];
   
   const avoidanceKeywords: Record<string, string[]> = {
-    'Shellfish': ['shrimp', 'crab', 'lobster', 'clam', 'mussel', 'oyster', 'scallop', 'crawfish', 'prawn'],
-    'Peanuts': ['peanut', 'goober', 'groundnut', 'arachis'],
-    'Tree Nuts': ['almond', 'cashew', 'walnut', 'pecan', 'pistachio', 'macadamia', 'hazelnut', 'pine nut'],
-    'Soy': ['soy', 'tofu', 'edamame', 'tempeh', 'miso', 'tamari'],
-    'Mushrooms': ['mushroom', 'shiitake', 'portobello', 'truffle', 'porcini', 'cremini', 'enoki'],
-    'Bell Peppers': ['bell pepper', 'capsicum', 'sweet pepper', 'paprika'],
-    'Raw Fish': ['sushi', 'sashimi', 'raw', 'tartare', 'ceviche', 'crudo', 'poke'],
-    'Very Spicy': ['spicy', 'hot', 'chili', 'jalapeno', 'habanero', 'sriracha', 'wasabi', 'cayenne'],
+    'Shellfish': [
+      'shrimp', 'crab', 'lobster', 'clam', 'mussel', 'oyster', 'scallop', 
+      'crawfish', 'prawn', 'seafood', 'shellfish'
+    ],
+    'Peanuts': [
+      'peanut', 'goober', 'groundnut', 'arachis', 'peanut sauce', 
+      'satay', 'kung pao'
+    ],
+    'Tree Nuts': [
+      'almond', 'cashew', 'walnut', 'pecan', 'pistachio', 'macadamia', 
+      'hazelnut', 'pine nut', 'brazil nut', 'nutmeg'
+    ],
+    'Soy': [
+      'soy', 'tofu', 'edamame', 'tempeh', 'miso', 'tamari', 'soya', 
+      'shoyu', 'teriyaki'
+    ],
+    'Mushrooms': [
+      'mushroom', 'shiitake', 'portobello', 'truffle', 'porcini', 
+      'cremini', 'enoki', 'button mushroom', 'fungi'
+    ],
+    'Bell Peppers': [
+      'bell pepper', 'capsicum', 'sweet pepper', 'paprika', 'pimento',
+      'red pepper', 'green pepper', 'yellow pepper'
+    ],
+    'Raw Fish': [
+      'sushi', 'sashimi', 'raw', 'tartare', 'ceviche', 'crudo', 'poke',
+      'carpaccio', 'uncooked fish'
+    ],
+    'Very Spicy': [
+      'spicy', 'hot', 'chili', 'jalapeno', 'habanero', 'sriracha', 
+      'wasabi', 'cayenne', 'ghost pepper', 'scotch bonnet', 'thai hot'
+    ],
     'Sweet Foods': [
-      'sweet', 'dessert', 'candy', 'chocolate', 'sugar', 'syrup', 'honey', 'caramel',
-      'frosting', 'glazed', 'pastry', 'cookie', 'cake', 'pie', 'ice cream', 'pudding'
+      'sweet', 'dessert', 'candy', 'chocolate', 'sugar', 'syrup', 'honey',
+      'caramel', 'frosting', 'glazed', 'pastry', 'cookie', 'cake', 'pie',
+      'ice cream', 'pudding', 'custard', 'tart', 'cobbler', 'brownie',
+      'donut', 'muffin', 'danish', 'confection'
     ],
     'Oily Foods': [
       'fried', 'deep-fried', 'pan-fried', 'oil', 'greasy', 'butter', 'fatty',
-      'tempura', 'schnitzel', 'fritter', 'crispy', 'sautéed', 'deep fried'
+      'tempura', 'schnitzel', 'fritter', 'crispy', 'sautéed', 'deep fried',
+      'battered', 'breaded', 'crusted', 'confit', 'aioli', 'mayo', 
+      'mayonnaise', 'cream sauce'
     ]
   };
 
@@ -194,6 +228,17 @@ const analyzePreparationMethods = (itemContent: string): number => {
       score += points;
     }
   });
+
+  // Penalize unhealthy preparation methods
+  const unhealthyMethods = [
+    'fried', 'deep-fried', 'pan-fried', 'breaded', 'battered',
+    'tempura', 'crispy'
+  ];
+
+  if (unhealthyMethods.some(method => itemContent.toLowerCase().includes(method))) {
+    console.log("⚠️ Unhealthy preparation method detected");
+    return 0; // Complete rejection for unhealthy preparation methods
+  }
 
   return Math.min(20, score);
 };
