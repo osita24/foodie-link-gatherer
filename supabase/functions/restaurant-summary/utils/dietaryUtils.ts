@@ -20,23 +20,37 @@ export function checkDietaryCompatibility(
       )
     );
 
+    // For vegetarian/vegan restaurants, provide more nuanced feedback
+    if (['Vegetarian', 'Vegan'].includes(restriction)) {
+      const hasVegetarianOptions = restaurant.servesVegetarianFood;
+      const isStrictlyVegetarian = restaurant.types?.some(type => 
+        type.toLowerCase().includes('vegetarian') || 
+        type.toLowerCase().includes('vegan')
+      );
+      
+      if (!hasVegetarianOptions && !isStrictlyVegetarian) {
+        return {
+          isCompatible: false,
+          reason: `Limited ${restriction.toLowerCase()} options available - you may want to call ahead to confirm dietary accommodations`
+        };
+      }
+      
+      if (hasVegetarianOptions) {
+        return { 
+          isCompatible: true,
+          reason: isStrictlyVegetarian 
+            ? `Specializes in ${restriction.toLowerCase()} cuisine`
+            : `Offers dedicated ${restriction.toLowerCase()} menu options`
+        };
+      }
+    }
+
+    // For other dietary restrictions, check type compatibility
     if (hasIncompatibleType) {
       return {
         isCompatible: false,
-        reason: `This restaurant specializes in dishes that don't align with your ${restriction.toLowerCase()} preferences`
+        reason: `This restaurant specializes in cuisine that may not align with your ${restriction.toLowerCase()} preferences - call ahead to discuss options`
       };
-    }
-
-    // For vegetarian/vegan restaurants, check if they explicitly cater to these diets
-    if (['Vegetarian', 'Vegan'].includes(restriction)) {
-      const isVegetarianFriendly = restaurant.servesVegetarianFood;
-      
-      if (!isVegetarianFriendly) {
-        return {
-          isCompatible: false,
-          reason: `This restaurant doesn't have a dedicated ${restriction.toLowerCase()} menu`
-        };
-      }
     }
   }
 
@@ -53,11 +67,20 @@ export function generateDietaryMatchReason(
 
   const restriction = preferences.dietary_restrictions[0];
   
-  if (['Vegetarian', 'Vegan'].includes(restriction) && restaurant.servesVegetarianFood) {
-    return {
-      emoji: "🥗",
-      text: `Dedicated ${restriction.toLowerCase()} menu available`
-    };
+  if (['Vegetarian', 'Vegan'].includes(restriction)) {
+    const isStrictlyVegetarian = restaurant.types?.some(type => 
+      type.toLowerCase().includes('vegetarian') || 
+      type.toLowerCase().includes('vegan')
+    );
+
+    if (restaurant.servesVegetarianFood) {
+      return {
+        emoji: "🥗",
+        text: isStrictlyVegetarian
+          ? `Dedicated ${restriction.toLowerCase()} restaurant`
+          : `Offers ${restriction.toLowerCase()} menu options`
+      };
+    }
   }
 
   return null;
