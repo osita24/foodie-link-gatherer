@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import AuthForm from "./AuthForm";
 import AuthHeader from "./AuthHeader";
@@ -12,7 +12,7 @@ interface AuthModalProps {
 }
 
 const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
-  const location = useLocation();
+  const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -34,25 +34,34 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
             emailRedirectTo: window.location.origin
           }
         });
+
+        if (result.error) {
+          throw result.error;
+        }
+
+        // If signup is successful, redirect to onboarding
+        if (result.data.user) {
+          console.log("✅ Signup successful, redirecting to onboarding...");
+          toast({
+            title: "Welcome to Cilantro!",
+            description: "Let's set up your preferences.",
+          });
+          onOpenChange(false);
+          navigate('/onboarding');
+          return;
+        }
       } else {
         result = await supabase.auth.signInWithPassword({
           email,
           password,
         });
-      }
 
-      if (result.error) {
-        throw result.error;
-      }
+        if (result.error) {
+          throw result.error;
+        }
 
-      if (isSignUp) {
         toast({
-          title: "Success!",
-          description: "Please check your email to verify your account.",
-        });
-      } else {
-        toast({
-          title: "Success!",
+          title: "Welcome back!",
           description: "Successfully signed in.",
         });
         onOpenChange(false);
