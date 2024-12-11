@@ -94,6 +94,10 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
     console.log('📊 Search response status:', data.status);
     
     if (data.status === 'ZERO_RESULTS') {
+      console.log('⚠️ No results found from text search, trying place details directly if place ID exists');
+      if (placeId) {
+        return await getPlaceDetails(placeId);
+      }
       throw new Error('No restaurant found at this location');
     }
     
@@ -168,6 +172,7 @@ async function getPlaceDetails(placeId: string): Promise<any> {
   }
   
   const data = await response.json();
+  console.log('📊 Place details response status:', data.status);
   
   if (data.status !== 'OK') {
     console.error('❌ Place Details API error:', data);
