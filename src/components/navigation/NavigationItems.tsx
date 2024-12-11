@@ -12,24 +12,33 @@ export const NavigationItems = () => {
       if (!session?.user?.id) return;
 
       try {
-        const { data: preferences } = await supabase
+        const { data: preferences, error } = await supabase
           .from('user_preferences')
           .select('*')
           .eq('user_id', session.user.id)
-          .single();
+          .maybeSingle();
 
-        if (preferences) {
-          let completed = 0;
-          let total = 5;
-
-          if (preferences.cuisine_preferences?.length > 0) completed++;
-          if (preferences.dietary_restrictions?.length > 0) completed++;
-          if (preferences.favorite_ingredients?.length > 0) completed++;
-          if (preferences.atmosphere_preferences?.length > 0) completed++;
-          if (preferences.favorite_proteins?.length > 0) completed++;
-
-          setCompletionPercentage((completed / total) * 100);
+        if (error) {
+          console.error('Error checking profile completion:', error);
+          return;
         }
+
+        // If no preferences exist yet, show the indicator
+        if (!preferences) {
+          setCompletionPercentage(0);
+          return;
+        }
+
+        let completed = 0;
+        let total = 5;
+
+        if (preferences.cuisine_preferences?.length > 0) completed++;
+        if (preferences.dietary_restrictions?.length > 0) completed++;
+        if (preferences.favorite_ingredients?.length > 0) completed++;
+        if (preferences.atmosphere_preferences?.length > 0) completed++;
+        if (preferences.favorite_proteins?.length > 0) completed++;
+
+        setCompletionPercentage((completed / total) * 100);
       } catch (error) {
         console.error('Error checking profile completion:', error);
       }
