@@ -43,6 +43,15 @@ export const calculateMenuItemScore = async (
     };
   }
 
+  // Check for high sodium indicators
+  const highSodiumKeywords = ['salty', 'brined', 'cured', 'pickled', 'soy sauce', 'fish sauce', 'teriyaki'];
+  const hasHighSodiumIndicators = highSodiumKeywords.some(keyword => 
+    itemContent.toLowerCase().includes(keyword)
+  );
+
+  // Adjust score for high sodium preference
+  const sodiumPenalty = preferences.foodsToAvoid?.includes('High Sodium') && hasHighSodiumIndicators ? -30 : 0;
+  
   // Calculate preparation method score
   const prepScore = semanticResults.prepMethod.includes('fried') ? 0 : 20;
   
@@ -55,16 +64,17 @@ export const calculateMenuItemScore = async (
     cuisineMatch: preferences.cuisine_preferences?.includes(
       semanticResults.cuisineType
     ) ? 25 : 0,
-    ingredientMatch: 0, // Will be enhanced with ingredient semantic analysis
+    ingredientMatch: 0,
     preparationMatch: prepScore
   };
 
   const totalScore = Math.min(100, Math.max(0,
-    Object.values(factors).reduce((sum, score) => sum + score, 0)
+    Object.values(factors).reduce((sum, score) => sum + score, 0) + sodiumPenalty
   ));
 
   console.log("📊 Final score calculation:", {
     factors,
+    sodiumPenalty,
     totalScore,
     semanticResults
   });

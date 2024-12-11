@@ -37,6 +37,20 @@ export const analyzeDietaryCompliance = async (
   const preferenceViolations = userRestrictions
     .filter(r => r.severity === 'preference')
     .reduce((score, restriction) => {
+      // Special handling for high sodium
+      if (restriction.name === 'High Sodium') {
+        const highSodiumKeywords = ['salty', 'brined', 'cured', 'pickled', 'soy sauce', 'fish sauce', 'teriyaki'];
+        const hasHighSodiumIndicators = highSodiumKeywords.some(keyword => 
+          itemContent.toLowerCase().includes(keyword)
+        );
+        
+        if (hasHighSodiumIndicators) {
+          console.log("⚠️ Found high sodium indicators");
+          return score - 30;
+        }
+        return score;
+      }
+
       const matchesRestriction = semanticResults.mainIngredients
         .some((ingredient: string) => 
           ingredient.toLowerCase().includes(restriction.name.toLowerCase())
