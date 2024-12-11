@@ -41,40 +41,44 @@ export const calculateMenuItemScore = (
     factors.avoidanceImpact = -25 * avoidanceResult.matches.length;
   }
 
-  // WEIGHTED SCORING
-  // 1. Protein Preferences (20% weight)
+  // Calculate base score without cuisine preferences
+  // 1. Protein Preferences (25% weight)
   if (!preferences.dietary_restrictions?.includes('Vegetarian') && 
       !preferences.dietary_restrictions?.includes('Vegan')) {
     const proteinMatch = checkProteinMatch(itemContent, preferences);
-    factors.proteinMatch = proteinMatch ? 20 : 0;
+    factors.proteinMatch = proteinMatch ? 25 : 0;
     console.log("🥩 Protein match score:", factors.proteinMatch);
   }
 
-  // 2. Cuisine Preferences (25% weight)
-  const cuisineMatch = checkCuisineMatch(itemContent, preferences);
-  factors.cuisineMatch = cuisineMatch ? 25 : 0;
-  console.log("🍽️ Cuisine match score:", factors.cuisineMatch);
-
-  // 3. Favorite Ingredients (15% weight)
+  // 2. Favorite Ingredients (20% weight)
   const ingredientMatch = checkIngredientMatch(itemContent, preferences);
-  factors.ingredientMatch = ingredientMatch ? 15 : 0;
+  factors.ingredientMatch = ingredientMatch ? 20 : 0;
   console.log("🌶️ Ingredient match score:", factors.ingredientMatch);
 
-  // 4. Preparation Methods (10% weight)
+  // 3. Preparation Methods (15% weight)
   const prepScore = analyzePreparationMethods(itemContent);
   factors.preparationMatch = prepScore;
   console.log("👨‍🍳 Preparation method score:", factors.preparationMatch);
 
-  // Base score (30%) + weighted factors
-  const baseScore = 30;
-  const totalScore = Math.min(100, Math.max(0, 
+  // Base score calculation without cuisine
+  const baseScore = 40; // Increased base score to compensate for cuisine being optional
+
+  // Calculate initial score without cuisine bonus
+  let totalScore = Math.min(100, Math.max(0, 
     baseScore + 
     factors.proteinMatch + 
-    factors.cuisineMatch + 
     factors.ingredientMatch + 
     factors.preparationMatch +
     factors.avoidanceImpact
   ));
+
+  // Add cuisine bonus (up to 25% extra) if there's a match
+  const cuisineMatch = checkCuisineMatch(itemContent, preferences);
+  if (cuisineMatch) {
+    factors.cuisineMatch = 25;
+    totalScore = Math.min(100, totalScore + 25); // Add cuisine bonus but cap at 100
+    console.log("🍽️ Added cuisine match bonus:", factors.cuisineMatch);
+  }
 
   console.log("📊 Final score calculation:", {
     baseScore,
@@ -125,5 +129,5 @@ const analyzePreparationMethods = (itemContent: string): number => {
     }
   });
 
-  return Math.min(20, score);
+  return Math.min(15, score); // Cap preparation score at 15%
 };
