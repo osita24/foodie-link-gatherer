@@ -39,13 +39,14 @@ const RestaurantPreferences = () => {
           .from('user_preferences')
           .select('*')
           .eq('user_id', user.id)
-          .maybeSingle();
+          .maybeSingle(); // Use maybeSingle() instead of single() to handle no rows gracefully
 
         if (error) {
           console.error("Error checking preferences:", error);
           throw error;
         }
 
+        // If user has preferences, use them
         if (existingPrefs) {
           console.log("Found existing preferences:", existingPrefs);
           setPreferences({
@@ -100,18 +101,6 @@ const RestaurantPreferences = () => {
 
       console.log("Saving preferences for user:", user.id);
 
-      // First, check if preferences exist for this user
-      const { data: existingPrefs, error: checkError } = await supabase
-        .from('user_preferences')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error("Error checking existing preferences:", checkError);
-        throw checkError;
-      }
-
       const preferencesData = {
         user_id: user.id,
         cuisine_preferences: preferences.cuisinePreferences,
@@ -122,23 +111,11 @@ const RestaurantPreferences = () => {
         special_considerations: preferences.specialConsiderations,
       };
 
-      let saveError;
-      if (existingPrefs) {
-        // Update existing preferences
-        const { error } = await supabase
-          .from('user_preferences')
-          .update(preferencesData)
-          .eq('id', existingPrefs.id);
-        saveError = error;
-      } else {
-        // Insert new preferences
-        const { error } = await supabase
-          .from('user_preferences')
-          .insert([preferencesData]);
-        saveError = error;
-      }
+      const { error } = await supabase
+        .from('user_preferences')
+        .upsert(preferencesData);
 
-      if (saveError) throw saveError;
+      if (error) throw error;
 
       console.log("Preferences saved successfully");
       toast({
