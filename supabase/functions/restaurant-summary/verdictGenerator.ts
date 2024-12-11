@@ -15,9 +15,17 @@ export function generateVerdict(
   const dietaryCheck = checkDietaryCompatibility(restaurant, preferences);
   if (!dietaryCheck.isCompatible) {
     console.log("❌ Restaurant incompatible with dietary restrictions:", dietaryCheck.reason);
+    const reasons = generateNegativeReasons(restaurant, preferences);
+    // Ensure exactly 3 reasons
+    while (reasons.length < 3) {
+      reasons.push({
+        emoji: "⚠️",
+        text: "May not align with your dietary preferences"
+      });
+    }
     return {
       verdict: "CONSIDER ALTERNATIVES",
-      reasons: generateNegativeReasons(restaurant, preferences)
+      reasons: reasons.slice(0, 3)
     };
   }
 
@@ -33,21 +41,41 @@ export function generateVerdict(
   console.log("📊 Weighted score:", weightedScore);
 
   let verdict: Verdict;
-  let reasons: Array<{ emoji: string; text: string }>;
+  let reasons = weightedScore >= 85 
+    ? generatePositiveReasons(restaurant, preferences)
+    : weightedScore >= 65 
+      ? generatePositiveReasons(restaurant, preferences)
+      : generateNegativeReasons(restaurant, preferences);
 
+  // Ensure exactly 3 reasons
+  while (reasons.length < 3) {
+    if (weightedScore >= 65) {
+      reasons.push({
+        emoji: "✨",
+        text: "Generally matches your preferences"
+      });
+    } else {
+      reasons.push({
+        emoji: "⚠️",
+        text: "May not fully match your preferences"
+      });
+    }
+  }
+
+  // Set verdict based on score
   if (weightedScore >= 85) {
     verdict = "PERFECT MATCH";
-    reasons = generatePositiveReasons(restaurant, preferences);
   } else if (weightedScore >= 65) {
     verdict = "WORTH EXPLORING";
-    reasons = generatePositiveReasons(restaurant, preferences);
   } else {
     verdict = "CONSIDER ALTERNATIVES";
-    reasons = generateNegativeReasons(restaurant, preferences);
   }
 
   console.log("✨ Generated verdict:", verdict);
   console.log("📝 Generated reasons:", reasons);
 
-  return { verdict, reasons };
+  return { 
+    verdict, 
+    reasons: reasons.slice(0, 3) // Ensure exactly 3 reasons
+  };
 }

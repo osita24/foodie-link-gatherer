@@ -139,6 +139,10 @@ const checkFoodsToAvoid = (itemContent: string, preferences: any): string | null
     'Oily Foods': [
       'fried', 'deep-fried', 'pan-fried', 'oil', 'greasy', 'butter', 'fatty',
       'tempura', 'schnitzel', 'fritter', 'crispy', 'sautéed', 'deep fried'
+    ],
+    'Salty Foods': [
+      'salt', 'soy sauce', 'fish sauce', 'miso', 'pickled', 'cured', 'brined',
+      'preserved', 'teriyaki', 'bacon', 'ham', 'anchovy', 'capers', 'olives'
     ]
   };
 
