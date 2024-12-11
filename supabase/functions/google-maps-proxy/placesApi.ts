@@ -12,7 +12,12 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
     // If placeId is provided, use it directly
     if (placeId) {
       console.log('🎯 Using provided place ID:', placeId);
-      return await getPlaceDetails(placeId);
+      const details = await getPlaceDetails(placeId);
+      if (!details?.result) {
+        console.error('❌ No details found for place ID:', placeId);
+        throw new Error('Restaurant details not found');
+      }
+      return details;
     }
 
     if (!url) {
@@ -93,14 +98,9 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
     const data = await response.json();
     console.log('📊 Search response status:', data.status);
     
-    if (data.status === 'ZERO_RESULTS') {
-      console.log('⚠️ No results found from text search');
+    if (!data.results?.[0]) {
+      console.error('❌ No results found from text search:', data);
       throw new Error('Could not find restaurant. Please check the URL and try again.');
-    }
-    
-    if (data.status !== 'OK' || !data.results?.[0]) {
-      console.error('❌ Places API error:', data);
-      throw new Error(`Places API error: ${data.status}`);
     }
     
     const foundPlaceId = data.results[0].place_id;
@@ -171,9 +171,9 @@ async function getPlaceDetails(placeId: string): Promise<any> {
   const data = await response.json();
   console.log('📊 Place details response status:', data.status);
   
-  if (data.status !== 'OK') {
+  if (data.status !== 'OK' || !data.result) {
     console.error('❌ Place Details API error:', data);
-    throw new Error(`Place Details API error: ${data.status}`);
+    throw new Error('Restaurant details not found');
   }
 
   console.log('✅ Successfully retrieved place details');
