@@ -8,6 +8,7 @@ import DietaryStep from "@/components/onboarding/steps/DietaryStep";
 import CuisineStep from "@/components/onboarding/steps/CuisineStep";
 import AvoidanceStep from "@/components/onboarding/steps/AvoidanceStep";
 import AtmosphereStep from "@/components/onboarding/steps/AtmosphereStep";
+import ProteinStep from "@/components/onboarding/steps/ProteinStep";
 
 const Onboarding = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ const Onboarding = () => {
     dietaryRestrictions: [] as string[],
     foodsToAvoid: [] as string[],
     atmospherePreferences: [] as string[],
+    favoriteProteins: [] as string[],
   });
 
   const canProgress = () => {
@@ -32,6 +34,8 @@ const Onboarding = () => {
       case 4:
         return preferences.foodsToAvoid.length > 0;
       case 5:
+        return preferences.favoriteProteins.length > 0;
+      case 6:
         return preferences.atmospherePreferences.length > 0;
       default:
         return false;
@@ -50,7 +54,7 @@ const Onboarding = () => {
   }, [navigate]);
 
   const handleNext = async () => {
-    if (step === 5) {
+    if (step === 6) {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
@@ -67,6 +71,7 @@ const Onboarding = () => {
             dietary_restrictions: preferences.dietaryRestrictions,
             favorite_ingredients: preferences.foodsToAvoid,
             atmosphere_preferences: preferences.atmospherePreferences,
+            favorite_proteins: preferences.favoriteProteins,
           });
 
         if (preferencesError) throw preferencesError;
@@ -139,6 +144,17 @@ const Onboarding = () => {
 
       case 5:
         return (
+          <ProteinStep
+            selected={preferences.favoriteProteins}
+            onChange={(proteins) => setPreferences(prev => ({
+              ...prev,
+              favoriteProteins: proteins
+            }))}
+          />
+        );
+
+      case 6:
+        return (
           <AtmosphereStep
             selected={preferences.atmospherePreferences}
             onChange={(atmospheres) => setPreferences(prev => ({
@@ -153,10 +169,10 @@ const Onboarding = () => {
   return (
     <OnboardingLayout
       currentStep={step}
-      totalSteps={5}
+      totalSteps={6}
       onNext={handleNext}
       onBack={handleBack}
-      isLastStep={step === 5}
+      isLastStep={step === 6}
       canProgress={canProgress()}
     >
       {renderStep()}
