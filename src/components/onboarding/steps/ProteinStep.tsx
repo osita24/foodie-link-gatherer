@@ -22,6 +22,15 @@ interface ProteinStepProps {
 }
 
 const ProteinStep = ({ selected, onChange }: ProteinStepProps) => {
+  const handleProteinToggle = (proteinName: string) => {
+    if (selected.includes(proteinName)) {
+      onChange(selected.filter((p) => p !== proteinName));
+    } else {
+      onChange([...selected, proteinName]);
+    }
+    console.log("Updated protein preferences:", selected); // Log for debugging
+  };
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -38,13 +47,7 @@ const ProteinStep = ({ selected, onChange }: ProteinStepProps) => {
             label={protein.name}
             icon={protein.icon}
             selected={selected.includes(protein.name)}
-            onClick={() => {
-              if (selected.includes(protein.name)) {
-                onChange(selected.filter((p) => p !== protein.name));
-              } else {
-                onChange([...selected, protein.name]);
-              }
-            }}
+            onClick={() => handleProteinToggle(protein.name)}
           />
         ))}
       </div>
