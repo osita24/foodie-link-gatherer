@@ -1,16 +1,16 @@
-import { RestaurantFeatures, UserPreferences } from "./types.ts";
+import { RestaurantFeatures, UserPreferences } from "./types";
 
 export function calculateDietaryScore(restaurant: RestaurantFeatures, preferences: UserPreferences): number {
   console.log("🥗 Calculating enhanced dietary score for:", restaurant.name);
-  console.log("👤 User dietary preferences:", preferences.dietary_restrictions);
+  console.log("👤 User dietary preferences:", preferences.dietaryRestrictions);
 
   let score = 75; // Start with a neutral score
 
   // Critical dietary restrictions check with enhanced validation
-  if (preferences.dietary_restrictions?.length) {
+  if (preferences.dietaryRestrictions?.length) {
     // Vegetarian/Vegan checks with stricter validation
-    if (preferences.dietary_restrictions.includes('Vegetarian') || 
-        preferences.dietary_restrictions.includes('Vegan')) {
+    if (preferences.dietaryRestrictions.includes('Vegetarian') || 
+        preferences.dietaryRestrictions.includes('Vegan')) {
       if (!restaurant.servesVegetarianFood) {
         console.log("❌ Restaurant doesn't serve vegetarian food");
         return 0; // Complete rejection for dietary incompatibility
@@ -22,13 +22,13 @@ export function calculateDietaryScore(restaurant: RestaurantFeatures, preference
     const hasConflictingTypes = restaurant.types?.some(type => {
       const lowerType = type.toLowerCase();
       return (
-        (preferences.dietary_restrictions.includes('Gluten-Free') && 
+        (preferences.dietaryRestrictions.includes('Gluten-Free') && 
          (lowerType.includes('pasta') || lowerType.includes('pizza') || 
           lowerType.includes('bakery') || lowerType.includes('brewery'))) ||
-        (preferences.dietary_restrictions.includes('Dairy-Free') && 
+        (preferences.dietaryRestrictions.includes('Dairy-Free') && 
          (lowerType.includes('cheese') || lowerType.includes('ice cream') || 
           lowerType.includes('creamery'))) ||
-        (preferences.dietary_restrictions.includes('High Sodium') &&
+        (preferences.dietaryRestrictions.includes('High Sodium') &&
          (lowerType.includes('fast food') || lowerType.includes('chinese') || 
           lowerType.includes('korean') || lowerType.includes('bbq')))
       );
@@ -46,16 +46,16 @@ export function calculateDietaryScore(restaurant: RestaurantFeatures, preference
 
 export function calculateCuisineScore(restaurant: RestaurantFeatures, preferences: UserPreferences): number {
   console.log("🍽️ Calculating enhanced cuisine score for:", restaurant.name);
-  console.log("👤 User cuisine preferences:", preferences.cuisine_preferences);
+  console.log("👤 User cuisine preferences:", preferences.cuisinePreferences);
 
-  if (!preferences.cuisine_preferences?.length) return 75;
+  if (!preferences.cuisinePreferences?.length) return 75;
 
   const restaurantCuisines = restaurant.types?.filter(type => 
     type.includes('cuisine') || type.includes('food')
   ) || [];
 
   const matchCount = restaurantCuisines.filter(cuisine =>
-    preferences.cuisine_preferences.some(pref => 
+    preferences.cuisinePreferences.some(pref => 
       cuisine.toLowerCase().includes(pref.toLowerCase())
     )
   ).length;
@@ -69,14 +69,14 @@ export function calculateCuisineScore(restaurant: RestaurantFeatures, preference
 export function calculateProteinScore(restaurant: RestaurantFeatures, preferences: UserPreferences): number {
   console.log("🥩 Calculating enhanced protein score for:", restaurant.name);
   
-  if (preferences.dietary_restrictions?.includes('Vegetarian') || 
-      preferences.dietary_restrictions?.includes('Vegan')) {
+  if (preferences.dietaryRestrictions?.includes('Vegetarian') || 
+      preferences.dietaryRestrictions?.includes('Vegan')) {
     console.log("🌱 User is vegetarian/vegan - skipping protein score");
     return 85; // Higher base score for vegetarian/vegan preferences
   }
 
-  if (!preferences.favorite_proteins?.length || 
-      preferences.favorite_proteins.includes("Doesn't Apply")) {
+  if (!preferences.favoriteProteins?.length || 
+      preferences.favoriteProteins.includes("Doesn't Apply")) {
     return 75;
   }
 
@@ -91,7 +91,7 @@ export function calculateProteinScore(restaurant: RestaurantFeatures, preference
     'Turkey': ['sandwich', 'deli', 'american', 'thanksgiving'],
   };
 
-  const matchCount = preferences.favorite_proteins.filter(protein =>
+  const matchCount = preferences.favoriteProteins.filter(protein =>
     restaurant.types?.some(type =>
       proteinMatches[protein]?.some(keyword =>
         type.toLowerCase().includes(keyword)
@@ -106,7 +106,7 @@ export function calculateProteinScore(restaurant: RestaurantFeatures, preference
 }
 
 export function calculatePriceScore(restaurant: RestaurantFeatures, preferences: UserPreferences): number {
-  if (!preferences.price_range) return 75;
+  if (!preferences.priceRange) return 75;
 
   const priceMap: Record<string, number[]> = {
     'budget': [1],
@@ -115,7 +115,7 @@ export function calculatePriceScore(restaurant: RestaurantFeatures, preferences:
     'luxury': [3, 4]
   };
 
-  const preferredLevels = priceMap[preferences.price_range];
+  const preferredLevels = priceMap[preferences.priceRange];
   const restaurantLevel = restaurant.priceLevel || 2;
 
   // Enhanced price matching with more nuanced scoring
@@ -126,7 +126,7 @@ export function calculatePriceScore(restaurant: RestaurantFeatures, preferences:
 }
 
 export function calculateAtmosphereScore(restaurant: RestaurantFeatures, preferences: UserPreferences): number {
-  if (!preferences.atmosphere_preferences?.length) return 75;
+  if (!preferences.atmospherePreferences?.length) return 75;
 
   // Enhanced atmosphere matching with more specific features
   const features = {
@@ -139,7 +139,7 @@ export function calculateAtmosphereScore(restaurant: RestaurantFeatures, prefere
     'Outdoor Seating': restaurant.hasOutdoorSeating,
   };
 
-  const matchCount = preferences.atmosphere_preferences.filter(pref => features[pref]).length;
+  const matchCount = preferences.atmospherePreferences.filter(pref => features[pref]).length;
   // Enhanced scoring system for atmosphere matches
   return Math.min(100, 70 + (matchCount * 15));
 }
