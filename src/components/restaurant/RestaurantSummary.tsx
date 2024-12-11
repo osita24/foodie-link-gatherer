@@ -37,11 +37,30 @@ const RestaurantSummary = ({ restaurant }: RestaurantSummaryProps) => {
 
         console.log("👤 User preferences loaded:", preferences);
 
+        if (!preferences) {
+          console.log("❌ No preferences found for user");
+          return;
+        }
+
         const { data, error } = await supabase.functions.invoke("restaurant-summary", {
-          body: { restaurant, preferences }
+          body: { 
+            restaurant,
+            preferences: {
+              ...preferences,
+              // Ensure all required fields are present
+              cuisine_preferences: preferences.cuisine_preferences || [],
+              dietary_restrictions: preferences.dietary_restrictions || [],
+              favorite_ingredients: preferences.favorite_ingredients || [],
+              favorite_proteins: preferences.favorite_proteins || [],
+              atmosphere_preferences: preferences.atmosphere_preferences || [],
+            }
+          }
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error("❌ Error generating summary:", error);
+          throw error;
+        }
 
         console.log("✨ Generated summary:", data);
         setSummary(data);
