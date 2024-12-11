@@ -14,19 +14,40 @@ const ProfileSettings = () => {
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
+      try {
+        console.log("🔍 Fetching user profile data...");
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          console.log("👤 Found user:", user.id);
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .maybeSingle();
 
-        setUserDetails({
-          name: profile?.full_name || "",
-          email: user.email || "",
-        });
+          if (error) {
+            console.error("❌ Error fetching profile:", error);
+            throw error;
+          }
+
+          if (profile) {
+            console.log("✅ Profile found:", profile);
+            setUserDetails({
+              name: profile.full_name || "",
+              email: user.email || "",
+            });
+          } else {
+            console.log("⚠️ No profile found, using email as name");
+            setUserDetails({
+              name: user.email?.split('@')[0] || "",
+              email: user.email || "",
+            });
+          }
+        }
+      } catch (error: any) {
+        console.error("Error fetching user details:", error);
+        toast.error("Failed to load profile information");
       }
     };
 
@@ -36,16 +57,21 @@ const ProfileSettings = () => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      console.log("💾 Saving profile updates...");
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
         const { error } = await supabase
           .from('profiles')
-          .update({ full_name: userDetails.name })
-          .eq('id', user.id);
+          .upsert({ 
+            id: user.id,
+            full_name: userDetails.name,
+            updated_at: new Date().toISOString()
+          });
 
         if (error) throw error;
 
+        console.log("✅ Profile updated successfully");
         setIsEditing(false);
         toast.success("Profile updated successfully");
       }
