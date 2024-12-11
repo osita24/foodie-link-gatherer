@@ -15,10 +15,20 @@ export async function analyzeMenuItem(
     console.log('🔍 Analyzing menu item:', item.name);
     
     const itemContent = `${item.name} ${item.description || ''}`.toLowerCase();
-    let score = 50; // Base score
+    let score = 45; // Base score
     let reasons: string[] = [];
     let warnings: string[] = [];
+
+    // First, check if this is a beverage
+    const beverageKeywords = [
+      'juice', 'smoothie', 'drink', 'tea', 'coffee', 'latte', 
+      'espresso', 'cappuccino', 'water', 'soda', 'pop', 'beer', 
+      'wine', 'cocktail', 'lemonade', 'milkshake', 'shake'
+    ];
     
+    const isBeverage = beverageKeywords.some(keyword => itemContent.includes(keyword));
+    console.log('🥤 Is beverage check:', isBeverage);
+
     // Check dietary preferences with weighted scoring
     if (preferences.dietary_restrictions?.length > 0) {
       console.log('🥗 Checking dietary restrictions:', preferences.dietary_restrictions);
@@ -31,7 +41,8 @@ export async function analyzeMenuItem(
           'anchovy', 'duck', 'veal', 'foie gras', 'chorizo', 'sausage'
         ];
         
-        const containsMeat = meatKeywords.some(keyword => itemContent.includes(keyword));
+        // Skip meat check for beverages unless specifically mentioned
+        const containsMeat = !isBeverage && meatKeywords.some(keyword => itemContent.includes(keyword));
         
         if (containsMeat) {
           console.log('❌ Item contains meat, not suitable for vegetarian diet');
@@ -41,11 +52,9 @@ export async function analyzeMenuItem(
             matchType: 'warning'
           };
         } else {
-          // Start with higher base score for vegetarian-compatible items
           score = 60;
           reasons.push("Suitable for vegetarians");
           
-          // Additional boost for explicitly vegetarian items
           const vegetarianKeywords = ['vegetarian', 'veggie', 'meatless', 'plant-based'];
           if (vegetarianKeywords.some(keyword => itemContent.includes(keyword))) {
             score += 20;
@@ -63,28 +72,28 @@ export async function analyzeMenuItem(
           'anchovy', 'duck', 'veal', 'foie gras', 'chorizo', 'sausage',
           'gelatin', 'whey', 'casein', 'ghee', 'lard', 'aioli'
         ];
+
+        // For beverages, only check dairy-related keywords
+        const dairyKeywords = ['milk', 'cream', 'whey', 'casein'];
+        const keywordsToCheck = isBeverage ? dairyKeywords : nonVeganKeywords;
         
-        const containsNonVegan = nonVeganKeywords.some(keyword => itemContent.includes(keyword));
+        const containsNonVegan = keywordsToCheck.some(keyword => itemContent.includes(keyword));
         
-        // If it's explicitly marked as vegan, give it a high score
         if (itemContent.includes('vegan')) {
           score = 90;
-          reasons.push("Certified vegan dish");
+          reasons.push("Certified vegan");
         } else if (containsNonVegan) {
-          // If user has multiple dietary preferences, don't immediately disqualify
           if (preferences.dietary_restrictions.length > 1) {
-            score = Math.max(30, score - 30); // Reduce score but don't zero it
-            warnings.push("Contains non-vegan ingredients");
+            score = Math.max(30, score - 30);
+            warnings.push(isBeverage ? "Contains dairy" : "Contains animal products");
           } else {
-            // If vegan is the only restriction, then be strict
             return {
               score: 0,
-              warning: "Contains animal products - not suitable for vegans",
+              warning: isBeverage ? "Contains dairy - not suitable for vegans" : "Contains animal products - not suitable for vegans",
               matchType: 'warning'
             };
           }
         } else {
-          // Potentially vegan items get a moderate score
           score = Math.max(score, 60);
           reasons.push("May be suitable for vegans - please verify");
         }
@@ -92,37 +101,30 @@ export async function analyzeMenuItem(
       
       // Check gluten-free preferences
       if (preferences.dietary_restrictions.includes("Gluten-Free")) {
-        const glutenKeywords = [
-          'bread', 'pasta', 'flour', 'wheat', 'tortilla', 'breaded',
-          'crusted', 'battered', 'soy sauce', 'teriyaki', 'noodles',
-          'ramen', 'udon', 'couscous', 'barley', 'malt', 'seitan', 'panko'
-        ];
-        
-        const containsGluten = glutenKeywords.some(keyword => itemContent.includes(keyword));
-        
-        if (containsGluten) {
-          if (preferences.dietary_restrictions.length > 1) {
-            score = Math.max(30, score - 20); // Reduce score but don't zero it
-            warnings.push("Contains gluten");
-          } else {
-            score = 20;
-            warnings.push("Contains gluten - not recommended for gluten-free diet");
+        // Most beverages are naturally gluten-free
+        if (!isBeverage) {
+          const glutenKeywords = [
+            'bread', 'pasta', 'flour', 'wheat', 'tortilla', 'breaded',
+            'crusted', 'battered', 'soy sauce', 'teriyaki', 'noodles',
+            'ramen', 'udon', 'couscous', 'barley', 'malt', 'seitan', 'panko'
+          ];
+          
+          const containsGluten = glutenKeywords.some(keyword => itemContent.includes(keyword));
+          
+          if (containsGluten) {
+            if (preferences.dietary_restrictions.length > 1) {
+              score = Math.max(30, score - 20);
+              warnings.push("Contains gluten");
+            } else {
+              score = 20;
+              warnings.push("Contains gluten - not recommended for gluten-free diet");
+            }
+          } else if (itemContent.includes('gluten-free')) {
+            score += 20;
+            reasons.push("Certified gluten-free");
           }
-        } else if (itemContent.includes('gluten-free')) {
-          score += 20;
-          reasons.push("Certified gluten-free");
         }
       }
-    }
-
-    // Check cuisine match
-    const cuisineMatches = preferences.cuisine_preferences?.filter(
-      (cuisine: string) => itemContent.includes(cuisine.toLowerCase())
-    );
-    
-    if (cuisineMatches?.length > 0) {
-      score += 15;
-      reasons.push(`Authentic ${cuisineMatches[0]} dish`);
     }
 
     // Check favorite ingredients
@@ -131,27 +133,40 @@ export async function analyzeMenuItem(
     );
 
     if (ingredientMatches?.length > 0) {
-      score += 15;
+      score += Math.min(15, ingredientMatches.length * 5);
       reasons.push(`Contains ${ingredientMatches[0]}, which you enjoy`);
     }
 
-    // Analyze cooking methods and ingredients
-    const healthyIndicators = {
-      "grilled": "Healthy grilled preparation",
-      "steamed": "Light and healthy steamed preparation",
-      "baked": "Oven-baked for a healthier option",
-      "fresh": "Made with fresh ingredients",
-      "organic": "Features organic ingredients",
-      "seasonal": "Made with seasonal ingredients",
-      "house-made": "Freshly prepared in-house"
-    };
+    // Analyze preparation methods and ingredients
+    if (!isBeverage) {
+      const healthyIndicators = {
+        "grilled": "Healthy grilled preparation",
+        "steamed": "Light and healthy steamed preparation",
+        "baked": "Oven-baked for a healthier option",
+        "fresh": "Made with fresh ingredients",
+        "organic": "Features organic ingredients",
+        "seasonal": "Made with seasonal ingredients",
+        "house-made": "Freshly prepared in-house"
+      };
 
-    for (const [indicator, reason] of Object.entries(healthyIndicators)) {
-      if (itemContent.includes(indicator)) {
-        score += 10;
-        reasons.push(reason);
-        break;
+      for (const [indicator, reason] of Object.entries(healthyIndicators)) {
+        if (itemContent.includes(indicator)) {
+          score += 10;
+          reasons.push(reason);
+          break;
+        }
       }
+    }
+
+    // Apply cuisine bonus if relevant (proportional to current score)
+    const cuisineMatches = preferences.cuisine_preferences?.filter(
+      (cuisine: string) => itemContent.includes(cuisine.toLowerCase())
+    );
+    
+    if (cuisineMatches?.length > 0) {
+      const bonusAmount = Math.min(25, score * 0.25);
+      score = Math.min(100, score + bonusAmount);
+      console.log("🍽️ Added proportional cuisine bonus:", bonusAmount);
     }
 
     // Determine match type based on final score and warnings
@@ -165,7 +180,7 @@ export async function analyzeMenuItem(
     }
 
     // Cap score between 0 and 100
-    score = Math.max(0, Math.min(100, score));
+    score = Math.max(0, Math.min(100, Math.round(score)));
 
     console.log('✅ Analysis complete:', { score, matchType, reason: reasons[0], warning: warnings[0] });
 
