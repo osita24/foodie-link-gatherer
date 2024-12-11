@@ -58,7 +58,7 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
       }
     }
 
-    // Try to extract place ID from URL
+    // Try to extract place ID from URL first
     try {
       const urlObj = new URL(finalUrl);
       const searchParams = new URLSearchParams(urlObj.search);
@@ -94,11 +94,8 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
     console.log('📊 Search response status:', data.status);
     
     if (data.status === 'ZERO_RESULTS') {
-      console.log('⚠️ No results found from text search, trying place details directly if place ID exists');
-      if (placeId) {
-        return await getPlaceDetails(placeId);
-      }
-      throw new Error('No restaurant found at this location');
+      console.log('⚠️ No results found from text search');
+      throw new Error('Could not find restaurant. Please check the URL and try again.');
     }
     
     if (data.status !== 'OK' || !data.results?.[0]) {
