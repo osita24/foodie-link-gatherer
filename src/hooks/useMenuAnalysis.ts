@@ -40,21 +40,21 @@ export const useMenuAnalysis = (processedMenu: MenuCategory[] | null) => {
         console.log("Found user preferences:", preferences);
 
         const details: Record<string, any> = {};
-        const analyzedItems = processedMenu[0].items.map(item => {
+        const analyzedItems = await Promise.all(processedMenu[0].items.map(async (item) => {
           const itemContent = `${item.name} ${item.description || ''}`.toLowerCase();
-          const { score, factors } = calculateMenuItemScore(itemContent, preferences);
-          const matchResult = resolveMatchType(score, factors, itemContent);
+          const result = await calculateMenuItemScore(itemContent, preferences);
+          const matchResult = resolveMatchType(result.score, result.factors, itemContent);
           
           details[item.id] = {
-            score,
+            score: result.score,
             ...matchResult
           };
 
           return {
             ...item,
-            matchScore: score
+            matchScore: result.score
           };
-        });
+        }));
 
         // Sort items by score
         const sortedItems = analyzedItems.sort((a, b) => 
