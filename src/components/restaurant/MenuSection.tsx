@@ -31,21 +31,14 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
     console.log("🔍 Initializing MenuSection with restaurant:", restaurant?.name);
     
     const setupAuth = async () => {
-      try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        console.log("🔐 Auth session loaded:", currentSession?.user?.id);
-        setSession(currentSession);
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      setSession(currentSession);
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-          console.log("🔄 Auth state changed:", session?.user?.id);
-          setSession(session);
-        });
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setSession(session);
+      });
 
-        return () => subscription.unsubscribe();
-      } catch (error) {
-        console.error("❌ Auth error:", error);
-        toast.error("Authentication error occurred");
-      }
+      return () => subscription.unsubscribe();
     };
 
     setupAuth();
@@ -53,7 +46,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
 
   useEffect(() => {
     if (menu) {
-      console.log("📋 Using provided menu data:", menu);
+      console.log("📋 Using provided menu data");
       setProcessedMenu(menu);
     } else if (menuUrl || photos?.length || reviews?.length) {
       console.log("🔄 Processing available data sources");
@@ -69,7 +62,6 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
       }));
       const topMatch = scores.sort((a, b) => b.score - a.score)[0];
       setTopMatchId(topMatch?.id || null);
-      console.log("🏆 Top match identified:", topMatch);
     }
   }, [itemMatchDetails, session]);
 
@@ -78,16 +70,17 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
     setError(null);
     
     try {
+      // Only send limited data to reduce processing time
       const payload = {
         menuUrl: menuUrl || null,
-        photos: photos || [],
-        reviews: reviews?.map(review => ({
+        photos: photos?.slice(0, 3) || [], // Limit photos
+        reviews: reviews?.slice(0, 5)?.map(review => ({ // Limit reviews
           text: review.text || '',
           rating: review.rating || 0
         })) || []
       };
 
-      console.log("📤 Sending payload to menu processor:", payload);
+      console.log("📤 Sending payload to menu processor");
       
       const { data, error } = await supabase.functions.invoke('menu-processor', {
         body: payload
@@ -99,11 +92,10 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
         throw new Error("No menu data generated");
       }
 
-      console.log("✅ Menu sections generated:", data.menuSections);
       setProcessedMenu(data.menuSections);
       toast.success(`Found ${data.menuSections[0].items.length} menu items`);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ Error processing restaurant data:", error);
       setError("Failed to load menu information");
       toast.error("Failed to generate menu information");
