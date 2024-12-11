@@ -40,11 +40,15 @@ export async function analyzeMenuItem(
             matchType: 'warning'
           };
         } else {
-          // Boost score for vegetarian-friendly items
+          // Start with higher base score for vegetarian-compatible items
+          score = 60;
+          reasons.push("Suitable for vegetarians");
+          
+          // Additional boost for explicitly vegetarian items
           const vegetarianKeywords = ['vegetarian', 'veggie', 'meatless', 'plant-based'];
           if (vegetarianKeywords.some(keyword => itemContent.includes(keyword))) {
-            score += 30;
-            reasons.push("Perfect for vegetarians");
+            score += 20;
+            reasons[0] = "Perfect for vegetarians"; // Update the reason
           }
         }
       }
@@ -69,11 +73,15 @@ export async function analyzeMenuItem(
             matchType: 'warning'
           };
         } else {
-          // Boost score for vegan-friendly items
+          // Start with higher base score for vegan-compatible items
+          score = 60;
+          reasons.push("Suitable for vegans");
+          
+          // Additional boost for explicitly vegan items
           const veganKeywords = ['vegan', 'plant-based', 'dairy-free'];
           if (veganKeywords.some(keyword => itemContent.includes(keyword))) {
-            score += 30;
-            reasons.push("Perfect for vegans");
+            score += 20;
+            reasons[0] = "Perfect for vegans"; // Update the reason
           }
         }
       }
