@@ -30,14 +30,15 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a friendly AI food recommender. Generate a short, engaging message (max 4 words) about how well a menu item matches a user's preferences. 
-            Be creative and fun, but clear about the match quality. Include an appropriate emoji.
+            content: `You are a friendly AI food recommender. Generate a short, personalized message (max 15 words) about how well a menu item matches a user's preferences. 
+            Be specific about why it matches or doesn't match, mentioning specific ingredients or preparations.
+            Include an appropriate emoji.
             
             Examples:
-            - "Perfect for you! 🎯"
-            - "Great protein match! 💪"
-            - "Matches your style! ✨"
-            - "Careful: contains dairy 🥛"`
+            - "Contains dairy and gluten - not suitable for your dietary needs 🚫"
+            - "Perfect match! Fresh vegetables align with your vegan preferences 🌱"
+            - "Spice level might be too high for your preference 🌶️"
+            - "Great choice! Matches your love of Vietnamese cuisine 🍜"`
           },
           {
             role: 'user',
@@ -47,7 +48,7 @@ serve(async (req) => {
             Item details: ${JSON.stringify(itemDetails)}
             User preferences: ${JSON.stringify(preferences)}
             
-            The message should reflect the match quality and any relevant dietary considerations.`
+            The message should be specific about why it matches or doesn't match the user's preferences.`
           }
         ],
         temperature: 0.7,
@@ -70,7 +71,7 @@ serve(async (req) => {
     console.error('Error generating match message:', error);
     return new Response(
       JSON.stringify({ 
-        message: matchType === 'warning' ? 'Check ingredients ⚠️' : 'Possible match 🤔'
+        message: matchType === 'warning' ? 'Not recommended for your dietary preferences ⚠️' : 'Possible match for your preferences 🤔'
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

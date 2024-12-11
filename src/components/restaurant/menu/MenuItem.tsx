@@ -1,5 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Tooltip,
   TooltipContent,
@@ -29,6 +31,46 @@ interface MenuItemProps {
 }
 
 const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
+  const [personalizedMessage, setPersonalizedMessage] = useState<string | null>(null);
+  const [isLoadingMessage, setIsLoadingMessage] = useState(false);
+
+  useEffect(() => {
+    const generatePersonalizedMessage = async () => {
+      if (!matchDetails) return;
+      
+      setIsLoadingMessage(true);
+      try {
+        const { data: preferences } = await supabase
+          .from('user_preferences')
+          .select('*')
+          .single();
+
+        const { data, error } = await supabase.functions.invoke('generate-match-message', {
+          body: {
+            matchType: matchDetails.matchType,
+            score: matchDetails.score,
+            itemDetails: {
+              name: item.name,
+              description: item.description,
+              dietaryInfo: item.dietaryInfo
+            },
+            preferences
+          }
+        });
+
+        if (error) throw error;
+        setPersonalizedMessage(data.message);
+      } catch (error) {
+        console.error('Failed to generate personalized message:', error);
+        setPersonalizedMessage(matchDetails.warning || matchDetails.reason || 'Match status unclear');
+      } finally {
+        setIsLoadingMessage(false);
+      }
+    };
+
+    generatePersonalizedMessage();
+  }, [item, matchDetails]);
+
   const cleanName = item.name
     .replace(/^\d+\.\s*/, '')
     .replace(/\*\*/g, '')
@@ -55,7 +97,6 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
     }
   };
 
-  // Determine dietary badges based on item description and name
   const getDietaryBadges = () => {
     const badges: string[] = [];
     const content = `${item.name} ${item.description || ''}`.toLowerCase();
@@ -108,14 +149,13 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
                     <p className="text-sm font-medium">
                       {matchDetails.score}% Match Score
                     </p>
-                    {matchDetails.reason && (
-                      <p className="text-xs text-gray-500">
-                        {matchDetails.reason}
+                    {isLoadingMessage ? (
+                      <p className="text-xs text-gray-500 animate-pulse">
+                        Analyzing match...
                       </p>
-                    )}
-                    {matchDetails.warning && (
-                      <p className="text-xs text-red-500">
-                        {matchDetails.warning}
+                    ) : personalizedMessage && (
+                      <p className="text-xs text-gray-500">
+                        {personalizedMessage}
                       </p>
                     )}
                   </div>
@@ -129,18 +169,19 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
         
         <DietaryBadges badges={getDietaryBadges()} />
         
-        {matchDetails && (matchDetails.reason || matchDetails.warning) && (
+        {matchDetails && personalizedMessage && (
           <div className="flex items-center gap-2 flex-wrap mt-3 animate-fade-in-up">
-            {matchDetails.matchType !== 'warning' && matchDetails.reason && (
-              <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50 text-xs">
-                {matchDetails.reason} ✨
-              </Badge>
-            )}
-            {matchDetails.matchType === 'warning' && matchDetails.warning && (
-              <Badge variant="outline" className="text-red-700 border-red-200 bg-red-50 text-xs">
-                {matchDetails.warning} ⚠️
-              </Badge>
-            )}
+            <Badge 
+              variant="outline" 
+              className={cn(
+                "text-xs",
+                matchDetails.matchType === 'warning' 
+                  ? "text-red-700 border-red-200 bg-red-50"
+                  : "text-emerald-700 border-emerald-200 bg-emerald-50"
+              )}
+            >
+              {personalizedMessage}
+            </Badge>
           </div>
         )}
       </div>
