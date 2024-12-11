@@ -9,8 +9,6 @@ export interface ScoreFactors {
 export interface MenuAnalysisResult {
   score: number;
   factors: ScoreFactors;
-  matchType?: 'perfect' | 'good' | 'neutral' | 'warning';
-  reason?: string;
 }
 
 export interface DietaryRestriction {

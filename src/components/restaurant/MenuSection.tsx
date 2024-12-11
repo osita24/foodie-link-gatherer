@@ -31,20 +31,14 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
     console.log("🔍 Initializing MenuSection with restaurant:", restaurant?.name);
     
     const setupAuth = async () => {
-      try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        console.log("Auth session:", currentSession ? "Found" : "Not found");
-        setSession(currentSession);
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      setSession(currentSession);
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-          console.log("Auth state changed:", session ? "Logged in" : "Logged out");
-          setSession(session);
-        });
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setSession(session);
+      });
 
-        return () => subscription.unsubscribe();
-      } catch (error) {
-        console.error("Error setting up auth:", error);
-      }
+      return () => subscription.unsubscribe();
     };
 
     setupAuth();
@@ -76,37 +70,28 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
     setError(null);
     
     try {
-      if (!session) {
-        console.log("No authenticated session, skipping menu processing");
-        return;
-      }
-
+      // Only send limited data to reduce processing time
       const payload = {
         menuUrl: menuUrl || null,
-        photos: photos?.slice(0, 3) || [],
-        reviews: reviews?.slice(0, 5)?.map(review => ({
+        photos: photos?.slice(0, 3) || [], // Limit photos
+        reviews: reviews?.slice(0, 5)?.map(review => ({ // Limit reviews
           text: review.text || '',
           rating: review.rating || 0
         })) || []
       };
 
-      console.log("📤 Sending payload to menu processor:", payload);
+      console.log("📤 Sending payload to menu processor");
       
       const { data, error } = await supabase.functions.invoke('menu-processor', {
         body: payload
       });
 
-      if (error) {
-        console.error("❌ Menu processor error:", error);
-        throw error;
-      }
+      if (error) throw error;
 
       if (!data?.menuSections?.length) {
-        console.error("❌ No menu sections returned");
         throw new Error("No menu data generated");
       }
 
-      console.log("✅ Menu sections received:", data.menuSections);
       setProcessedMenu(data.menuSections);
       toast.success(`Found ${data.menuSections[0].items.length} menu items`);
       

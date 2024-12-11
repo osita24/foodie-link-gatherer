@@ -1,60 +1,65 @@
+import { pipeline } from "@huggingface/transformers";
+
+let classifier: any = null;
+
+const initializeClassifier = async () => {
+  if (!classifier) {
+    console.log("🤖 Initializing food classifier...");
+    classifier = await pipeline(
+      "zero-shot-classification",
+      "facebook/bart-large-mnli",
+      { device: "cpu" }
+    );
+  }
+  return classifier;
+};
+
 export const analyzeDishSemantics = async (itemContent: string) => {
   console.log("🔍 Analyzing dish semantics for:", itemContent);
   
-  // Simple keyword-based analysis instead of ML
-  const content = itemContent.toLowerCase();
+  const classifier = await initializeClassifier();
   
-  // Basic preparation method detection
-  const prepMethods = {
-    fried: content.includes('fried') || content.includes('crispy'),
-    grilled: content.includes('grilled') || content.includes('charred'),
-    baked: content.includes('baked') || content.includes('roasted'),
-    steamed: content.includes('steamed'),
-    raw: content.includes('raw') || content.includes('sashimi')
-  };
+  // Analyze preparation method
+  const prepMethods = await classifier(itemContent, [
+    "fried food",
+    "grilled food",
+    "baked food",
+    "steamed food",
+    "raw food"
+  ]);
+  
+  // Analyze main ingredients
+  const ingredients = await classifier(itemContent, [
+    "contains meat",
+    "contains dairy",
+    "contains gluten",
+    "contains nuts",
+    "contains seafood",
+    "contains eggs",
+    "vegetarian dish",
+    "vegan dish"
+  ]);
+  
+  // Analyze cuisine type
+  const cuisine = await classifier(itemContent, [
+    "Italian cuisine",
+    "Asian cuisine",
+    "Mexican cuisine",
+    "Mediterranean cuisine",
+    "American cuisine"
+  ]);
 
-  // Basic ingredient detection
-  const ingredients = {
-    meat: content.includes('meat') || content.includes('beef') || content.includes('pork'),
-    dairy: content.includes('cheese') || content.includes('milk') || content.includes('cream'),
-    gluten: content.includes('bread') || content.includes('pasta') || content.includes('flour'),
-    nuts: content.includes('nut') || content.includes('almond') || content.includes('cashew'),
-    seafood: content.includes('fish') || content.includes('shrimp') || content.includes('seafood'),
-    eggs: content.includes('egg'),
-    vegetarian: content.includes('vegetarian') || (!content.includes('meat') && !content.includes('fish')),
-    vegan: content.includes('vegan')
-  };
-
-  // Basic cuisine type detection
-  const cuisineKeywords = {
-    Italian: ['pasta', 'pizza', 'risotto'],
-    Asian: ['soy', 'wok', 'stir-fry', 'teriyaki'],
-    Mexican: ['taco', 'burrito', 'salsa'],
-    Mediterranean: ['hummus', 'falafel', 'pita'],
-    American: ['burger', 'fries', 'steak']
-  };
-
-  let detectedCuisine = 'Other';
-  for (const [cuisine, keywords] of Object.entries(cuisineKeywords)) {
-    if (keywords.some(keyword => content.includes(keyword))) {
-      detectedCuisine = cuisine;
-      break;
-    }
-  }
-
-  console.log("✨ Basic semantic analysis results:", {
-    prepMethods,
-    ingredients,
-    detectedCuisine
+  console.log("✨ Semantic analysis results:", {
+    prepMethods: prepMethods.scores,
+    ingredients: ingredients.scores,
+    cuisine: cuisine.scores
   });
 
   return {
-    prepMethod: Object.entries(prepMethods).find(([_, value]) => value)?.[0] || 'unknown',
-    prepScore: 0.8,
-    mainIngredients: Object.entries(ingredients)
-      .filter(([_, value]) => value)
-      .map(([key]) => key),
-    cuisineType: detectedCuisine,
-    cuisineScore: 0.7
+    prepMethod: prepMethods.labels[0],
+    prepScore: prepMethods.scores[0],
+    mainIngredients: ingredients.labels.filter((_: string, i: number) => ingredients.scores[i] > 0.5),
+    cuisineType: cuisine.labels[0],
+    cuisineScore: cuisine.scores[0]
   };
 };
