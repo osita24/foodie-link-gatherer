@@ -28,7 +28,16 @@ serve(async (req) => {
 
     if (!url && !placeId) {
       console.error('❌ Missing required parameters');
-      throw new Error('Either URL or placeId is required');
+      return new Response(
+        JSON.stringify({
+          error: 'Either URL or placeId is required',
+          status: 400
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     // Set a timeout for the restaurant search
@@ -47,7 +56,16 @@ serve(async (req) => {
 
     if (!result) {
       console.error('❌ No result returned from search');
-      throw new Error('Restaurant not found');
+      return new Response(
+        JSON.stringify({
+          error: 'Restaurant not found',
+          status: 404
+        }),
+        { 
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     console.log('✅ Successfully found restaurant data');
@@ -60,7 +78,7 @@ serve(async (req) => {
       }
     );
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('❌ Edge function error:', error);
     
     const errorResponse = {

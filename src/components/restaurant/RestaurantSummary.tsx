@@ -18,20 +18,13 @@ interface RestaurantSummaryProps {
 const RestaurantSummary = ({ restaurant }: RestaurantSummaryProps) => {
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const session = useSession();
 
   useEffect(() => {
     const generateSummary = async () => {
-      if (!session?.user) {
-        setIsLoading(false);
-        return;
-      }
+      if (!session?.user) return;
 
       console.log("🤖 Generating personalized summary for:", restaurant.name);
-      setError(null);
-      setIsLoading(true);
-
       try {
         const { data: preferences, error: preferencesError } = await supabase
           .from("user_preferences")
@@ -44,13 +37,12 @@ const RestaurantSummary = ({ restaurant }: RestaurantSummaryProps) => {
           throw preferencesError;
         }
 
+        console.log("👤 User preferences loaded:", preferences);
+
         if (!preferences) {
           console.log("❌ No preferences found for user");
-          setError("Please complete your preferences to get personalized recommendations");
           return;
         }
-
-        console.log("👤 User preferences loaded:", preferences);
 
         // Map database columns to UserPreferences type
         const mappedPreferences: UserPreferences = {
@@ -80,14 +72,14 @@ const RestaurantSummary = ({ restaurant }: RestaurantSummaryProps) => {
 
         if (error) {
           console.error("❌ Error generating summary:", error);
+          toast.error("Failed to generate restaurant summary");
           throw error;
         }
 
         console.log("✨ Generated summary:", data);
         setSummary(data);
-      } catch (error: any) {
+      } catch (error) {
         console.error("❌ Error generating summary:", error);
-        setError("Failed to generate restaurant summary");
         toast.error("Failed to generate restaurant summary");
       } finally {
         setIsLoading(false);
@@ -101,18 +93,6 @@ const RestaurantSummary = ({ restaurant }: RestaurantSummaryProps) => {
 
   if (isLoading) {
     return <LoadingSummary />;
-  }
-
-  if (error) {
-    return (
-      <Card className="p-4 md:p-6 bg-background border-accent">
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-semibold">Cilantro Says</h3>
-        </div>
-        <p className="text-muted-foreground">{error}</p>
-      </Card>
-    );
   }
 
   if (!summary) return null;

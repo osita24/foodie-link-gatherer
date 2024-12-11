@@ -10,8 +10,6 @@ import { Progress } from "@/components/ui/progress";
 import { MenuItemMatchBadge } from "./MenuItemMatchBadge";
 import { MenuItemDescription } from "./MenuItemDescription";
 import DietaryBadges from "./DietaryBadges";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 interface MenuItemProps {
   item: {
@@ -31,7 +29,6 @@ interface MenuItemProps {
 }
 
 const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
-  const [warningMessage, setWarningMessage] = useState<string | null>(null);
   const cleanName = item.name
     .replace(/^\d+\.\s*/, '')
     .replace(/\*\*/g, '')
@@ -40,37 +37,6 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
   const description = item.name.includes(' - ') 
     ? item.name.split(' - ')[1].replace(/\*\*/g, '').trim()
     : item.description;
-
-  useEffect(() => {
-    const generateWarningMessage = async () => {
-      if (matchDetails?.matchType === 'warning') {
-        try {
-          const { data, error } = await supabase.functions.invoke('generate-match-message', {
-            body: {
-              matchType: matchDetails.matchType,
-              score: matchDetails.score,
-              itemDetails: {
-                name: cleanName,
-                description: description,
-                dietaryInfo: item.dietaryInfo
-              },
-              preferences: matchDetails
-            }
-          });
-
-          if (error) throw error;
-          if (data?.message) {
-            setWarningMessage(data.message);
-          }
-        } catch (error) {
-          console.error('Failed to generate warning message:', error);
-          setWarningMessage(matchDetails.warning || 'This item may not match your preferences');
-        }
-      }
-    };
-
-    generateWarningMessage();
-  }, [matchDetails, cleanName, description, item.dietaryInfo]);
 
   const getMatchStyle = (matchType: string = 'neutral') => {
     const baseStyle = isTopMatch 
@@ -89,6 +55,7 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
     }
   };
 
+  // Determine dietary badges based on item description and name
   const getDietaryBadges = () => {
     const badges: string[] = [];
     const content = `${item.name} ${item.description || ''}`.toLowerCase();
@@ -146,9 +113,9 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
                         {matchDetails.reason}
                       </p>
                     )}
-                    {warningMessage && matchDetails.matchType === 'warning' && (
+                    {matchDetails.warning && (
                       <p className="text-xs text-red-500">
-                        {warningMessage}
+                        {matchDetails.warning}
                       </p>
                     )}
                   </div>
@@ -162,16 +129,16 @@ const MenuItem = ({ item, matchDetails, isTopMatch }: MenuItemProps) => {
         
         <DietaryBadges badges={getDietaryBadges()} />
         
-        {matchDetails && (matchDetails.reason || warningMessage) && (
+        {matchDetails && (matchDetails.reason || matchDetails.warning) && (
           <div className="flex items-center gap-2 flex-wrap mt-3 animate-fade-in-up">
             {matchDetails.matchType !== 'warning' && matchDetails.reason && (
               <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50 text-xs">
                 {matchDetails.reason} ✨
               </Badge>
             )}
-            {matchDetails.matchType === 'warning' && warningMessage && (
+            {matchDetails.matchType === 'warning' && matchDetails.warning && (
               <Badge variant="outline" className="text-red-700 border-red-200 bg-red-50 text-xs">
-                {warningMessage} ⚠️
+                {matchDetails.warning} ⚠️
               </Badge>
             )}
           </div>

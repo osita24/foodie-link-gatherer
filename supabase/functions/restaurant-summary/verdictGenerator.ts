@@ -11,21 +11,21 @@ export function generateVerdict(
   console.log("🎯 Generating verdict for:", restaurant.name);
   console.log("📊 Match scores:", scores);
 
-  // First, check dietary compatibility - more lenient now
+  // First, check dietary compatibility
   const dietaryCheck = checkDietaryCompatibility(restaurant, preferences);
-  if (!dietaryCheck.isCompatible && scores.dietaryScore < 30) {
-    console.log("⚠️ Restaurant has significant dietary conflicts");
+  if (!dietaryCheck.isCompatible) {
+    console.log("❌ Restaurant incompatible with dietary restrictions:", dietaryCheck.reason);
     return {
       verdict: "CONSIDER ALTERNATIVES",
       reasons: generateNegativeReasons(restaurant, preferences)
     };
   }
 
-  // Calculate weighted score with reduced impact from dietary restrictions
+  // Calculate weighted score only if dietary compatible
   const weightedScore = (
-    (scores.dietaryScore * 0.25) + // Reduced from 0.35
-    (scores.cuisineScore * 0.30) + // Increased from 0.25
-    (scores.proteinScore * 0.25) + // Increased from 0.20
+    (scores.dietaryScore * 0.35) +
+    (scores.cuisineScore * 0.25) +
+    (scores.proteinScore * 0.20) +
     (scores.atmosphereScore * 0.10) +
     (scores.priceScore * 0.10)
   );
@@ -35,11 +35,10 @@ export function generateVerdict(
   let verdict: Verdict;
   let reasons: Array<{ emoji: string; text: string }>;
 
-  // More lenient thresholds
-  if (weightedScore >= 75) { // Reduced from 85
+  if (weightedScore >= 85) {
     verdict = "PERFECT MATCH";
     reasons = generatePositiveReasons(restaurant, preferences);
-  } else if (weightedScore >= 55) { // Reduced from 65
+  } else if (weightedScore >= 65) {
     verdict = "WORTH EXPLORING";
     reasons = generatePositiveReasons(restaurant, preferences);
   } else {
