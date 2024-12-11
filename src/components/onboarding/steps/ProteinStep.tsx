@@ -4,16 +4,16 @@ import PreferenceCard from "@/components/profile/preferences/PreferenceCard";
 import { Beef, Fish, Egg, Drumstick, Salad } from "lucide-react";
 
 const PROTEIN_OPTIONS = [
-  { name: "Chicken", icon: <Drumstick />, emoji: "🍗" },
-  { name: "Beef", icon: <Beef />, emoji: "🥩" },
-  { name: "Fish", icon: <Fish />, emoji: "🐟" },
-  { name: "Pork", icon: <Beef />, emoji: "🥓" },
-  { name: "Tofu", icon: <Salad />, emoji: "🧊" },
-  { name: "Eggs", icon: <Egg />, emoji: "🥚" },
-  { name: "Turkey", icon: <Drumstick />, emoji: "🦃" },
-  { name: "Lamb", icon: <Beef />, emoji: "🐑" },
-  { name: "Shrimp", icon: <Fish />, emoji: "🦐" },
-  { name: "Duck", icon: <Drumstick />, emoji: "🦆" },
+  { name: "Chicken", icon: <Drumstick /> },
+  { name: "Beef", icon: <Beef /> },
+  { name: "Fish", icon: <Fish /> },
+  { name: "Pork", icon: <Beef /> },
+  { name: "Tofu", icon: <Salad /> },
+  { name: "Eggs", icon: <Egg /> },
+  { name: "Turkey", icon: <Drumstick /> },
+  { name: "Lamb", icon: <Beef /> },
+  { name: "Shrimp", icon: <Fish /> },
+  { name: "Duck", icon: <Drumstick /> },
 ];
 
 interface ProteinStepProps {
@@ -25,7 +25,7 @@ const ProteinStep = ({ selected, onChange }: ProteinStepProps) => {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-center">Select Your Favorite Proteins</h2>
+        <h2 className="text-2xl font-bold text-center">Select Your Favorite Proteins 🥩</h2>
         <p className="text-muted-foreground text-center">
           Choose the proteins you enjoy most. This helps us find restaurants that serve your preferred options.
         </p>
@@ -37,7 +37,6 @@ const ProteinStep = ({ selected, onChange }: ProteinStepProps) => {
             key={protein.name}
             label={protein.name}
             icon={protein.icon}
-            description={protein.emoji}
             selected={selected.includes(protein.name)}
             onClick={() => {
               if (selected.includes(protein.name)) {
