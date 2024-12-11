@@ -35,30 +35,30 @@ const RestaurantPreferences = () => {
 
         console.log("Loading preferences for user:", user.id);
         
-        // First check if the user has any preferences
-        const { data: existingPrefs, error: checkError } = await supabase
+        const { data: existingPrefs, error } = await supabase
           .from('user_preferences')
           .select('*')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .maybeSingle(); // Use maybeSingle() instead of single() to handle no rows gracefully
 
-        if (checkError) {
-          console.error("Error checking preferences:", checkError);
-          throw checkError;
+        if (error) {
+          console.error("Error checking preferences:", error);
+          throw error;
         }
 
         // If user has preferences, use them
-        if (existingPrefs && existingPrefs.length > 0) {
-          console.log("Found existing preferences:", existingPrefs[0]);
+        if (existingPrefs) {
+          console.log("Found existing preferences:", existingPrefs);
           setPreferences({
-            cuisinePreferences: existingPrefs[0].cuisine_preferences || [],
-            dietaryRestrictions: existingPrefs[0].dietary_restrictions || [],
-            foodsToAvoid: existingPrefs[0].favorite_ingredients || [],
-            atmospherePreferences: existingPrefs[0].atmosphere_preferences || [],
+            cuisinePreferences: existingPrefs.cuisine_preferences || [],
+            dietaryRestrictions: existingPrefs.dietary_restrictions || [],
+            foodsToAvoid: existingPrefs.favorite_ingredients || [],
+            atmospherePreferences: existingPrefs.atmosphere_preferences || [],
             favoriteIngredients: [],
-            favoriteProteins: existingPrefs[0].favorite_proteins || [],
-            spiceLevel: existingPrefs[0].spice_level || 3,
-            priceRange: existingPrefs[0].price_range || 'moderate',
-            specialConsiderations: existingPrefs[0].special_considerations || "",
+            favoriteProteins: existingPrefs.favorite_proteins || [],
+            spiceLevel: existingPrefs.spice_level || 3,
+            priceRange: existingPrefs.price_range || 'moderate',
+            specialConsiderations: existingPrefs.special_considerations || "",
           });
         } else {
           console.log("No existing preferences found, using defaults");
