@@ -28,10 +28,14 @@ export function generatePositiveReasons(
   }
 
   // Add atmosphere reason if applicable
-  if (preferences.atmosphere_preferences?.includes('Fine Dining') && restaurant.reservable) {
+  if (preferences.atmosphere_preferences?.some(pref => 
+    (pref === 'Outdoor Seating' && restaurant.outdoor_seating) ||
+    (pref === 'Fine Dining' && restaurant.reservable)
+  )) {
+    const matchingAtmosphere = preferences.atmosphere_preferences[0];
     reasons.push({
       emoji: "✨",
-      text: `Upscale dining experience with carefully curated menu`
+      text: `Offers ${matchingAtmosphere.toLowerCase()} that you prefer`
     });
   }
 
@@ -43,20 +47,42 @@ export function generatePositiveReasons(
     });
   }
 
-  // Add fallback positive reasons if we don't have enough
+  // Add price range reason if applicable
+  if (preferences.price_range && restaurant.price_level) {
+    const priceMatches = (
+      (preferences.price_range === 'budget' && restaurant.price_level <= 1) ||
+      (preferences.price_range === 'moderate' && restaurant.price_level === 2) ||
+      (preferences.price_range === 'upscale' && restaurant.price_level >= 3)
+    );
+    
+    if (priceMatches) {
+      reasons.push({
+        emoji: "💰",
+        text: `Price range matches your ${preferences.price_range} dining preference`
+      });
+    }
+  }
+
+  // Add personalized fallback reasons if we don't have enough
   if (reasons.length < 3) {
     const fallbackReasons = [
       {
-        emoji: "🌟",
-        text: "Popular destination with diverse menu options"
+        emoji: "🍽️",
+        text: preferences.cuisine_preferences?.length 
+          ? `Menu includes ${preferences.cuisine_preferences[0].toLowerCase()}-inspired dishes`
+          : "Diverse menu options to explore"
       },
       {
         emoji: "🏠",
-        text: "Welcoming atmosphere for all diners"
+        text: preferences.atmosphere_preferences?.length
+          ? `Atmosphere aligns with your ${preferences.atmosphere_preferences[0].toLowerCase()} preference`
+          : "Welcoming dining environment"
       },
       {
-        emoji: "✨",
-        text: "Known for quality ingredients and preparation"
+        emoji: "🌟",
+        text: preferences.dietary_restrictions?.length
+          ? `Kitchen can accommodate ${preferences.dietary_restrictions[0].toLowerCase()} dietary needs`
+          : "Known for accommodating dietary preferences"
       }
     ];
 
@@ -98,42 +124,58 @@ export function generateNegativeReasons(
     }
   }
 
-  // Check for food avoidance conflicts
-  if (preferences.favorite_ingredients?.some(item => 
-    ["Oily Foods", "Salty Foods"].includes(item)
-  )) {
-    reasons.push({
-      emoji: "🚫",
-      text: "Menu items may contain ingredients you prefer to avoid"
-    });
-  }
-
-  // Add atmosphere mismatch if applicable
+  // Check for atmosphere mismatch
   if (preferences.atmosphere_preferences?.length) {
     const atmosphere = preferences.atmosphere_preferences[0];
-    if ((atmosphere === 'Fine Dining' && !restaurant.reservable) ||
-        (atmosphere === 'Casual Dining' && !restaurant.dineIn)) {
+    const hasAtmosphereMismatch = (
+      (atmosphere === 'Outdoor Seating' && !restaurant.outdoor_seating) ||
+      (atmosphere === 'Fine Dining' && !restaurant.reservable)
+    );
+    
+    if (hasAtmosphereMismatch) {
       reasons.push({
         emoji: "🏠",
-        text: `Different dining style than your preferred ${atmosphere.toLowerCase()}`
+        text: `May not offer your preferred ${atmosphere.toLowerCase()} experience`
       });
     }
   }
 
-  // Add fallback negative reasons if we don't have enough
+  // Check price range mismatch
+  if (preferences.price_range && restaurant.price_level) {
+    const priceMismatch = (
+      (preferences.price_range === 'budget' && restaurant.price_level > 1) ||
+      (preferences.price_range === 'moderate' && (restaurant.price_level < 2 || restaurant.price_level > 2)) ||
+      (preferences.price_range === 'upscale' && restaurant.price_level < 3)
+    );
+    
+    if (priceMismatch) {
+      reasons.push({
+        emoji: "💰",
+        text: `Price range may not match your ${preferences.price_range} dining preference`
+      });
+    }
+  }
+
+  // Add personalized fallback negative reasons if we don't have enough
   if (reasons.length < 3) {
     const fallbackReasons = [
       {
         emoji: "💭",
-        text: "Consider exploring other dining options that better match your preferences"
+        text: preferences.cuisine_preferences?.length
+          ? `Limited options for ${preferences.cuisine_preferences[0].toLowerCase()} cuisine lovers`
+          : "May not fully align with your dining preferences"
       },
       {
         emoji: "📝",
-        text: "Limited menu information available for dietary assessment"
+        text: preferences.dietary_restrictions?.length
+          ? `${preferences.dietary_restrictions[0]} options may be limited`
+          : "Limited information about dietary accommodations"
       },
       {
         emoji: "⚠️",
-        text: "May not fully align with your dining preferences"
+        text: preferences.atmosphere_preferences?.length
+          ? `Atmosphere may differ from your ${preferences.atmosphere_preferences[0].toLowerCase()} preference`
+          : "Consider exploring other dining options"
       }
     ];
 
