@@ -6,6 +6,7 @@ import Profile from "@/pages/Profile";
 import Saved from "@/pages/Saved";
 import Onboarding from "@/pages/Onboarding";
 import RestaurantDetails from "@/pages/RestaurantDetails";
+import NotFound from "@/pages/NotFound";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="/saved" element={<Saved />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/restaurant/:id" element={<RestaurantDetails />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
     </SessionContextProvider>
