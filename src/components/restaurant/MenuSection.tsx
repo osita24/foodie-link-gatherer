@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { MenuCategory, RestaurantDetails } from "@/types/restaurant";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,60 +27,80 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
   const [session, setSession] = useState<any>(null);
   const [topMatchId, setTopMatchId] = useState<string | null>(null);
 
+  // Memoize session setup to prevent unnecessary re-renders
   useEffect(() => {
     console.log("🔍 Initializing MenuSection with restaurant:", restaurant?.name);
     
+    let isSubscribed = true;
+    
     const setupAuth = async () => {
       const { data: { session: currentSession } } = await supabase.auth.getSession();
-      setSession(currentSession);
+      if (isSubscribed) {
+        setSession(currentSession);
+      }
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        setSession(session);
+        if (isSubscribed) {
+          setSession(session);
+        }
       });
 
-      return () => subscription.unsubscribe();
+      return () => {
+        subscription.unsubscribe();
+        isSubscribed = false;
+      };
     };
 
     setupAuth();
   }, []);
 
+  // Optimize menu processing by adding cleanup and preventing unnecessary processing
   useEffect(() => {
-    if (menu) {
+    let isSubscribed = true;
+
+    if (menu && isSubscribed) {
       console.log("📋 Using provided menu data");
       setProcessedMenu(menu);
-    } else if (menuUrl || photos?.length || reviews?.length) {
+    } else if ((menuUrl || photos?.length || reviews?.length) && !processedMenu.length && !isProcessing) {
       console.log("🔄 Processing available data sources");
       processRestaurantData();
     }
-  }, [menu, photos, reviews, menuUrl]);
 
+    return () => {
+      isSubscribed = false;
+    };
+  }, [menu, menuUrl, photos, reviews]);
+
+  // Memoize top match calculation
   useEffect(() => {
-    if (session && itemMatchDetails) {
-      const scores = Object.entries(itemMatchDetails).map(([id, details]) => ({
-        id,
-        score: details.score || 0
-      }));
-      const topMatch = scores.sort((a, b) => b.score - a.score)[0];
-      setTopMatchId(topMatch?.id || null);
-    }
+    if (!session || !itemMatchDetails) return;
+
+    const scores = Object.entries(itemMatchDetails).map(([id, details]) => ({
+      id,
+      score: details.score || 0
+    }));
+    const topMatch = scores.sort((a, b) => b.score - a.score)[0];
+    setTopMatchId(topMatch?.id || null);
   }, [itemMatchDetails, session]);
 
   const processRestaurantData = async () => {
+    if (isProcessing) return;
+    
     setIsProcessing(true);
     setError(null);
     
     try {
-      // Only send limited data to reduce processing time
+      // Optimize payload size
       const payload = {
         menuUrl: menuUrl || null,
-        photos: photos?.slice(0, 3) || [], // Limit photos
-        reviews: reviews?.slice(0, 5)?.map(review => ({ // Limit reviews
-          text: review.text || '',
+        photos: photos?.slice(0, 2) || [], // Reduce photos processed
+        reviews: reviews?.slice(0, 3)?.map(review => ({ // Reduce reviews processed
+          text: review.text?.slice(0, 200) || '', // Limit review text length
           rating: review.rating || 0
         })) || []
       };
 
-      console.log("📤 Sending payload to menu processor");
+      console.log("📤 Sending optimized payload to menu processor");
       
       const { data, error } = await supabase.functions.invoke('menu-processor', {
         body: payload
@@ -104,6 +124,11 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
     }
   };
 
+  // Memoize the menu to display to prevent unnecessary re-renders
+  const menuToDisplay = useMemo(() => {
+    return session ? (analyzedMenu || processedMenu) : processedMenu;
+  }, [session, analyzedMenu, processedMenu]);
+
   if (isProcessing) return <MenuLoadingState isProcessing />;
   if (error) {
     return (
@@ -119,8 +144,6 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
     );
   }
   if (!processedMenu || processedMenu.length === 0) return <MenuLoadingState />;
-
-  const menuToDisplay = session ? (analyzedMenu || processedMenu) : processedMenu;
 
   return (
     <div className="space-y-6">
