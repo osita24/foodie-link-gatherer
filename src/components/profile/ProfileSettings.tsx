@@ -3,6 +3,8 @@ import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
 
 const ProfileSettings = () => {
   const [userDetails, setUserDetails] = useState({
@@ -11,6 +13,7 @@ const ProfileSettings = () => {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const getUser = async () => {
@@ -48,6 +51,8 @@ const ProfileSettings = () => {
       } catch (error: any) {
         console.error("Error fetching user details:", error);
         toast.error("Failed to load profile information");
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -83,56 +88,84 @@ const ProfileSettings = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Profile Settings</h2>
+    <motion.div 
+      className="space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="name" className="text-sm font-medium">Name</Label>
+          {isEditing ? (
+            <Input
+              id="name"
+              value={userDetails.name}
+              onChange={(e) => setUserDetails({ ...userDetails, name: e.target.value })}
+              className="max-w-md transition-all duration-200 focus:ring-2 focus:ring-primary/20"
+              placeholder="Enter your name"
+            />
+          ) : (
+            <p className="text-lg text-foreground/90 font-medium">{userDetails.name}</p>
+          )}
+        </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="name">Name</Label>
-        {isEditing ? (
-          <Input
-            id="name"
-            value={userDetails.name}
-            onChange={(e) => setUserDetails({ ...userDetails, name: e.target.value })}
-          />
-        ) : (
-          <p className="text-gray-700">{userDetails.name}</p>
-        )}
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+          <p className="text-lg text-foreground/90 font-medium">{userDetails.email}</p>
+        </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <p className="text-gray-700">{userDetails.email}</p>
-      </div>
-
-      <div className="flex justify-end space-x-2">
+      <div className="flex justify-end space-x-3 pt-4">
         {isEditing ? (
           <>
-            <button
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+            <motion.button
+              className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-md"
               onClick={() => setIsEditing(false)}
               disabled={isSaving}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
               Cancel
-            </button>
-            <button
-              className="px-4 py-2 text-sm bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50"
+            </motion.button>
+            <motion.button
+              className="px-4 py-2 text-sm bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-2"
               onClick={handleSave}
               disabled={isSaving}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              {isSaving ? "Saving..." : "Save"}
-            </button>
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </motion.button>
           </>
         ) : (
-          <button
-            className="px-4 py-2 text-sm text-primary hover:text-primary/90"
+          <motion.button
+            className="px-4 py-2 text-sm text-primary hover:text-primary/90 transition-colors"
             onClick={() => setIsEditing(true)}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
             Edit Profile
-          </button>
+          </motion.button>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
