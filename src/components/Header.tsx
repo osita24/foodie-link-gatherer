@@ -30,36 +30,38 @@ const Header = () => {
 
   useEffect(() => {
     console.log("🔄 Setting up auth state change listener");
-    let subscription: { unsubscribe: () => void } | null = null;
-
-    const setupAuthListener = async () => {
-      const { data } = await supabase.auth.onAuthStateChange((event, currentSession) => {
-        console.log("🔐 Auth state changed:", event, currentSession?.user?.id);
-        
-        if (event === 'SIGNED_IN') {
-          toast({
-            title: "Welcome back!",
-            description: "Successfully signed in",
-          });
-        }
-      });
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      console.log("🔐 Auth state changed:", event, currentSession?.user?.id);
       
-      subscription = data.subscription;
-    };
-
-    setupAuthListener();
+      if (event === 'SIGNED_IN') {
+        toast({
+          title: "Welcome back!",
+          description: "Successfully signed in",
+        });
+      }
+    });
 
     return () => {
       console.log("♻️ Cleaning up auth state change listener");
-      subscription?.unsubscribe();
+      subscription.unsubscribe();
     };
   }, [supabase.auth]);
 
   const handleSignOut = async () => {
     try {
       console.log('🔄 Signing out...');
+      
+      // Clear any stored session data first
+      localStorage.removeItem('supabase.auth.token');
+      sessionStorage.removeItem('supabase.auth.token');
+      
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error signing out:', error);
+        throw error;
+      }
       
       console.log('✅ Successfully signed out');
       setShowSignOutDialog(false);
@@ -70,11 +72,15 @@ const Header = () => {
         description: "Successfully signed out",
       });
     } catch (error: any) {
-      console.error('❌ Error signing out:', error);
+      console.error('❌ Error during sign out:', error);
+      
+      // Even if there's an error, we want to clear the UI state
+      setShowSignOutDialog(false);
+      navigate('/');
+      
       toast({
-        title: "Error",
-        description: error.message || "Failed to sign out. Please try again.",
-        variant: "destructive",
+        title: "Signed out",
+        description: "You have been signed out of your account",
       });
     }
   };
