@@ -51,15 +51,14 @@ const Header = () => {
 
   const handleSignOut = async () => {
     try {
-      console.log('🔄 Signing out...');
+      console.log('🔄 Starting sign out process...');
       
-      // Clear any stored session data first
-      localStorage.removeItem('supabase.auth.token');
-      sessionStorage.removeItem('supabase.auth.token');
+      const { error } = await supabase.auth.signOut({
+        scope: 'local'  // This ensures we only clear local session data
+      });
       
-      const { error } = await supabase.auth.signOut();
       if (error) {
-        console.error('❌ Error signing out:', error);
+        console.error('❌ Error during sign out:', error);
         throw error;
       }
       
@@ -73,15 +72,14 @@ const Header = () => {
       });
     } catch (error: any) {
       console.error('❌ Error during sign out:', error);
-      
-      // Even if there's an error, we want to clear the UI state
-      setShowSignOutDialog(false);
-      navigate('/');
-      
       toast({
-        title: "Signed out",
-        description: "You have been signed out of your account",
+        title: "Error",
+        description: "An error occurred while signing out",
+        variant: "destructive",
       });
+    } finally {
+      // Ensure the dialog is closed regardless of success/failure
+      setShowSignOutDialog(false);
     }
   };
 
