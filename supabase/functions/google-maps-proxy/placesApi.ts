@@ -27,15 +27,10 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
     // Clean and validate the URL
     let finalUrl = url;
     try {
-      // Remove any trailing colons without port numbers
       finalUrl = finalUrl.replace(/:\/?$/, '');
-      
-      // Ensure the URL has a valid protocol
       if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
         finalUrl = `https://${finalUrl}`;
       }
-
-      // Validate URL format
       new URL(finalUrl);
     } catch (error) {
       console.error('❌ Invalid URL format:', error);
@@ -63,6 +58,17 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
       }
     }
 
+    // Extract coordinates from URL if available
+    const coordsMatch = finalUrl.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    let latitude: string | undefined;
+    let longitude: string | undefined;
+    
+    if (coordsMatch) {
+      latitude = coordsMatch[1];
+      longitude = coordsMatch[2];
+      console.log('📍 Extracted coordinates:', { latitude, longitude });
+    }
+
     // Try to extract place ID from URL first
     try {
       const urlObj = new URL(finalUrl);
@@ -79,7 +85,7 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
       console.log('⚠️ Continuing with text search...');
     }
 
-    // Extract search text and try text search
+    // Extract search text and perform search
     const searchText = extractSearchText(finalUrl);
     console.log('🔍 Searching with text:', searchText);
 
@@ -87,6 +93,13 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
     searchUrl.searchParams.set('key', GOOGLE_API_KEY);
     searchUrl.searchParams.set('query', searchText);
     searchUrl.searchParams.set('type', 'restaurant');
+    
+    // Add location bias if coordinates are available
+    if (latitude && longitude) {
+      searchUrl.searchParams.set('location', `${latitude},${longitude}`);
+      searchUrl.searchParams.set('radius', '1000'); // Search within 1km radius
+      console.log('🎯 Adding location bias to search');
+    }
     
     console.log('🌐 Making text search request');
     const response = await fetch(searchUrl.toString());
@@ -101,6 +114,24 @@ export async function searchRestaurant(url?: string, placeId?: string): Promise<
     if (!data.results?.[0]) {
       console.error('❌ No results found from text search:', data);
       throw new Error('Could not find restaurant. Please check the URL and try again.');
+    }
+
+    // If we have coordinates, verify the first result is within a reasonable distance
+    if (latitude && longitude) {
+      const result = data.results[0];
+      const distance = calculateDistance(
+        parseFloat(latitude),
+        parseFloat(longitude),
+        result.geometry.location.lat,
+        result.geometry.location.lng
+      );
+      
+      console.log('📏 Distance to first result:', distance, 'km');
+      
+      // If the first result is too far (more than 2km), log a warning
+      if (distance > 2) {
+        console.warn('⚠️ First result may be incorrect - distance:', distance, 'km');
+      }
     }
     
     const foundPlaceId = data.results[0].place_id;
@@ -156,7 +187,8 @@ async function getPlaceDetails(placeId: string): Promise<any> {
     'user_ratings_total',
     'utc_offset',
     'place_id',
-    'vicinity'
+    'vicinity',
+    'geometry'
   ].join(','));
   detailsUrl.searchParams.set('key', GOOGLE_API_KEY);
   
@@ -178,4 +210,17 @@ async function getPlaceDetails(placeId: string): Promise<any> {
 
   console.log('✅ Successfully retrieved place details');
   return data;
+}
+
+// Helper function to calculate distance between two points using the Haversine formula
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth's radius in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
 }
