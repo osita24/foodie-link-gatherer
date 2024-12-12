@@ -24,16 +24,34 @@ serve(async (req) => {
 
     const { matchType, score, itemDetails } = await req.json();
     
-    console.log('📊 Processing match data:', { matchType, score });
+    console.log('📊 Processing match data:', { matchType, score, itemDetails });
 
     // Validate required parameters
     if (!matchType || typeof score !== 'number') {
       throw new Error('Invalid parameters');
     }
 
-    // Simple message generation based on match type and score
+    // Handle 0% matches first
+    if (score === 0) {
+      const message = itemDetails?.dietaryInfo?.length 
+        ? 'Does not match dietary preferences ⚠️'
+        : 'Not recommended ⚠️';
+      
+      console.log('⚠️ Zero match score:', message);
+      return new Response(
+        JSON.stringify({ message }),
+        { 
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          },
+          status: 200
+        }
+      );
+    }
+
+    // Generate message for non-zero scores
     let message = '';
-    
     if (score >= 90) {
       message = 'Perfect match! ⭐';
     } else if (score >= 70) {
@@ -43,7 +61,7 @@ serve(async (req) => {
     } else if (matchType === 'warning') {
       message = 'Check details ⚠️';
     } else {
-      message = 'Neutral pick 🤔';
+      message = 'May not match preferences 🤔';
     }
 
     console.log('✅ Generated message:', message);
