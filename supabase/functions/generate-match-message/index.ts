@@ -1,4 +1,3 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -15,7 +14,10 @@ serve(async (req) => {
     const { matchType, score, itemDetails, preferences } = await req.json();
     
     const openAIKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIKey) throw new Error('OpenAI API key not configured');
+    if (!openAIKey) {
+      console.error('OpenAI API key not configured');
+      throw new Error('OpenAI API key not configured');
+    }
 
     console.log('🤖 Generating match message for:', { matchType, score });
 
@@ -26,7 +28,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-3.5-turbo',
         messages: [
           {
             role: 'system',
@@ -57,11 +59,14 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
+      console.error('Failed to generate message:', await response.text());
       throw new Error('Failed to generate message');
     }
 
     const data = await response.json();
     const message = data.choices[0].message.content.trim();
+
+    console.log('✨ Generated message:', message);
 
     return new Response(
       JSON.stringify({ message }),
