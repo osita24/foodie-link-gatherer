@@ -5,30 +5,58 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import AuthModal from "@/components/auth/AuthModal";
+import { Session } from "@supabase/supabase-js";
 
 const Profile = () => {
-  const [session, setSession] = useState(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    console.log("🔄 Setting up auth state change listener");
+    
+    // Initial session check
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("🔍 Initial session check:", session ? "Session found" : "No session");
       setSession(session);
-      if (!session) {
-        setShowAuthModal(true);
-      }
+      setShowAuthModal(!session);
+      setIsLoading(false);
     });
 
+    // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("🔐 Auth state changed:", event, session?.user?.id);
       setSession(session);
-      if (!session) {
+      
+      if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION' && !session) {
         setShowAuthModal(true);
+      } else if (session) {
+        setShowAuthModal(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log("♻️ Cleaning up auth state change listener");
+      subscription.unsubscribe();
+    };
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto py-20 px-4">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-64 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!session) {
     return (
