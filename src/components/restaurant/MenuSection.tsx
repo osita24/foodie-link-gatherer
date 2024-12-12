@@ -33,15 +33,15 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
     const setupAuth = async () => {
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       setSession(currentSession);
-
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      return supabase.auth.onAuthStateChange((_event, session) => {
         setSession(session);
-      });
-
-      return () => subscription.unsubscribe();
+      }).data.subscription;
     };
 
-    setupAuth();
+    const subscription = setupAuth();
+    return () => {
+      subscription.then(sub => sub.unsubscribe());
+    };
   }, []);
 
   useEffect(() => {
@@ -66,21 +66,23 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
   }, [itemMatchDetails, session]);
 
   const processRestaurantData = async () => {
+    if (isProcessing) return; // Prevent multiple simultaneous processing attempts
+    
     setIsProcessing(true);
     setError(null);
     
     try {
-      // Only send limited data to reduce processing time
+      // Optimize payload size
       const payload = {
         menuUrl: menuUrl || null,
-        photos: photos?.slice(0, 3) || [], // Limit photos
-        reviews: reviews?.slice(0, 5)?.map(review => ({ // Limit reviews
-          text: review.text || '',
+        photos: photos?.slice(0, 2) || [], // Reduce to 2 photos max
+        reviews: reviews?.slice(0, 3)?.map(review => ({ // Reduce to 3 reviews max
+          text: review.text?.slice(0, 200) || '', // Limit review text length
           rating: review.rating || 0
         })) || []
       };
 
-      console.log("📤 Sending payload to menu processor");
+      console.log("📤 Sending optimized payload to menu processor");
       
       const { data, error } = await supabase.functions.invoke('menu-processor', {
         body: payload
@@ -93,7 +95,7 @@ const MenuSection = ({ menu, photos, reviews, menuUrl, restaurant }: MenuSection
       }
 
       setProcessedMenu(data.menuSections);
-      toast.success(`Found ${data.menuSections[0].items.length} menu items`);
+      console.log(`✅ Successfully processed ${data.menuSections[0].items.length} menu items`);
       
     } catch (error: any) {
       console.error("❌ Error processing restaurant data:", error);

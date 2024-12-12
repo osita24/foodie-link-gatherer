@@ -14,10 +14,10 @@ const MenuLoadingState = ({ isProcessing }: MenuLoadingStateProps) => {
           <div className="flex flex-col items-center justify-center mb-6">
             <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
             <p className="text-secondary text-lg font-medium">
-              Processing Menu...
+              Analyzing Menu Information
             </p>
-            <p className="text-muted-foreground text-sm mt-2">
-              Analyzing available information to create your digital menu
+            <p className="text-muted-foreground text-sm mt-2 text-center max-w-md">
+              We're processing available information to create your personalized menu experience
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -41,8 +41,8 @@ const MenuLoadingState = ({ isProcessing }: MenuLoadingStateProps) => {
         <p className="text-secondary text-lg font-medium">
           Menu Not Available
         </p>
-        <p className="text-muted-foreground text-sm mt-2">
-          We're working on getting the latest menu information.
+        <p className="text-muted-foreground text-sm mt-2 text-center max-w-md">
+          We're working on getting the latest menu information for this restaurant.
         </p>
       </CardContent>
     </Card>
