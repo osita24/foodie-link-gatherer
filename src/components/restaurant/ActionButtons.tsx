@@ -90,11 +90,10 @@ const ActionButtons = () => {
         setIsSaved(false);
         toast.success("Restaurant removed from your saved list");
       } else {
-        // Ensure all required fields are present
         const restaurantData = {
           user_id: session.user.id,
           place_id: placeId,
-          name: restaurant.name || 'Unnamed Restaurant', // Provide a fallback
+          name: restaurant.name || 'Unnamed Restaurant',
           image_url: restaurant.photos?.[0] || null,
           cuisine: restaurant.types?.[0] || null,
           rating: restaurant.rating || null,
@@ -124,22 +123,39 @@ const ActionButtons = () => {
   };
 
   const handleShare = async () => {
-    const url = window.location.href;
-    
     try {
+      console.log("🔗 Starting share operation");
+      const shareData = {
+        title: restaurant?.name || 'Check out this restaurant',
+        text: `Check out ${restaurant?.name || 'this restaurant'} on Cilantro!`,
+        url: window.location.href
+      };
+
+      // Check if native sharing is available and device is mobile
       if (navigator.share && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        await navigator.share({
-          title: restaurant?.name || 'Check out this restaurant',
-          text: 'I found this great restaurant!',
-          url: url
-        });
+        console.log("📱 Using native share on mobile");
+        await navigator.share(shareData);
+        toast.success("Shared successfully!");
       } else {
-        await navigator.clipboard.writeText(url);
+        console.log("📋 Copying to clipboard on desktop");
+        await navigator.clipboard.writeText(window.location.href);
         toast.success("Link copied to clipboard!");
       }
     } catch (error) {
-      console.error('Error sharing:', error);
-      toast.error("Failed to share restaurant");
+      console.error('❌ Error sharing:', error);
+      // If clipboard API fails, fallback to a temporary input element
+      try {
+        const tempInput = document.createElement('input');
+        tempInput.value = window.location.href;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        toast.success("Link copied to clipboard!");
+      } catch (fallbackError) {
+        console.error('❌ Fallback sharing failed:', fallbackError);
+        toast.error("Failed to share restaurant");
+      }
     }
   };
 
