@@ -1,23 +1,34 @@
-export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Earth's radius in kilometers
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
-}
+const EARTH_RADIUS_KM = 6371; // Earth's radius in kilometers
+const MAX_DISTANCE_KM = 1; // Maximum allowed distance in kilometers
 
 export function isLocationNearby(
-  lat1: number, 
-  lon1: number, 
-  lat2: number, 
-  lon2: number, 
-  maxDistance: number = 2
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
 ): boolean {
-  const distance = calculateDistance(lat1, lon1, lat2, lon2);
-  console.log('📏 Distance between points:', distance, 'km');
-  return distance <= maxDistance;
+  // Convert coordinates to radians
+  const lat1Rad = toRadians(lat1);
+  const lon1Rad = toRadians(lon1);
+  const lat2Rad = toRadians(lat2);
+  const lon2Rad = toRadians(lon2);
+
+  // Calculate differences
+  const dLat = lat2Rad - lat1Rad;
+  const dLon = lon2Rad - lon1Rad;
+
+  // Haversine formula
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+           Math.cos(lat1Rad) * Math.cos(lat2Rad) *
+           Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = EARTH_RADIUS_KM * c;
+
+  console.log('📏 Distance between points:', distance.toFixed(2), 'km');
+  return distance <= MAX_DISTANCE_KM;
+}
+
+function toRadians(degrees: number): number {
+  return degrees * (Math.PI / 180);
 }

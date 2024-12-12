@@ -1,5 +1,6 @@
-import { cleanUrl, expandShortUrl, extractCoordinates, extractPlaceId } from './utils/urlParser';
-import { isLocationNearby } from './utils/distanceCalculator';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { cleanUrl, expandShortUrl, extractCoordinates, extractPlaceId } from './utils/urlParser.ts';
+import { isLocationNearby } from './utils/distanceCalculator.ts';
 
 const GOOGLE_API_KEY = Deno.env.get('GOOGLE_PLACES_API_KEY');
 
