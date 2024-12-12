@@ -6,16 +6,18 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log('📥 Received request');
     const { matchType, score, itemDetails, preferences } = await req.json();
     
     const openAIKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIKey) {
-      console.error('OpenAI API key not configured');
+      console.error('❌ OpenAI API key not configured');
       throw new Error('OpenAI API key not configured');
     }
 
@@ -28,7 +30,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4',
         messages: [
           {
             role: 'system',
@@ -59,8 +61,9 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      console.error('Failed to generate message:', await response.text());
-      throw new Error('Failed to generate message');
+      const errorText = await response.text();
+      console.error('❌ OpenAI API error:', errorText);
+      throw new Error('Failed to generate message: ' + errorText);
     }
 
     const data = await response.json();
@@ -73,10 +76,11 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error generating match message:', error);
+    console.error('❌ Error in generate-match-message function:', error);
     return new Response(
       JSON.stringify({ 
-        message: matchType === 'warning' ? 'Not suitable ⚠️' : 'Good match ✅'
+        error: error.message,
+        matchType: matchType === 'warning' ? 'Not suitable ⚠️' : 'Good match ✅'
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
