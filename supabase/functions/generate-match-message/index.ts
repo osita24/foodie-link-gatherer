@@ -3,45 +3,47 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  console.log('🎯 Function called:', req.method);
+
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      headers: corsHeaders,
+      status: 204
+    });
   }
 
   try {
-    console.log('🎯 Generate match message function called');
-    const { matchType, score, itemDetails } = await req.json();
-    
-    // Quick validation to fail fast if data is missing
-    if (!matchType || score === undefined) {
-      console.error('❌ Missing required parameters');
-      throw new Error('Missing required parameters');
+    if (req.method !== 'POST') {
+      throw new Error('Method not allowed');
     }
 
-    console.log('📊 Processing match:', { matchType, score });
+    const { matchType, score, itemDetails } = await req.json();
+    
+    console.log('📊 Processing match data:', { matchType, score });
 
-    // Generate a simple message without AI for better performance
+    // Validate required parameters
+    if (!matchType || typeof score !== 'number') {
+      throw new Error('Invalid parameters');
+    }
+
+    // Simple message generation based on match type and score
     let message = '';
     
-    switch (matchType) {
-      case 'perfect':
-        message = score >= 95 ? 'Perfect choice! ⭐' : 'Great match! ✨';
-        break;
-      case 'good':
-        message = 'Good pick! 👍';
-        break;
-      case 'warning':
-        if (itemDetails?.dietaryInfo?.length) {
-          message = 'Dietary warning ⚠️';
-        } else {
-          message = 'May not match ⚠️';
-        }
-        break;
-      default:
-        message = 'Neutral match 🤔';
+    if (score >= 90) {
+      message = 'Perfect match! ⭐';
+    } else if (score >= 70) {
+      message = 'Great choice! ✨';
+    } else if (score >= 50) {
+      message = 'Good option 👍';
+    } else if (matchType === 'warning') {
+      message = 'Check details ⚠️';
+    } else {
+      message = 'Neutral pick 🤔';
     }
 
     console.log('✅ Generated message:', message);
@@ -49,26 +51,29 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ message }),
       { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-  } catch (error) {
-    console.error('❌ Error in generate-match-message:', error);
-    
-    // Return a safe fallback message instead of failing
-    return new Response(
-      JSON.stringify({ 
-        message: 'Match status ℹ️'
-      }),
-      { 
-        headers: { 
+        headers: {
           ...corsHeaders,
           'Content-Type': 'application/json'
         },
-        status: 200 // Return 200 even on error to prevent client issues
+        status: 200
+      }
+    );
+
+  } catch (error) {
+    console.error('❌ Error:', error.message);
+    
+    // Always return a valid response
+    return new Response(
+      JSON.stringify({ 
+        message: 'Menu item ℹ️',
+        error: error.message 
+      }),
+      { 
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        },
+        status: 200 // Return 200 to prevent client-side errors
       }
     );
   }
