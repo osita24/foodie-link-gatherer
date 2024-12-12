@@ -1,4 +1,3 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -7,75 +6,69 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { matchType, score, itemDetails, preferences } = await req.json();
+    console.log('🎯 Generate match message function called');
+    const { matchType, score, itemDetails } = await req.json();
     
-    const openAIKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIKey) throw new Error('OpenAI API key not configured');
-
-    console.log('🤖 Generating match message for:', { matchType, score });
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a concise AI food recommender. Generate a very short message (max 25 characters) about how well a menu item matches user preferences. 
-            Focus on the most important single reason why it matches or doesn't match.
-            Include one emoji at the end.
-            
-            Examples:
-            - "Contains dairy 🚫"
-            - "Vegan friendly ✅"
-            - "Too spicy 🌶️"
-            - "Perfect match! 🎯"`
-          },
-          {
-            role: 'user',
-            content: `Generate a very short match message for a menu item with:
-            Match type: ${matchType}
-            Score: ${score}
-            Item details: ${JSON.stringify(itemDetails)}
-            User preferences: ${JSON.stringify(preferences)}
-            
-            The message should be extremely concise, focusing on just one key reason.`
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 50
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to generate message');
+    // Quick validation to fail fast if data is missing
+    if (!matchType || score === undefined) {
+      console.error('❌ Missing required parameters');
+      throw new Error('Missing required parameters');
     }
 
-    const data = await response.json();
-    const message = data.choices[0].message.content.trim();
+    console.log('📊 Processing match:', { matchType, score });
+
+    // Generate a simple message without AI for better performance
+    let message = '';
+    
+    switch (matchType) {
+      case 'perfect':
+        message = score >= 95 ? 'Perfect choice! ⭐' : 'Great match! ✨';
+        break;
+      case 'good':
+        message = 'Good pick! 👍';
+        break;
+      case 'warning':
+        if (itemDetails?.dietaryInfo?.length) {
+          message = 'Dietary warning ⚠️';
+        } else {
+          message = 'May not match ⚠️';
+        }
+        break;
+      default:
+        message = 'Neutral match 🤔';
+    }
+
+    console.log('✅ Generated message:', message);
 
     return new Response(
       JSON.stringify({ message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      }
     );
   } catch (error) {
-    console.error('Error generating match message:', error);
+    console.error('❌ Error in generate-match-message:', error);
+    
+    // Return a safe fallback message instead of failing
     return new Response(
       JSON.stringify({ 
-        message: matchType === 'warning' ? 'Not suitable ⚠️' : 'Good match ✅'
+        message: 'Match status ℹ️'
       }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        },
+        status: 200 // Return 200 even on error to prevent client issues
       }
     );
   }
