@@ -7,8 +7,8 @@ import Header from "@/components/Header";
 import AuthModal from "@/components/auth/AuthModal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserCog, UtensilsCrossed } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { Session } from "@supabase/supabase-js";
+import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -18,37 +18,64 @@ const Profile = () => {
 
   useEffect(() => {
     console.log("🔄 Setting up auth state in Profile page");
-    
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("📌 Initial session check:", session ? "Session found" : "No session");
-      setSession(session);
-      setIsLoading(false);
-      
-      if (!session) {
-        console.log("🚫 No session found, showing auth modal");
+    let mounted = true;
+
+    const setupAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("❌ Error getting session:", sessionError);
+          throw sessionError;
+        }
+
+        if (mounted) {
+          console.log("📌 Initial session check:", initialSession ? "Session found" : "No session");
+          setSession(initialSession);
+          
+          if (!initialSession) {
+            console.log("🚫 No session found, showing auth modal");
+            setShowAuthModal(true);
+          }
+        }
+      } catch (error) {
+        console.error("❌ Auth setup error:", error);
         setShowAuthModal(true);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
-    });
+    };
+
+    setupAuth();
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log("🔐 Auth state changed:", _event, session?.user?.id);
-      setSession(session);
+    } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+      console.log("🔐 Auth state changed:", event, currentSession?.user?.id);
       
-      if (!session) {
-        console.log("🚫 Session ended, redirecting to home");
-        navigate("/");
+      if (mounted) {
+        setSession(currentSession);
+        
+        if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+          console.log("🚫 User signed out or deleted");
+          setShowAuthModal(true);
+        } else if (event === 'SIGNED_IN') {
+          console.log("✅ User signed in");
+          setShowAuthModal(false);
+        }
       }
     });
 
     return () => {
       console.log("♻️ Cleaning up auth listener in Profile page");
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, []);
 
   if (isLoading) {
     return (
