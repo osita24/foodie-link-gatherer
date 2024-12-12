@@ -12,8 +12,10 @@ serve(async (req) => {
   }
 
   try {
-    console.log('📥 Received request');
+    console.log('📥 Received request to generate match message');
     const { matchType, score, itemDetails, preferences } = await req.json();
+    
+    console.log('🔍 Processing request with:', { matchType, score });
     
     const openAIKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIKey) {
@@ -21,7 +23,7 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    console.log('🤖 Generating match message for:', { matchType, score });
+    console.log('🤖 Generating match message');
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -30,7 +32,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
@@ -63,7 +65,18 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('❌ OpenAI API error:', errorText);
-      throw new Error('Failed to generate message: ' + errorText);
+      
+      // Return a fallback response instead of throwing
+      return new Response(
+        JSON.stringify({ 
+          message: matchType === 'warning' ? 'Not suitable ⚠️' : 'Good match ✅',
+          error: errorText
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 // Still return 200 since we're providing a fallback
+        }
+      );
     }
 
     const data = await response.json();
@@ -77,14 +90,16 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('❌ Error in generate-match-message function:', error);
+    
+    // Return a fallback response with error details
     return new Response(
       JSON.stringify({ 
-        error: error.message,
-        matchType: matchType === 'warning' ? 'Not suitable ⚠️' : 'Good match ✅'
+        message: matchType === 'warning' ? 'Not suitable ⚠️' : 'Good match ✅',
+        error: error.message
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500
+        status: 200 // Return 200 since we're providing a fallback
       }
     );
   }
