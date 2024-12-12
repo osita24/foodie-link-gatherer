@@ -6,42 +6,68 @@ import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import AuthModal from "@/components/auth/AuthModal";
 import { Session } from "@supabase/supabase-js";
+import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     console.log("🔄 Setting up auth state change listener");
-    
-    // Initial session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("🔍 Initial session check:", session ? "Session found" : "No session");
-      setSession(session);
-      setShowAuthModal(!session);
-      setIsLoading(false);
-    });
+    let mounted = true;
+
+    const setupAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("❌ Error getting session:", sessionError);
+          throw sessionError;
+        }
+
+        console.log("🔍 Initial session check:", initialSession ? "Session found" : "No session");
+        
+        if (mounted) {
+          setSession(initialSession);
+          setShowAuthModal(!initialSession);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error("❌ Auth setup error:", error);
+        if (mounted) {
+          setIsLoading(false);
+          setShowAuthModal(true);
+        }
+      }
+    };
+
+    setupAuth();
 
     // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("🔐 Auth state changed:", event, session?.user?.id);
-      setSession(session);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      console.log("🔐 Auth state changed:", event, currentSession?.user?.id);
       
-      if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION' && !session) {
-        setShowAuthModal(true);
-      } else if (session) {
-        setShowAuthModal(false);
+      if (mounted) {
+        setSession(currentSession);
+        
+        if (event === 'SIGNED_OUT' || (!currentSession && event === 'INITIAL_SESSION')) {
+          setShowAuthModal(true);
+          navigate('/');
+        } else if (currentSession) {
+          setShowAuthModal(false);
+        }
       }
     });
 
     return () => {
       console.log("♻️ Cleaning up auth state change listener");
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   if (isLoading) {
     return (
