@@ -3,8 +3,6 @@ import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Loader2, User } from "lucide-react";
 
 const ProfileSettings = () => {
   const [userDetails, setUserDetails] = useState({
@@ -86,72 +84,52 @@ const ProfileSettings = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
-      <div className="flex items-center gap-4 pb-4 border-b">
-        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-          <User className="h-8 w-8 text-primary" />
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold">Account Settings</h2>
-          <p className="text-muted-foreground">Manage your profile information</p>
-        </div>
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold">Profile Settings</h2>
+
+      <div className="space-y-2">
+        <Label htmlFor="name">Name</Label>
+        {isEditing ? (
+          <Input
+            id="name"
+            value={userDetails.name}
+            onChange={(e) => setUserDetails({ ...userDetails, name: e.target.value })}
+          />
+        ) : (
+          <p className="text-gray-700">{userDetails.name}</p>
+        )}
       </div>
 
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Display Name</Label>
-          {isEditing ? (
-            <Input
-              id="name"
-              value={userDetails.name}
-              onChange={(e) => setUserDetails({ ...userDetails, name: e.target.value })}
-              placeholder="Enter your name"
-              className="max-w-md"
-            />
-          ) : (
-            <p className="text-lg">{userDetails.name}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="email">Email Address</Label>
-          <p className="text-lg text-muted-foreground">{userDetails.email}</p>
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <p className="text-gray-700">{userDetails.email}</p>
       </div>
 
-      <div className="flex justify-end space-x-2 pt-4">
+      <div className="flex justify-end space-x-2">
         {isEditing ? (
           <>
-            <Button
-              variant="outline"
+            <button
+              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
               onClick={() => setIsEditing(false)}
               disabled={isSaving}
             >
               Cancel
-            </Button>
-            <Button
+            </button>
+            <button
+              className="px-4 py-2 text-sm bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50"
               onClick={handleSave}
               disabled={isSaving}
-              className="min-w-[100px]"
             >
-              {isSaving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving
-                </>
-              ) : (
-                'Save Changes'
-              )}
-            </Button>
+              {isSaving ? "Saving..." : "Save"}
+            </button>
           </>
         ) : (
-          <Button
-            variant="outline"
+          <button
+            className="px-4 py-2 text-sm text-primary hover:text-primary/90"
             onClick={() => setIsEditing(true)}
-            className="min-w-[100px]"
           >
             Edit Profile
-          </Button>
+          </button>
         )}
       </div>
     </div>

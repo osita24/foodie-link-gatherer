@@ -9,10 +9,10 @@ interface PreferencesSaveButtonProps {
 
 const PreferencesSaveButton = ({ onClick, disabled, loading }: PreferencesSaveButtonProps) => {
   return (
-    <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-sm border-t md:relative md:border-0 md:p-0 md:bg-transparent">
+    <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t md:relative md:border-0 md:p-0 md:bg-transparent">
       <Button 
         onClick={onClick} 
-        className="w-full md:w-auto transition-all duration-200"
+        className="w-full md:w-auto"
         disabled={disabled || loading}
       >
         {loading ? (
