@@ -3,6 +3,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 
 interface PreferencesSectionProps {
   value: string;
@@ -13,14 +14,17 @@ interface PreferencesSectionProps {
 
 const PreferencesSection = ({ value, title, selectedCount, children }: PreferencesSectionProps) => {
   return (
-    <AccordionItem value={value} className="border rounded-lg bg-white shadow-sm">
+    <AccordionItem 
+      value={value} 
+      className="border rounded-lg bg-white shadow-sm transition-all duration-200 hover:shadow-md"
+    >
       <AccordionTrigger className="px-4 py-3">
         <div className="flex items-center gap-3 w-full">
           <span className="text-base md:text-lg font-medium">{title}</span>
           {selectedCount !== undefined && selectedCount > 0 && (
-            <span className="text-sm text-gray-500">
-              ({selectedCount} selected)
-            </span>
+            <Badge variant="secondary" className="ml-2">
+              {selectedCount} selected
+            </Badge>
           )}
         </div>
       </AccordionTrigger>
