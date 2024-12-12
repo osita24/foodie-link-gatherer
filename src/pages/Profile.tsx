@@ -7,30 +7,59 @@ import Header from "@/components/Header";
 import AuthModal from "@/components/auth/AuthModal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserCog, UtensilsCrossed } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Session } from "@supabase/supabase-js";
 
 const Profile = () => {
-  const [session, setSession] = useState(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
+    console.log("🔄 Setting up auth state in Profile page");
+    
+    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("📌 Initial session check:", session ? "Session found" : "No session");
       setSession(session);
+      setIsLoading(false);
+      
       if (!session) {
+        console.log("🚫 No session found, showing auth modal");
         setShowAuthModal(true);
       }
     });
 
+    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("🔐 Auth state changed:", _event, session?.user?.id);
       setSession(session);
+      
       if (!session) {
-        setShowAuthModal(true);
+        console.log("🚫 Session ended, redirecting to home");
+        navigate("/");
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      console.log("♻️ Cleaning up auth listener in Profile page");
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto py-8 flex items-center justify-center">
+          <div className="animate-pulse text-muted-foreground">Loading...</div>
+        </div>
+      </div>
+    );
+  }
 
   if (!session) {
     return (
