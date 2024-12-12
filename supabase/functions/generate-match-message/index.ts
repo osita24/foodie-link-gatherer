@@ -22,9 +22,9 @@ serve(async (req) => {
       throw new Error('Method not allowed');
     }
 
-    const { matchType, score, itemDetails } = await req.json();
+    const { matchType, score, itemDetails, preferences } = await req.json();
     
-    console.log('📊 Processing match data:', { matchType, score, itemDetails });
+    console.log('📊 Processing match data:', { matchType, score, itemDetails, preferences });
 
     // Validate required parameters
     if (!matchType || typeof score !== 'number') {
@@ -33,9 +33,28 @@ serve(async (req) => {
 
     // Handle 0% matches first
     if (score === 0) {
-      const message = itemDetails?.dietaryInfo?.length 
-        ? 'Does not match dietary preferences ⚠️'
-        : 'Not recommended ⚠️';
+      let message = '';
+      
+      // Check if it's due to dietary restrictions
+      if (itemDetails?.dietaryInfo?.length) {
+        const restrictions = preferences?.dietary_restrictions || [];
+        if (restrictions.includes('Vegetarian')) {
+          message = 'Contains meat - not suitable for vegetarians ⚠️';
+        } else if (restrictions.includes('Vegan')) {
+          message = 'Contains animal products - not suitable for vegans ⚠️';
+        } else if (restrictions.includes('Gluten-Free')) {
+          message = 'Contains gluten - not suitable for gluten-free diet ⚠️';
+        } else {
+          message = `Doesn't align with your dietary preferences ⚠️`;
+        }
+      } else if (preferences?.foods_to_avoid?.some((food: string) => 
+        itemDetails?.name?.toLowerCase().includes(food.toLowerCase()) || 
+        itemDetails?.description?.toLowerCase().includes(food.toLowerCase())
+      )) {
+        message = 'Contains ingredients you prefer to avoid ⚠️';
+      } else {
+        message = 'Not recommended based on your preferences ⚠️';
+      }
       
       console.log('⚠️ Zero match score:', message);
       return new Response(
@@ -53,15 +72,15 @@ serve(async (req) => {
     // Generate message for non-zero scores
     let message = '';
     if (score >= 90) {
-      message = 'Perfect match! ⭐';
+      message = 'Perfect match with your preferences! ⭐';
     } else if (score >= 70) {
-      message = 'Great choice! ✨';
+      message = 'Great choice that aligns with your taste! ✨';
     } else if (score >= 50) {
-      message = 'Good option 👍';
+      message = 'Decent option that partially matches your preferences 👍';
     } else if (matchType === 'warning') {
-      message = 'Check details ⚠️';
+      message = 'Consider other options that better match your preferences ⚠️';
     } else {
-      message = 'May not match preferences 🤔';
+      message = 'May not align well with your dining preferences 🤔';
     }
 
     console.log('✅ Generated message:', message);
