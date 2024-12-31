@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import OnboardingLayout from "@/components/onboarding/OnboardingLayout";
@@ -12,6 +12,7 @@ import ProteinStep from "@/components/onboarding/steps/ProteinStep";
 
 const Onboarding = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
@@ -22,6 +23,10 @@ const Onboarding = () => {
     atmospherePreferences: [] as string[],
     favoriteProteins: [] as string[],
   });
+
+  // Get the return URL from state or default to home
+  const returnUrl = location.state?.returnUrl || "/";
+  console.log("🔄 Return URL after onboarding:", returnUrl);
 
   const canProgress = () => {
     switch (step) {
@@ -46,6 +51,7 @@ const Onboarding = () => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
+        console.log("⚠️ No session found, redirecting to home");
         navigate("/");
       }
     };
@@ -56,8 +62,12 @@ const Onboarding = () => {
   const handleNext = async () => {
     if (step === 6) {
       try {
+        console.log("🔄 Saving preferences...");
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          console.error("❌ No user found");
+          return;
+        }
 
         await supabase.auth.updateUser({
           data: { full_name: name }
@@ -76,14 +86,16 @@ const Onboarding = () => {
 
         if (preferencesError) throw preferencesError;
 
+        console.log("✅ Preferences saved successfully");
         toast({
           title: "Welcome aboard! 🎉",
           description: "Your preferences have been saved. Let's find you some great restaurants!",
         });
 
-        navigate("/");
+        console.log("🔄 Navigating to:", returnUrl);
+        navigate(returnUrl);
       } catch (error) {
-        console.error('Error saving preferences:', error);
+        console.error('❌ Error saving preferences:', error);
         toast({
           title: "Error",
           description: "Failed to save your preferences. Please try again.",
