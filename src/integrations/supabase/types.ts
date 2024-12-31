@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      oauth_tokens: {
+        Row: {
+          access_token: string
+          created_at: string | null
+          expires_at: string
+          id: string
+          refresh_token: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          refresh_token: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          refresh_token?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           full_name: string | null
@@ -26,6 +56,189 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      recipe_community_insights: {
+        Row: {
+          created_at: string | null
+          id: string
+          insight_type: string
+          processed_insight: string
+          recipe_id: string | null
+          source_comment: string
+          updated_at: string | null
+          votes: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          insight_type: string
+          processed_insight: string
+          recipe_id?: string | null
+          source_comment: string
+          updated_at?: string | null
+          votes?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          insight_type?: string
+          processed_insight?: string
+          recipe_id?: string | null
+          source_comment?: string
+          updated_at?: string | null
+          votes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_community_insights_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipe_ingredient_sources: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          id: string
+          processed_ingredients: Json | null
+          raw_text: string
+          recipe_id: string | null
+          source_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          processed_ingredients?: Json | null
+          raw_text: string
+          recipe_id?: string | null
+          source_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          processed_ingredients?: Json | null
+          raw_text?: string
+          recipe_id?: string | null
+          source_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_ingredient_sources_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipes: {
+        Row: {
+          cook_time: number | null
+          cooking_tips: string[] | null
+          created_at: string | null
+          cuisine_type: string | null
+          description: string | null
+          difficulty_level: string | null
+          id: string
+          ingredient_confidence: number | null
+          ingredient_source: string | null
+          ingredients: Json | null
+          instructions: Json | null
+          nutrition_info: Json
+          prep_time: number | null
+          servings: number | null
+          timestamp_source: string | null
+          timestamps: Json | null
+          title: string
+          updated_at: string | null
+          user_id: string | null
+          video_id: string
+        }
+        Insert: {
+          cook_time?: number | null
+          cooking_tips?: string[] | null
+          created_at?: string | null
+          cuisine_type?: string | null
+          description?: string | null
+          difficulty_level?: string | null
+          id?: string
+          ingredient_confidence?: number | null
+          ingredient_source?: string | null
+          ingredients?: Json | null
+          instructions?: Json | null
+          nutrition_info?: Json
+          prep_time?: number | null
+          servings?: number | null
+          timestamp_source?: string | null
+          timestamps?: Json | null
+          title: string
+          updated_at?: string | null
+          user_id?: string | null
+          video_id: string
+        }
+        Update: {
+          cook_time?: number | null
+          cooking_tips?: string[] | null
+          created_at?: string | null
+          cuisine_type?: string | null
+          description?: string | null
+          difficulty_level?: string | null
+          id?: string
+          ingredient_confidence?: number | null
+          ingredient_source?: string | null
+          ingredients?: Json | null
+          instructions?: Json | null
+          nutrition_info?: Json
+          prep_time?: number | null
+          servings?: number | null
+          timestamp_source?: string | null
+          timestamps?: Json | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string | null
+          video_id?: string
+        }
+        Relationships: []
+      }
+      saved_recipes: {
+        Row: {
+          created_at: string | null
+          id: string
+          notes: string | null
+          recipe_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          recipe_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          recipe_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_recipes_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_restaurants: {
         Row: {
@@ -153,6 +366,93 @@ export type Database = {
           spice_level?: number | null
           updated_at?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      video_analysis: {
+        Row: {
+          created_at: string | null
+          engagement_score: number | null
+          id: string
+          timestamps: Json
+          user_feedback: string[] | null
+          user_id: string | null
+          video_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          engagement_score?: number | null
+          id?: string
+          timestamps: Json
+          user_feedback?: string[] | null
+          user_id?: string | null
+          video_id: string
+        }
+        Update: {
+          created_at?: string | null
+          engagement_score?: number | null
+          id?: string
+          timestamps?: Json
+          user_feedback?: string[] | null
+          user_id?: string | null
+          video_id?: string
+        }
+        Relationships: []
+      }
+      video_raw_data: {
+        Row: {
+          captions: Json | null
+          chapters: Json | null
+          created_at: string | null
+          description: string | null
+          id: string
+          recipe_comments: Json | null
+          updated_at: string | null
+          video_id: string
+        }
+        Insert: {
+          captions?: Json | null
+          chapters?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          recipe_comments?: Json | null
+          updated_at?: string | null
+          video_id: string
+        }
+        Update: {
+          captions?: Json | null
+          chapters?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          recipe_comments?: Json | null
+          updated_at?: string | null
+          video_id?: string
+        }
+        Relationships: []
+      }
+      video_transcriptions: {
+        Row: {
+          created_at: string | null
+          id: string
+          transcript: Json
+          updated_at: string | null
+          video_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          transcript: Json
+          updated_at?: string | null
+          video_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          transcript?: Json
+          updated_at?: string | null
+          video_id?: string
         }
         Relationships: []
       }
