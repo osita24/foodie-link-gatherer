@@ -26,12 +26,23 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
           view="sign_in"
           theme="light"
           showLinks={false}
-          onSuccess={({ session }) => {
-            console.log("🎉 Auth success, session:", session?.user?.id);
-            onOpenChange(false);
-            navigate("/onboarding", { 
-              state: { returnUrl: location.pathname } 
-            });
+          localization={{
+            variables: {
+              sign_in: {
+                email_label: "Email",
+                password_label: "Password",
+              },
+            },
+          }}
+          {...{
+            // Using spread operator to handle auth state changes
+            onAuthSuccess: ({ session }) => {
+              console.log("🎉 Auth success, session:", session?.user?.id);
+              onOpenChange(false);
+              navigate("/onboarding", { 
+                state: { returnUrl: location.pathname } 
+              });
+            }
           }}
         />
       </DialogContent>
